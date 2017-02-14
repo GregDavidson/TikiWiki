@@ -16,7 +16,14 @@
 # /vendor/
 # Ignore PhpStorm
 .idea/
+# jgd additions
+# Ignore derived files
+TAGS
+TAGS-*
 # Ignore subversion stores
 .svn/
 # Ignore locks
 *.lock
+# Ignore backup files
+*~
+#*#
