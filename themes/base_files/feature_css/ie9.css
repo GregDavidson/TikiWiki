@@ -1,0 +1,6 @@
+/* $Id: ie9.css 47389 2013-09-10 05:32:43Z chibaguy $ */
+
+.CodeMirror-fullscreen,
+.TextArea-fullscreen {
+	top: expression(eval(document.body.scrollTop + 15) + "px");
+}

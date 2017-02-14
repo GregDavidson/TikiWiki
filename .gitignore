@@ -1,0 +1,22 @@
+## Tiki.gitignore - customized by jgd
+# Ignore binaries
+/bin/
+# Ignore local.php
+# /db/local.php
+# Ignore file upload directories
+/files/forums/
+/files/templates/
+/img/trackers/
+/img/wiki_up/
+# Ignore system caches
+/modules/cache/
+/temp/
+/templates_c/
+# Ignore vendor folders, they are managed by composer
+# /vendor/
+# Ignore PhpStorm
+.idea/
+# Ignore subversion stores
+.svn/
+# Ignore locks
+*.lock

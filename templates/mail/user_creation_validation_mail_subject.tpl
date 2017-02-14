@@ -1,0 +1,1 @@
+{* $Id: user_creation_validation_mail_subject.tpl 58620 2016-05-18 13:09:06Z jonnybradley $ *}{* -*- coding:utf-8 -*- *}{tr}Your personal access to{/tr} {if !empty($prefs.sitetitle)}{$prefs.sitetitle} - {/if}{$mail_site}

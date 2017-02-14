@@ -1,0 +1,1 @@
+{* $Id: new_friend_invitation.tpl 58620 2016-05-18 13:09:06Z jonnybradley $ *}{tr}Go to your friendship network to accept or refuse this {$prefs.mail_template_custom_text}request{/tr} : {$server_name}

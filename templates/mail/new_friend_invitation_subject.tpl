@@ -1,0 +1,1 @@
+{* $Id: new_friend_invitation_subject.tpl 58620 2016-05-18 13:09:06Z jonnybradley $ *}{tr}You're invited to join my {$prefs.mail_template_custom_text}network of friends!{/tr}

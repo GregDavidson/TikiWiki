@@ -1,0 +1,19 @@
+{
+    "name": "jquery-migrate",
+    "repo": "components/jquery-migrate",
+    "version": "3.0.0",
+    "description": "APIs and features removed from jQuery core",
+    "license": "MIT",
+    "keywords": [
+        "jquery",
+        "javascript",
+        "browser",
+        "plugin",
+        "migrate"
+    ],
+    "main": "jquery-migrate.js",
+    "scripts": [
+        "jquery-migrate.js",
+        "jquery-migrate.min.js"
+    ]
+}
