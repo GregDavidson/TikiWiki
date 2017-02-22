@@ -26,4 +26,6 @@ TAGS-*
 *.lock
 # Ignore backup files
 *~
-#*#
+*#
+# Ignore Misc
+Limbo/

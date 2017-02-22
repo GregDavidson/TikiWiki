@@ -1,8 +1,8 @@
 TAGS_FILES = TAGS TAGS-sql TAGS-php
 TAGS:
-	etags $$(find * -name '*.sql' -o -name '*.php' )
+	etags --exclude='*[0-9]to[0-9]*' $$(find * -name '*.sql' -o -name '*.php' )
 TAGS-sql:
-	etags -o $@ $$(find * -name '*.sql')
+	etags  --exclude='*[0-9]to[0-9]*' -o $@ $$(find * -name '*.sql')
 TAGS-php:
 	etags -o $@ $$(find * -name '*.php')
 TAGS-all:
