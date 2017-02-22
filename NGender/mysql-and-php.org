@@ -1,0 +1,131 @@
+* MySQL and PHP Notes
+
+** MySQL Notes
+
+#+BEGIN_SRC sh
+mysql -u{USER} -p[{PW}] [{DBNAME}] [< {FILE-TO-IMPORT}.sql]
+mysqldump -u{USER} -p[{PW}] {DBNAME} [{TABLE}...] > {BACKUP_FILE}.sql
+mysqldump --opt --all-databases > {BACKUP_FILE}.sql
+#+END_SRC
+
+
+#+BEGIN_SRC sql
+USE database_name;
+show databases;
+show tables;
+DESCRIBE table;
+CREATE DATABASE db_name;
+SOURCE {INPUT_FILE};
+#+END_SRC
+
+*** phpMyAdmin
+
+**** How can I connect on a?
+
+https://askubuntu.com/questions/763336/cannot-enter-phpmyadmin-as-root-mysql-5-7
+
+
+MySQL 5.7 changed the secure model: now MySQL root login requires a sudo (while the password still can be blank).
+
+I.e., phpMyAdmin will be not able to use root as user.
+
+The simplest (and safest) solution will be create a new user and grant required privileges.
+
+#+BEGIN_SRC sql
+GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+#+END_SRC
+
+**** How can we securely connect on ngender.org?
+
+*** mycli
+
+I installed mycli on a
+
+No man page or other documentation, not even useful --help
+
+Research or uninstall it!
+
+*** https://en.wikibooks.org/wiki/MySQL/CheatSheet
+
+Forgot root password?
+#+BEGIN_SRC sh
+service mysql stop
+mysqld_safe --skip-grant-tables &
+mysql # on another terminal
+mysql> UPDATE mysql.user SET password=PASSWORD('nouveau') WHERE user='root';
+## Kill mysqld_safe from the terminal, using Control + \
+service start mysql
+#+END_SRC
+
+Repair tables after unclean shutdown
+
+#+BEGIN_SRC sh
+mysqlcheck --all-databases
+mysqlcheck --all-databases --fast
+#+END_SRC
+
+*** MySql Functions and Operators
+
+#+BEGIN_SRC sql
+-- https://dev.mysql.com/doc/refman/5.7/en/string-functions.html
+-- http://www.w3resource.com/mysql/mysql-functions-and-operators.php
+CONCAT( arg1, arg2, .. )
+TRIM([{BOTH | LEADING | TRAILING} [remstr] FROM] str), TRIM([remstr FROM] str)
+#+END_SRC
+
+*** MySql Commands
+
+**** MySQL UPDATE
+
+#+BEGIN_SRC sql
+-- Single-table syntax:
+UPDATE [LOW_PRIORITY] [IGNORE] table_reference
+    SET col_name1={expr1|DEFAULT} [, col_name2={expr2|DEFAULT}] ...
+    [WHERE where_condition]
+    [ORDER BY ...]
+    [LIMIT row_count]
+
+-- Multiple-table syntax:
+
+UPDATE [LOW_PRIORITY] [IGNORE] table_references
+    SET col_name1={expr1|DEFAULT} [, col_name2={expr2|DEFAULT}] ...
+    [WHERE where_condition]
+#+END_SRC
+
+There are no FROM clauses in MySQL UPDATE so the
+Multiple-table syntax has to be used to introduce any
+additional tables involved in the WHERE constraints.
+
+** PHP Notes
+
+#+BEGIN_SRC php
+mysqli_connect("host","accnt","passwd")
+mysqli_select_db($cxn, "dbname",)
+mysqli_query($cxn,"query")
+mysqli_fetch_assoc($result)
+mysqli_num_rows($result)
+mysqli_insert_id($cxn)
+#+END_SRC
+
+
+#+BEGIN_SRC php
+array ( "key" => "value", … );
+die("message");
+do { block } while (condition);
+echo item;
+extract($array);
+for (startingval; endingval;incremnt) { block }
+foreach( $array as $key => $value) { block }
+function funcname(value,value,…) { block }
+header("Location: URL");
+if (condition) { block }
+   elseif (condition) { block }
+   else { block }
+number_format(number,decimals);
+session_start();
+session_destroy();
+switch var { case value statements break; … }
+unset();
+while (condition) { block }
+#+END_SRC

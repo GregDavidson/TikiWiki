@@ -1,0 +1,315 @@
+* Tiki Project Notes
+
+** [DONE] First Project: Setup Users with Default Groups with Default Categories
+
+Did it with sql!
+
+Extra credit: Create it as an admin check box.
+
+** Second Project: Fix Tiki Categories so that
+(1) Any object created newly by a user gets that users' Default Category, if any.
+(2) A user can do anything they like with an object with their Default Category
+(2a) Including see and add ANY other category
+
+** owner vs. creator vs. user
+
+TABLE tiki_user_tasks
+- user varchar(200) NOT NULL DEFAULT '',              -- task user
+- creator varchar(200) NOT NULL,                     -- username of creator
+
+*** SELECT LIKE owner
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME = 'owner'
+#+END_SRC
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME like '%owner%'
+#+END_SRC
+
+| table_name | column_name  | DATA_TYPE |
+|------------+--------------+-----------|
+| tiki_blogs | always_owner | char      |
+
+*** SELECT LIKE creator
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME = 'creator'
+#+END_SRC
+
+| table_name      | column_name | DATA_TYPE |
+|-----------------+-------------+-----------|
+| tiki_pages      | creator     | varchar   |
+| tiki_user_tasks | creator     | varchar   |
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME like '%creator%'
+#+END_SRC
+
+| table_name              | column_name       | DATA_TYPE |
+|-------------------------+-------------------+-----------|
+| tiki_article_types      | creator_edit      | varchar   |
+| tiki_file_galleries     | show_creator      | char      |
+| tiki_pages              | creator           | varchar   |
+| tiki_user_tasks         | creator           | varchar   |
+| tiki_user_tasks         | rights_by_creator | char      |
+| tiki_user_tasks_history | accepted_creator  | char      |
+
+*** SELECT LIKE user
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME = 'userid'
+#+END_SRC
+
+| table_name              | column_name | DATA_TYPE |
+|-------------------------+-------------+-----------|
+| tiki_credits            | userId      | int       |
+| tiki_credits_usage      | userId      | int       |
+| tiki_download           | userId      | int       |
+| tiki_language           | userId      | int       |
+| tiki_payment_received   | userId      | int       |
+| tiki_payment_requests   | userId      | int       |
+| tiki_search_queries     | userId      | int       |
+| tiki_user_login_cookies | userId      | int       |
+| tiki_user_monitors      | userId      | int       |
+| users_usergroups        | userId      | int       |
+| users_users             | userId      | int       |
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME LIKE '%user%id%'
+#+END_SRC
+
+| table_name                 | column_name                | DATA_TYPE |
+|----------------------------+----------------------------+-----------|
+| index_582a38baa4237        | tracker_field_user_skypeid | text      |
+| tiki_acct_account          | accountUserId              | int       |
+| tiki_credits               | userId                     | int       |
+| tiki_credits_usage         | userId                     | int       |
+| tiki_download              | userId                     | int       |
+| tiki_language              | userId                     | int       |
+| tiki_live_support_requests | user_id                    | varchar   |
+| tiki_payment_received      | userId                     | int       |
+| tiki_payment_requests      | userId                     | int       |
+| tiki_search_queries        | userId                     | int       |
+| tiki_user_answers          | userResultId               | int       |
+| tiki_user_answers_uploads  | userResultId               | int       |
+| tiki_user_login_cookies    | userId                     | int       |
+| tiki_user_monitors         | userId                     | int       |
+| tiki_user_quizzes          | userResultId               | int       |
+| users_groups               | usersTrackerId             | int       |
+| users_groups               | usersFieldId               | int       |
+| users_groups               | registrationUsersFieldIds  | text      |
+| users_usergroups           | userId                     | int       |
+| users_users                | userId                     | int       |
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME = 'user'
+#+END_SRC
+
+| table_name                    | column_name | DATA_TYPE |
+|-------------------------------+-------------+-----------|
+| messu_archive                 | user        | varchar   |
+| messu_messages                | user        | varchar   |
+| messu_sent                    | user        | varchar   |
+| tiki_actionlog                | user        | varchar   |
+| tiki_banning                  | user        | varchar   |
+| tiki_blogs                    | user        | varchar   |
+| tiki_blog_posts               | user        | varchar   |
+| tiki_calendars                | user        | varchar   |
+| tiki_calendar_items           | user        | varchar   |
+| tiki_calendar_recurrence      | user        | varchar   |
+| tiki_files                    | user        | varchar   |
+| tiki_file_drafts              | user        | varchar   |
+| tiki_file_galleries           | user        | varchar   |
+| tiki_forums_queue             | user        | varchar   |
+| tiki_forums_reported          | user        | varchar   |
+| tiki_forum_reads              | user        | varchar   |
+| tiki_freetagged_objects       | user        | varchar   |
+| tiki_galleries                | user        | varchar   |
+| tiki_goal_events              | user        | varchar   |
+| tiki_history                  | user        | varchar   |
+| tiki_images                   | user        | varchar   |
+| tiki_live_support_messages    | user        | varchar   |
+| tiki_live_support_operators   | user        | varchar   |
+| tiki_live_support_requests    | user        | varchar   |
+| tiki_mailin_accounts          | user        | varchar   |
+| tiki_minical_events           | user        | varchar   |
+| tiki_minical_topics           | user        | varchar   |
+| tiki_minichat                 | user        | varchar   |
+| tiki_pages                    | user        | varchar   |
+| tiki_page_footnotes           | user        | varchar   |
+| tiki_semaphores               | user        | varchar   |
+| tiki_sessions                 | user        | varchar   |
+| tiki_sheet_values             | user        | varchar   |
+| tiki_shoutbox                 | user        | varchar   |
+| tiki_suggested_faq_questions  | user        | varchar   |
+| tiki_tags                     | user        | varchar   |
+| tiki_tracker_item_attachments | user        | varchar   |
+| tiki_url_shortener            | user        | varchar   |
+| tiki_userfiles                | user        | varchar   |
+| tiki_userpoints               | user        | varchar   |
+| tiki_user_assigned_modules    | user        | varchar   |
+| tiki_user_bookmarks_folders   | user        | varchar   |
+| tiki_user_bookmarks_urls      | user        | varchar   |
+| tiki_user_mail_accounts       | user        | varchar   |
+| tiki_user_menus               | user        | varchar   |
+| tiki_user_notes               | user        | varchar   |
+| tiki_user_postings            | user        | varchar   |
+| tiki_user_preferences         | user        | varchar   |
+| tiki_user_quizzes             | user        | varchar   |
+| tiki_user_reports             | user        | varchar   |
+| tiki_user_reports_cache       | user        | varchar   |
+| tiki_user_taken_quizzes       | user        | varchar   |
+| tiki_user_tasks               | user        | varchar   |
+| tiki_user_votings             | user        | varchar   |
+| tiki_user_watches             | user        | varchar   |
+| tiki_webmail_contacts         | user        | varchar   |
+| tiki_webmail_contacts_fields  | user        | varchar   |
+| tiki_webmail_messages         | user        | varchar   |
+| tiki_wiki_attachments         | user        | varchar   |
+
+#+BEGIN_SRC sql
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
+TABLE_SCHEMA='tiki' and COLUMN_NAME LIKE '%user%' and
+table_name not like 'index%' order by table_name,
+column_name
+#+END_SRC
+
+| table_name                    | column_name               | DATA_TYPE |
+|-------------------------------+---------------------------+-----------|
+| messu_archive                 | user                      | varchar   |
+| messu_archive                 | user_bcc                  | text      |
+| messu_archive                 | user_cc                   | text      |
+| messu_archive                 | user_from                 | varchar   |
+| messu_archive                 | user_to                   | text      |
+| messu_messages                | user                      | varchar   |
+| messu_messages                | user_bcc                  | text      |
+| messu_messages                | user_cc                   | text      |
+| messu_messages                | user_from                 | varchar   |
+| messu_messages                | user_to                   | text      |
+| messu_sent                    | user                      | varchar   |
+| messu_sent                    | user_bcc                  | text      |
+| messu_sent                    | user_cc                   | text      |
+| messu_sent                    | user_from                 | varchar   |
+| messu_sent                    | user_to                   | text      |
+| tiki_acct_account             | accountUserId             | int       |
+| tiki_actionlog                | user                      | varchar   |
+| tiki_auth_tokens              | createUser                | char      |
+| tiki_auth_tokens              | userPrefix                | varchar   |
+| tiki_banners                  | maxUserImpressions        | int       |
+| tiki_banning                  | user                      | varchar   |
+| tiki_blogs                    | user                      | varchar   |
+| tiki_blog_posts               | user                      | varchar   |
+| tiki_calendars                | user                      | varchar   |
+| tiki_calendar_items           | user                      | varchar   |
+| tiki_calendar_recurrence      | user                      | varchar   |
+| tiki_calendar_roles           | username                  | varchar   |
+| tiki_chat_channels            | max_users                 | int       |
+| tiki_comments                 | userName                  | varchar   |
+| tiki_comments                 | user_ip                   | varchar   |
+| tiki_copyrights               | userName                  | varchar   |
+| tiki_credits                  | userId                    | int       |
+| tiki_credits_usage            | userId                    | int       |
+| tiki_download                 | userId                    | int       |
+| tiki_files                    | lastModifUser             | varchar   |
+| tiki_files                    | user                      | varchar   |
+| tiki_file_drafts              | user                      | varchar   |
+| tiki_file_galleries           | show_last_user            | char      |
+| tiki_file_galleries           | user                      | varchar   |
+| tiki_forums                   | inbound_pop_user          | varchar   |
+| tiki_forums_queue             | user                      | varchar   |
+| tiki_forums_reported          | user                      | varchar   |
+| tiki_forum_reads              | user                      | varchar   |
+| tiki_freetagged_objects       | user                      | varchar   |
+| tiki_galleries                | showuser                  | char      |
+| tiki_galleries                | user                      | varchar   |
+| tiki_goal_events              | user                      | varchar   |
+| tiki_groupalert               | displayEachuser           | char      |
+| tiki_history                  | user                      | varchar   |
+| tiki_images                   | user                      | varchar   |
+| tiki_invited                  | used_on_user              | varchar   |
+| tiki_language                 | userId                    | int       |
+| tiki_live_support_messages    | user                      | varchar   |
+| tiki_live_support_messages    | username                  | varchar   |
+| tiki_live_support_operators   | user                      | varchar   |
+| tiki_live_support_requests    | tiki_user                 | varchar   |
+| tiki_live_support_requests    | user                      | varchar   |
+| tiki_live_support_requests    | user_id                   | varchar   |
+| tiki_logs                     | loguser                   | varchar   |
+| tiki_mailin_accounts          | user                      | varchar   |
+| tiki_mailin_accounts          | username                  | varchar   |
+| tiki_menu_options             | userlevel                 | int       |
+| tiki_minical_events           | user                      | varchar   |
+| tiki_minical_topics           | user                      | varchar   |
+| tiki_minichat                 | user                      | varchar   |
+| tiki_newsletters              | allowUserSub              | char      |
+| tiki_newsletters              | users                     | int       |
+| tiki_newsletter_subscriptions | isUser                    | char      |
+| tiki_object_scores            | triggerUser               | varchar   |
+| tiki_pages                    | user                      | varchar   |
+| tiki_page_footnotes           | user                      | varchar   |
+| tiki_payment_received         | userId                    | int       |
+| tiki_payment_requests         | userId                    | int       |
+| tiki_received_articles        | receivedFromUser          | varchar   |
+| tiki_received_pages           | receivedFromUser          | varchar   |
+| tiki_search_queries           | userId                    | int       |
+| tiki_semaphores               | user                      | varchar   |
+| tiki_sent_newsletters         | users                     | int       |
+| tiki_sessions                 | user                      | varchar   |
+| tiki_sheet_values             | user                      | varchar   |
+| tiki_shoutbox                 | user                      | varchar   |
+| tiki_suggested_faq_questions  | user                      | varchar   |
+| tiki_tags                     | user                      | varchar   |
+| tiki_tracker_item_attachments | user                      | varchar   |
+| tiki_url_shortener            | user                      | varchar   |
+| tiki_userfiles                | user                      | varchar   |
+| tiki_userpoints               | user                      | varchar   |
+| tiki_user_answers             | userResultId              | int       |
+| tiki_user_answers_uploads     | userResultId              | int       |
+| tiki_user_assigned_modules    | user                      | varchar   |
+| tiki_user_bookmarks_folders   | user                      | varchar   |
+| tiki_user_bookmarks_urls      | user                      | varchar   |
+| tiki_user_login_cookies       | userId                    | int       |
+| tiki_user_mailin_struct       | username                  | varchar   |
+| tiki_user_mail_accounts       | user                      | varchar   |
+| tiki_user_mail_accounts       | username                  | varchar   |
+| tiki_user_menus               | user                      | varchar   |
+| tiki_user_monitors            | userId                    | int       |
+| tiki_user_notes               | user                      | varchar   |
+| tiki_user_postings            | user                      | varchar   |
+| tiki_user_preferences         | user                      | varchar   |
+| tiki_user_quizzes             | user                      | varchar   |
+| tiki_user_quizzes             | userResultId              | int       |
+| tiki_user_reports             | user                      | varchar   |
+| tiki_user_reports_cache       | user                      | varchar   |
+| tiki_user_taken_quizzes       | user                      | varchar   |
+| tiki_user_tasks               | user                      | varchar   |
+| tiki_user_tasks_history       | accepted_user             | char      |
+| tiki_user_votings             | user                      | varchar   |
+| tiki_user_watches             | user                      | varchar   |
+| tiki_webmail_contacts         | user                      | varchar   |
+| tiki_webmail_contacts_fields  | user                      | varchar   |
+| tiki_webmail_messages         | user                      | varchar   |
+| tiki_wiki_attachments         | user                      | varchar   |
+| users_groups                  | registrationUsersFieldIds | text      |
+| users_groups                  | userChoice                | char      |
+| users_groups                  | usersFieldId              | int       |
+| users_groups                  | usersTrackerId            | int       |
+| users_usergroups              | userId                    | int       |
+| users_users                   | userId                    | int       |
+
+| tiki_calendar_categories           |
+| tiki_categories                    |
+| tiki_categorized_objects           |
+| tiki_category_objects              |
+| tiki_category_sites                |
+| tiki_directory_categories          |
+| tiki_related_categories            |
+| tiki_theme_control_categs          |
