@@ -17,18 +17,16 @@ class PreferencesLib
 	private $system_info = array( 'fgal_use_dir', 'sender_email' );
 
 	function getPreference( $name, $deps = true, $source = null, $get_pages = false )
-    {
+	{
+		global $prefs, $systemConfiguration;
+		static $id = 0;
+// 	echo "getPreference: $name\n"; // NGender
+		$data = $this->loadData($name);
 
-	global $prefs, $systemConfiguration;
-	static $id = 0;
-	echo "$name";
-	$data = $this->loadData($name);
-	echo "x";
-
-	if ( ! isset( $data[$name] ) ) {
+		if ( ! isset( $data[$name] ) ) {
 	    return false;
-	}
-	$defaults = array(
+		}
+		$defaults = array(
 	    'type' => '',
 	    'helpurl' => '',
 	    'help' => '',
@@ -50,81 +48,74 @@ class PreferencesLib
 	    'plugin' => '',
 	    'view' => '',
 	    'public' => false,
-	);
-	echo "x";
+		);
 		if ($data[$name]['type'] === 'textarea') {
 			$defaults['size'] = 10;
 		}
-	    echo "x";
-	    $info = array_merge($defaults, $data[$name]);
-	    echo "array merge";
-	    if ( $source == null ) {
-		$source = $prefs;
-	    }
-
-	    $value = isset($source[$name]) ? $source[$name] : null;
-	    if ( !empty($value) && is_string($value) && (strlen($value) > 1 && $value{1} == ':') && false !== $unserialized = @unserialize($value) ) {
-		$value = $unserialized;
-	    }
-
-	    $info['preference'] = $name;
-	    if ( isset( $info['serialize'] ) ) {
-		$fnc = $info['serialize'];
-		$info['value'] = $fnc($value);
-	    } else {
-		$info['value'] = $value;
-	    }
-
-	    if (! isset($info['tags'])) {
-		$info['tags'] = array('advanced');
-	    }
-	    echo "x";
-
-	    $info['tags'][] = $name;
-	    $info['tags'][] = 'all';
-
-	    $info['notes'] = array();
-
-	    $info['raw'] = isset($source[$name]) ? $source[$name] : null;
-	    $info['id'] = 'pref-' . ++$id;
-
-	    if ( !empty($info['help']) && isset($prefs['feature_help']) && $prefs['feature_help'] == 'y' ) {
-		if ( preg_match('/^https?:/i', $info['help']) ) {
-		    $info['helpurl'] = $info['help'];
-		} else {
-		    $info['helpurl'] = $prefs['helpurl'] . $info['help'];
+		$info = array_merge($defaults, $data[$name]);
+		if ( $source == null ) {
+			$source = $prefs;
 		}
-	    }
 
-	    if ( $deps && isset( $info['dependencies'] ) ) {
-		$info['dependencies'] = $this->getDependencies($info['dependencies']);
-	    }
-	    echo "x";
+		$value = isset($source[$name]) ? $source[$name] : null;
+		if ( !empty($value) && is_string($value) && (strlen($value) > 1 && $value{1} == ':') && false !== $unserialized = @unserialize($value) ) {
+			$value = $unserialized;
+		}
 
-	    $info['available'] = true;
+		$info['preference'] = $name;
+		if ( isset( $info['serialize'] ) ) {
+			$fnc = $info['serialize'];
+			$info['value'] = $fnc($value);
+		} else {
+			$info['value'] = $value;
+		}
 
-	    if (! $this->checkExtensions($info['extensions']) ) {
-		$info['available'] = false;
-		$info['notes'][] = tr('Unmatched system requirement. Missing PHP extension among %0', implode(', ', $info['extensions']));
-	    }
+		if (! isset($info['tags'])) {
+			$info['tags'] = array('advanced');
+		}
 
-	    if (! $this->checkDatabaseFeatures($info['dbfeatures']) ) {
-		$info['available'] = false;
-		$info['notes'][] = tr('Unmatched system requirement. The database you are using does not support this feature.');
-	    }
-	    echo "x";
+		$info['tags'][] = $name;
+		$info['tags'][] = 'all';
 
-	    if (!isset($info['default'])) {	// missing default in prefs definition file?
-		$info['modified'] = false;
-		trigger_error(tr('Missing default for preference "%0"', $name), E_USER_WARNING);
-	    } else {
-		$info['modified'] = str_replace("\r\n", "\n", $info['value']) != $info['default'];
-	    }
+		$info['notes'] = array();
+		
+		$info['raw'] = isset($source[$name]) ? $source[$name] : null;
+		$info['id'] = 'pref-' . ++$id;
 
-	    if ($get_pages) {
-		$info['pages'] = $this->getPreferenceLocations($name);
-	    }
-	    echo "x";
+		if ( !empty($info['help']) && isset($prefs['feature_help']) && $prefs['feature_help'] == 'y' ) {
+			if ( preg_match('/^https?:/i', $info['help']) ) {
+		    $info['helpurl'] = $info['help'];
+			} else {
+		    $info['helpurl'] = $prefs['helpurl'] . $info['help'];
+			}
+		}
+
+		if ( $deps && isset( $info['dependencies'] ) ) {
+			$info['dependencies'] = $this->getDependencies($info['dependencies']);
+		}
+
+		$info['available'] = true;
+
+		if (! $this->checkExtensions($info['extensions']) ) {
+			$info['available'] = false;
+			$info['notes'][] = tr('Unmatched system requirement. Missing PHP extension among %0', implode(', ', $info['extensions']));
+		}
+		
+		if (! $this->checkDatabaseFeatures($info['dbfeatures']) ) {
+			$info['available'] = false;
+			$info['notes'][] = tr('Unmatched system requirement. The database you are using does not support this feature.');
+		}
+
+		if (!isset($info['default'])) {	// missing default in prefs definition file?
+			$info['modified'] = false;
+			trigger_error(tr('Missing default for preference "%0"', $name), E_USER_WARNING);
+		} else {
+			$info['modified'] = str_replace("\r\n", "\n", $info['value']) != $info['default'];
+		}
+		
+		if ($get_pages) {
+			$info['pages'] = $this->getPreferenceLocations($name);
+		}
 
 	    if ( isset( $systemConfiguration->preference->$name ) ) {
 		$info['available'] = false;
@@ -143,7 +134,6 @@ class PreferencesLib
 	    if ($info['modified'] && $info['available']) {
 		$info['tags'][] = 'modified';
 	    }
-	    echo "x";
 
 	    $info['tagstring'] = implode(' ', $info['tags']);
 
@@ -163,7 +153,6 @@ class PreferencesLib
 	    if (!empty($info['module'])) {
 		$info['module'] = 'tiki-admin_modules.php?cookietab=3&textFilter=' . urlencode($info['module']);
 	    }
-	    echo "x";
 
 	    if (!empty($info['plugin'])) {
 		$info['plugin'] = 'tiki-admin.php?page=textarea&amp;cookietab=2&textFilter=' . urlencode($info['plugin']);
@@ -198,7 +187,6 @@ class PreferencesLib
 		}
 		$info['popup_html'] .= '</ul>';
 	    }
-	    echo "x";
 
 	    if (isset($prefs['connect_feature']) && $prefs['connect_feature'] === 'y') {
 		$connectlib = TikiLib::lib('connect');
@@ -226,7 +214,6 @@ class PreferencesLib
 	    if (! $info['available']) {
 		$info['parameters']['disabled'] = 'disabled';
 	    }
-	    echo "x";
 
 	    $info['params'] = '';
 	    if (!empty($info['parameters'])) {
@@ -252,7 +239,6 @@ class PreferencesLib
 		    }
 		}
 	    }
-	    echo "x";
 
 		return $info;
 	}
@@ -438,13 +424,12 @@ class PreferencesLib
 	    } else {
 		$file = 'global';
 	    }
-	    echo $file;
+
 		return $this->getFileData($file);
 	}
 
 	private function getFileData( $file, $partial = false )
     {
-	echo "y";
 		if ( ! isset( $this->files[$file] ) ) {
    			$this->realLoad($file, $partial);
 		}
@@ -457,13 +442,12 @@ class PreferencesLib
 		if ($partial) {
 			unset($this->files[$file]);
 		}
-echo $ret;
+
 		return $ret;
 	}
 
 	private function realLoad($file, $partial)
     {
-	echo "z";
 		$inc_file = __DIR__ . "/prefs/{$file}.php";
 		if (substr($file, 0, 3) == "ta_") {
 			$paths = TikiAddons::getPaths();
@@ -471,10 +455,8 @@ echo $ret;
 			$inc_file = $paths[$package] .  "/prefs/{$file}.php";
 		}
 		if (file_exists($inc_file)) {
-		    echo "y";
-		    echo $inc_file;
 		    require_once $inc_file;
-		    echo "y";
+
 			$function = "prefs_{$file}_list";
 			if ( function_exists($function) ) {
 				$this->files[$file] = $function($partial);

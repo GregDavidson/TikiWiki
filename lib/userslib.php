@@ -2890,14 +2890,14 @@ class UsersLib extends TikiLib
 		return $result;
 	}
 
-	// Categorical Imperative
+	// Categorical Imperative // feature_ngender_stewardship
 	function user_owns_object($ObjectName)
 	{
 	    $query = 'select count(*) from tiki_objects o, tiki_category_objects co ';
 	    $query .= ' where co.catObjectId=o.objectId AND co.categId=? and o.name=?';
-			error_log('user_owns_object: $_SESSION[u_info][defcat] = '.$_SESSION['u_info']['defcat'].'$ObjectName = '.$ObjectName);
+//		error_log('user_owns_object: $_SESSION[u_info][defcat] = '.$_SESSION['u_info']['defcat'].'$ObjectName = '.$ObjectName); // NGender
 	    $result = $this->getOne($query, array($_SESSION['u_info']['defcat'], $ObjectName));
-			error_log('user_owns_object result = '.$result);
+//		error_log('user_owns_object result = '.$result); // NGender
 	    return $result;
 	}
 

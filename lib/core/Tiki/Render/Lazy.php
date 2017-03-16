@@ -17,13 +17,12 @@ class Tiki_Render_Lazy
 
 	function __toString()
     {
-	error_log('in tostring');
-	echo "<pre>";
-	var_dump($this->callback);
-	echo "</pre>";
+// 	error_log('in tostring'); // NGender
+// 	echo "<pre>"; // NGender
+// 	var_dump($this->callback); // NGender
+// 	echo "</pre>"; // NGender
 
 	if ($this->callback) {
-	    echo "yes";
 		try {
 		    $this->data = call_user_func($this->callback);
 		} catch (Exception $e) {

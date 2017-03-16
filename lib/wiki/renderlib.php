@@ -338,17 +338,15 @@ class WikiRenderer
 		    $page = $this->page;
 			$pdata = new Tiki_Render_Lazy(
 			    function () use ($page) {
-				error_log('arrived');
 					$wikilib = TikiLib::lib('wiki');
 				$smarty = TikiLib::lib('smarty');
-				error_log('foo'.$canBeRefreshed);
+				// get_parse will change $canBeRefreshed!!
 					$parsed = $wikilib->get_parse($page, $canBeRefreshed);
-				error_log('foo'.$canBeRefreshed);
-				error_log($parsed);
+// 				error_log('foo'.$canBeRefreshed); // NGender
+// 				error_log($parsed); // NGender
 					if ($canBeRefreshed) {
 						$smarty->assign('cached_page', 'y');
 					}
-				error_log($parsed);
 					return $parsed;
 				}
 			);

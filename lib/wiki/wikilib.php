@@ -553,20 +553,13 @@ class WikiLib extends TikiLib
 				$this->update_cache($page, $content . $jsFile . $js);
 			}
 		} else {
-		    echo "Here and Alive";
-		    error_log("alive");
-		    echo "<pre>";
-		    var_dump($info);
-		    echo "</pre>";
 		    $content = (new WikiLibOutput($info, $info['data'], $parse_options, $info['version']))->parsedValue;
-		    /* error_log("info[data]: ".$info['data']);
-		       error_log("info[version]: ".$info['version']);
-		       error_log("parse_options: ".$parse_options);
-		     */
-//		    $pre_content = new WikiLibOutput($info, $info['data'], $parse_options);
-//		    $content = pre_content->parsedValue;
-		    //error_log("content: ".$content);
-		    echo "Alive";
+//			error_log("info[data]: ".$info['data']); // NGender
+//			error_log("info[version]: ".$info['version']); // NGender
+//			error_log("parse_options: ".$parse_options); // NGender
+//			Why is this version a syntax error?? // NGender
+//		    $pre_content = new WikiLibOutput($info, $info['data'], $parse_options); // NGender
+//		    $content = pre_content->parsedValue; // NGender
 		}
 
 	    return $content;
@@ -1899,7 +1892,7 @@ class WikiLibOutput
 
     public function __construct($info, $originalValue, $options = array())
     {
-echo "in constructor of WikiLibOutput";
+// echo "WikiLibOutput ctor"; // NGender
         $tikilib = TikiLib::lib('tiki');
         $prefslib = TikiLib::lib('prefs');
         $headerlib = TikiLib::lib('header');
@@ -1908,10 +1901,8 @@ echo "in constructor of WikiLibOutput";
         $this->info = $info;
         $this->originalValue = $originalValue;
         $this->options = $options;
-	echo "getPreference";
-	// BUG: can return false !!!
+				// BUG: getPreference can return false!!! // NGender
         $feature_wikilingo = $prefslib->getPreference('feature_wikilingo')['value'];
-	echo "getPreference";
         if($feature_wikilingo === 'y'
             && isset($info['outputType']) && $info['outputType'] == 'wikiLingo') {
 
@@ -1925,7 +1916,6 @@ echo "in constructor of WikiLibOutput";
 	            require_once('lib/wikiLingo_tiki/WikiLingoEvents.php');
 	            (new WikiLingoEvents($wikiLingo));
             }
-echo "Here, now";
             if (isset($_POST['protocol']) && $_POST['protocol'] === 'futurelink')
             {
                 $this->parsedValue = '';
@@ -1935,7 +1925,7 @@ echo "Here, now";
                 //recover from failure, but DO NOT just output
                 if ($this->parsedValue === null)
                 {
-		    echo "parsedValue is null";
+// 		    echo "parsedValue is null"; // NGender
                     $possibleCause = '';
                     if (!empty($wikiLingo->pluginStack)) {
                         foreach ($wikiLingo->pluginStack as $pluginName) {

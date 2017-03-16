@@ -677,9 +677,8 @@ $smarty->assign('pdf_export', ($prefs['print_pdf_from_url'] != 'none') ? 'y' : '
 $pageRenderer->runSetups();
 
 //TRANSLATING HTML
-error_log('calling getTemplateVars');
+// error_log('calling getTemplateVars'); // NGender
 $page_content = (string) $smarty->getTemplateVars('parsed');
-error_log('die?');
 if (!empty($_REQUEST['machine_translate_to_lang'])) {
 	$page_content = generate_machine_translated_content($page_content, $info, $_REQUEST['machine_translate_to_lang']);
 	$smarty->assign('parsed', $page_content);
