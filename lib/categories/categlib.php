@@ -855,7 +855,7 @@ class CategLib extends ObjectLib
 	If localized is enabled, category names are translated to the user's language.
 	*/
 	function getCategories($filter = array('type'=>'all'), $considerCategoryFilter = true, $considerPermissions = true, $localized = true)
-	{
+    {
 		global $prefs;
 		$cachelib = TikiLib::lib('cache');
 		$cacheKey = 'all' . ($localized ? '_' . $prefs['language'] : '');
@@ -1664,7 +1664,7 @@ class CategLib extends ObjectLib
 	// Change an object's categories
 	// $objId: A unique identifier of an object of the given type, for example "Foo" for Wiki page Foo.
 	function update_object_categories($categories, $objId, $objType, $desc=NULL, $name=NULL, $href=NULL, $managedCategories = null, $override_perms = false)
-	{
+    {
 		global $prefs, $user;
 		$userlib = TikiLib::lib('user');
 

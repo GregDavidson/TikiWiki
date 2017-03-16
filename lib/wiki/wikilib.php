@@ -553,13 +553,26 @@ class WikiLib extends TikiLib
 				$this->update_cache($page, $content . $jsFile . $js);
 			}
 		} else {
-            $content = (new WikiLibOutput($info, $info['data'], $parse_options, $info['version']))->parsedValue;
+		    echo "Here and Alive";
+		    error_log("alive");
+		    echo "<pre>";
+		    var_dump($info);
+		    echo "</pre>";
+		    $content = (new WikiLibOutput($info, $info['data'], $parse_options, $info['version']))->parsedValue;
+		    /* error_log("info[data]: ".$info['data']);
+		       error_log("info[version]: ".$info['version']);
+		       error_log("parse_options: ".$parse_options);
+		     */
+//		    $pre_content = new WikiLibOutput($info, $info['data'], $parse_options);
+//		    $content = pre_content->parsedValue;
+		    //error_log("content: ".$content);
+		    echo "Alive";
 		}
 
-		return $content;
+	    return $content;
 	}
 
-	public function update_cache($page, $data)
+    public function update_cache($page, $data)
 	{
 		$query = 'update `tiki_pages` set `cache`=?, `cache_timestamp`=? where `pageName`=?';
 		$result = $this->query($query, array( $data, $this->now, $page ));
@@ -1886,6 +1899,7 @@ class WikiLibOutput
 
     public function __construct($info, $originalValue, $options = array())
     {
+echo "in constructor of WikiLibOutput";
         $tikilib = TikiLib::lib('tiki');
         $prefslib = TikiLib::lib('prefs');
         $headerlib = TikiLib::lib('header');
@@ -1894,9 +1908,10 @@ class WikiLibOutput
         $this->info = $info;
         $this->originalValue = $originalValue;
         $this->options = $options;
-
+	echo "getPreference";
+	// BUG: can return false !!!
         $feature_wikilingo = $prefslib->getPreference('feature_wikilingo')['value'];
-
+	echo "getPreference";
         if($feature_wikilingo === 'y'
             && isset($info['outputType']) && $info['outputType'] == 'wikiLingo') {
 
@@ -1910,7 +1925,7 @@ class WikiLibOutput
 	            require_once('lib/wikiLingo_tiki/WikiLingoEvents.php');
 	            (new WikiLingoEvents($wikiLingo));
             }
-
+echo "Here, now";
             if (isset($_POST['protocol']) && $_POST['protocol'] === 'futurelink')
             {
                 $this->parsedValue = '';
@@ -1920,6 +1935,7 @@ class WikiLibOutput
                 //recover from failure, but DO NOT just output
                 if ($this->parsedValue === null)
                 {
+		    echo "parsedValue is null";
                     $possibleCause = '';
                     if (!empty($wikiLingo->pluginStack)) {
                         foreach ($wikiLingo->pluginStack as $pluginName) {

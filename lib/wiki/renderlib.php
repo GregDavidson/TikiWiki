@@ -86,10 +86,10 @@ class WikiRenderer
 		foreach ( $this->smartyRestore as $name => $value )
 			$smarty->assign($name, $value);
 	} // }}}
-
+    
 	function runSetups() // {{{
-	{
-		foreach ( $this->prep as $method )
+    {
+		foreach ( $this->prep as $method ) 
 			$this->$method();
 	} // }}}
 
@@ -301,6 +301,7 @@ class WikiRenderer
 
 		$this->smartyassign('cached_page', 'n');
 
+
 		if ($prefs['flaggedrev_approval'] == 'y') {
 			$flaggedrevisionlib = TikiLib::lib('flaggedrevision');
 
@@ -333,19 +334,21 @@ class WikiRenderer
 				}
 			}
 		}
-
 		if ($this->content_to_render === null) {
-			$page = $this->page;
+		    $page = $this->page;
 			$pdata = new Tiki_Render_Lazy(
-				function () use ($page) {
+			    function () use ($page) {
+				error_log('arrived');
 					$wikilib = TikiLib::lib('wiki');
-					$smarty = TikiLib::lib('smarty');
+				$smarty = TikiLib::lib('smarty');
+				error_log('foo'.$canBeRefreshed);
 					$parsed = $wikilib->get_parse($page, $canBeRefreshed);
-
+				error_log('foo'.$canBeRefreshed);
+				error_log($parsed);
 					if ($canBeRefreshed) {
 						$smarty->assign('cached_page', 'y');
 					}
-
+				error_log($parsed);
 					return $parsed;
 				}
 			);
@@ -372,7 +375,6 @@ class WikiRenderer
 				);
 			}
 		}
-
 		if ($prefs['wiki_pagination'] == 'y') {
 			$pages = $wikilib->get_number_of_pages($pdata);
 			$pdata = $wikilib->get_page($pdata, $this->pageNumber);

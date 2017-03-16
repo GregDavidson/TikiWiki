@@ -27,5 +27,7 @@ TAGS-*
 # Ignore backup files
 *~
 *#
+# Ignore our project area NGender - we'll need a separate repository for it!!
+NGender/
 # Ignore Misc
 Limbo/

@@ -1,17 +1,24 @@
 * Tiki Project Notes
 
-** [DONE] First Project: Setup Users with Default Groups with Default Categories
+** Categorical Imperative Project
+
+Purpose: Leverage Default Groups their Default Categories to
+give users control over objects they create and/or objects
+associated with their default category.
+
+*** [DONE] First Project: Setup Users with Default Groups with Default Categories
 
 Did it with sql!
 
 Extra credit: Create it as an admin check box.
 
-** Second Project: Fix Tiki Categories so that
-(1) Any object created newly by a user gets that users' Default Category, if any.
-(2) A user can do anything they like with an object with their Default Category
-(2a) Including see and add ANY other category
+*** Second Project: Fix Tiki Categories so that
+(1) [DONE] Any object created newly by a user is associated with that users' Default Category, if any.
+(2) A user can do anything they like with an object associated with their Default Category, including
+(2b) [TODO] Edit the categories associated with their object
+(2a) [DONE] In editing, See all possible categories (--> but consider having a list of "hidden" categories)
 
-** owner vs. creator vs. user
+*** owner vs. creator vs. user
 
 TABLE tiki_user_tasks
 - user varchar(200) NOT NULL DEFAULT '',              -- task user
@@ -313,3 +320,122 @@ column_name
 | tiki_directory_categories          |
 | tiki_related_categories            |
 | tiki_theme_control_categs          |
+*** Things about creator and user
+In tikilib.php, there is function create_page($name, $hits, $data,
+$lastModif, $comment, $user = 'admin', $ip = '0.0.0.0', $description =
+'', $lang='', $is_html = false, $hash=null, $wysiwyg=NULL,
+$wiki_authors_style='', $minor=0, $created='')
+
+In there we set user and creator to the loggin user.
+
+** Features 
+
+in feature.php look at
+- feature_dummy
+- feature_ngender_ownership
+- hmm, this code does not seem to be used anywhere
+- is it obsoleted by table tiki_feature?
+
+What's the code at the top of
+- function prefs_feature list>
+
+Do features get put in the database automatically?
+- some are set in tiki.sql 
+
+What database tables hold features-related information?
+- tiki_preferences -- 87 like 'feature_%'
+- tiki_feature -- empty!
+- tiki_menu_options -- field section is getting set to features ?
+- tiki_featured_links -- empty!
+- tiki_sefurl_regex_out ?
+
+SELECT count(*)  FROM tiki_feature;
++----------+
+| count(*) |
++----------+
+|        0 |
++----------+
+
+SELECT count(*)  FROM tiki_preferences where name like 'feature_%';
++----------+
+| count(*) |
++----------+
+|       87 |
++----------+
+
+
+Do features show up in 
+
+** 
+
+Page: https://localhost/tiki-index.php
+Logged in as: ZRegister
+
+Fatal error: Method Tiki_Render_Lazy::__toString() must not
+throw an exception, caught ParseError: syntax error,
+unexpected ''default'' (T_CONSTANT_ENCAPSED_STRING),
+expecting ')' in /var/www/html/tiki/tiki-index.php on line 0
+
+** database settings
+
+*** convert Tiki's Tables from MyISAM to innodb
+	 
+In order to convert Tiki's Tables from MyISAM to innodb we must to either:
+	 
+#+BEGIN_SRC sql
+update  tiki_preferences set value = 'n' where name = 'feature_search_fulltext';
+insert into tiki_preferences (name, value) values ('feature_search_fulltext', 'n');
+-- or even better as as an upsert!!
+#+END_SRC
+
+See:
+- [[file:Tiki/db/tiki_innodb.sql]]
+- [[NGender/Tiki/db/tiki_convert_myisam_to_innodb.sql]]
+
+** Procedure and Function Experiments 
+
+#+BEGIN_SRC sql
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost` FUNCTION `cat_in_super`(cat_id int, super_id int) RETURNS int(11)
+    READS SQL DATA
+BEGIN
+ DECLARE recur_id int;
+ DECLARE found_cat_id int DEFAULT 0;
+ DECLARE no_more int DEFAULT 0;
+ DEClARE cat_cursor CURSOR FOR 
+ SELECT parentId FROM tiki_categories WHERE categId = super_id;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET no_more = 1;
+ OPEN cat_cursor;
+ LOOP
+  FETCH cat_cursor INTO found_cat_id;
+  IF no_more = 1 THEN CLOSE cat_cursor; RETURN 0; END IF;
+  IF found_cat_id = cat_id THEN CLOSE cat_cursor; RETURN cat_id; END IF;
+  SET recur_id = obj_in_cat(cat_id, found_cat_id);
+  IF recur_id <> 0 THEN CLOSE cat_cursor; RETURN recur_id; END IF;
+ END LOOP;
+END//
+#+END_SRC
+
+#+BEGIN_SRC sql
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost` FUNCTION `obj_in_cat`(obj_id int, cat_id int) RETURNS int(11)
+    READS SQL DATA
+BEGIN
+ DECLARE recur_id int;
+ DECLARE found_cat_id int DEFAULT 0;
+ DECLARE no_more int DEFAULT 0;
+ DEClARE cat_cursor CURSOR FOR 
+ SELECT parentId FROM tiki_categories WHERE categId = cat_id;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET no_more = 1;
+ SELECT categId INTO found_cat_id 
+ FROM tiki_category_objects WHERE categId = cat_id AND catObjectId = obj_id ;
+ IF found_cat_id <> 0 THEN RETURN found_cat_id; END IF;
+ OPEN cat_cursor;
+ LOOP
+  FETCH cat_cursor INTO found_cat_id;
+  IF no_more = 1 THEN CLOSE cat_cursor; RETURN 0; END IF;
+  SET recur_id = cat_in_super(cat_id, found_cat_id);
+  IF recur_id <> 0 THEN CLOSE cat_cursor; RETURN recur_id; END IF;
+ END LOOP;
+END//
+#+END_SRC

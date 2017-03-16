@@ -2921,5 +2921,15 @@ function prefs_feature_list($partial = false)
 			'tags' => array('basic'),
 			'default' => 'y',
 		),
+		'feature_ngender_ownership' => array(
+			'name' => tra('Categorical Ownership'),
+            'description' => tra('Default category allows editing of all other categories on object'),
+			'type' => 'flag',
+			'keywords' => 'ownership categories',
+			'default' => 'n',
+			'warning' => tra('Experimental'),
+			'tags' => array('experimental'),
+		),
+
 	);
 }

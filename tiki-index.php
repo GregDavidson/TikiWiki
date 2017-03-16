@@ -41,8 +41,10 @@ $inputConfiguration = array(
 $section = 'wiki page';
 $isHomePage = (!isset($_REQUEST['page']));
 require_once('tiki-setup.php');
+$smarty->debugging = true;
 
 $multilinguallib = TikiLib::lib('multilingual');
+echo "at the top";
 
 if ( $prefs['feature_wiki_structure'] == 'y' ) {
 	$structlib = TikiLib::lib('struct');
@@ -675,7 +677,9 @@ $smarty->assign('pdf_export', ($prefs['print_pdf_from_url'] != 'none') ? 'y' : '
 $pageRenderer->runSetups();
 
 //TRANSLATING HTML
-$page_content = (string) $smarty->getTemplateVars('parsed');		// convert from Tiki_Render_Lazy to string here
+error_log('calling getTemplateVars');
+$page_content = (string) $smarty->getTemplateVars('parsed');
+error_log('die?');
 if (!empty($_REQUEST['machine_translate_to_lang'])) {
 	$page_content = generate_machine_translated_content($page_content, $info, $_REQUEST['machine_translate_to_lang']);
 	$smarty->assign('parsed', $page_content);

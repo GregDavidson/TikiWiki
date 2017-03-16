@@ -11,22 +11,27 @@ class Tiki_Render_Lazy
 	private $data;
 
 	function __construct($callback)
-	{
-		$this->callback = $callback;
+    {
+	$this->callback = $callback;
 	}
 
 	function __toString()
-	{
-		if ($this->callback) {
-			try {
-				$this->data = call_user_func($this->callback);
-			} catch (Exception $e) {
-				$this->data = $e->getMessage();
-			}
-			$this->callback = null;
-		}
+    {
+	error_log('in tostring');
+	echo "<pre>";
+	var_dump($this->callback);
+	echo "</pre>";
 
-		return (string) $this->data;
+	if ($this->callback) {
+	    echo "yes";
+		try {
+		    $this->data = call_user_func($this->callback);
+		} catch (Exception $e) {
+		    $this->data = $e->getMessage();
+		}
+		$this->callback = null;
+	    }
+	    return (string) $this->data;
 	}
 }
 

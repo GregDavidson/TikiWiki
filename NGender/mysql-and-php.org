@@ -76,6 +76,16 @@ TRIM([{BOTH | LEADING | TRAILING} [remstr] FROM] str), TRIM([remstr FROM] str)
 
 *** MySql Commands
 
+**** Checking and repairing mysql tables and databases
+
+mysqlcheck -c tiki -u phpmyadmin -p
+
+**** Emacs as a Client
+
+https://stackoverflow.com/questions/17246119/emacs-how-to-use-ssh-tunnel-to-connect-to-remote-mysql
+
+(sql-default-directory "/host.myhost.com:")
+
 **** MySQL UPDATE
 
 #+BEGIN_SRC sql
@@ -129,3 +139,15 @@ switch var { case value statements break; … }
 unset();
 while (condition) { block }
 #+END_SRC
+** bugs
+DATA CORRUPTIONS as shown by:
+select * from tiki_categorized_objects t left join tiki_objects on (catObjectId=objectId) where t.catObjectId not in (select catObjectId from tiki_category_objects);
+MariaDB [tiki]> +-------------+----------+------+--------+-------------+---------+------+------+------+-----------------+
+| catObjectId | objectId | type | itemId | description | created | name | href | hits | comments_locked |
++-------------+----------+------+--------+-------------+---------+------+------+------+-----------------+
+|         138 |     NULL | NULL | NULL   | NULL        |    NULL | NULL | NULL | NULL | NULL            |
+|         145 |     NULL | NULL | NULL   | NULL        |    NULL | NULL | NULL | NULL | NULL            |
+|         157 |     NULL | NULL | NULL   | NULL        |    NULL | NULL | NULL | NULL | NULL            |
+|         163 |     NULL | NULL | NULL   | NULL        |    NULL | NULL | NULL | NULL | NULL            |
++-------------+----------+------+--------+-------------+---------+------+------+------+-----------------+
+4 rows in set (0.00 sec)
