@@ -78,6 +78,7 @@ $needed_prefs = array(
 	'cookie_consent_feature' => 'n',
 	'cookie_consent_disable' => 'n',
 	'cookie_consent_name' => 'tiki_cookies_accepted',
+	'feature_categorical_stewardship' => 'n', // NGender
 
 );
 
@@ -90,6 +91,8 @@ if ($tikilib->query("SHOW TABLES LIKE 'tiki_preferences'")->numRows() == 0) {
 $tikilib->get_preferences($needed_prefs, true, true);
 global $systemConfiguration;
 $prefs = $systemConfiguration->preference->toArray() + $prefs;
+
+error_log(__FILE__ . ', ' . __LINE__ . ' prefs[feature_categorical_stewardship] = ' . $prefs['feature_categorical_stewardship']); // NGender
 
 // mose : simulate strong var type checking for http vars
 $patterns['int'] = "/^[0-9]*$/"; // *Id

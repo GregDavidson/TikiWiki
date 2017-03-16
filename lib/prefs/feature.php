@@ -2921,11 +2921,11 @@ function prefs_feature_list($partial = false)
 			'tags' => array('basic'),
 			'default' => 'y',
 		),
-		'feature_ngender_ownership' => array(
-			'name' => tra('Categorical Ownership'),
-            'description' => tra('Default category allows editing of all other categories on object'),
+		'feature_ngender_stewardship' => array(
+			'name' => tra('Categorical Stewardship'),
+            'description' => tra("New Objects associated with Creator's Default Category.  User can Edit Categories of Object associated with User's Default Category"),
 			'type' => 'flag',
-			'keywords' => 'ownership categories',
+			'keywords' => 'ownership stewardship categories ngender',
 			'default' => 'n',
 			'warning' => tra('Experimental'),
 			'tags' => array('experimental'),

@@ -20,7 +20,7 @@ class PreferencesLib
 	{
 		global $prefs, $systemConfiguration;
 		static $id = 0;
-// 	echo "getPreference: $name\n"; // NGender
+// 	echo __FUNCTION__ . ": $name\n"; // NGender
 		$data = $this->loadData($name);
 
 		if ( ! isset( $data[$name] ) ) {

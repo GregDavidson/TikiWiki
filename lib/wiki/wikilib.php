@@ -554,9 +554,9 @@ class WikiLib extends TikiLib
 			}
 		} else {
 		    $content = (new WikiLibOutput($info, $info['data'], $parse_options, $info['version']))->parsedValue;
-//			error_log("info[data]: ".$info['data']); // NGender
-//			error_log("info[version]: ".$info['version']); // NGender
-//			error_log("parse_options: ".$parse_options); // NGender
+//			error_log(__FUNCTION__ . "info[data]: ".$info['data']); // NGender
+//			error_log(__FUNCTION__ . "info[version]: ".$info['version']); // NGender
+//			error_log(__FUNCTION__ . "parse_options: ".$parse_options); // NGender
 //			Why is this version a syntax error?? // NGender
 //		    $pre_content = new WikiLibOutput($info, $info['data'], $parse_options); // NGender
 //		    $content = pre_content->parsedValue; // NGender
@@ -1892,7 +1892,7 @@ class WikiLibOutput
 
     public function __construct($info, $originalValue, $options = array())
     {
-// echo "WikiLibOutput ctor"; // NGender
+// error_log('Entered ' . __METHOD__); // NGender
         $tikilib = TikiLib::lib('tiki');
         $prefslib = TikiLib::lib('prefs');
         $headerlib = TikiLib::lib('header');
@@ -1925,7 +1925,7 @@ class WikiLibOutput
                 //recover from failure, but DO NOT just output
                 if ($this->parsedValue === null)
                 {
-// 		    echo "parsedValue is null"; // NGender
+// 		    echo __METHOD__ . "parsedValue is null"; // NGender
                     $possibleCause = '';
                     if (!empty($wikiLingo->pluginStack)) {
                         foreach ($wikiLingo->pluginStack as $pluginName) {

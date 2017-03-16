@@ -18,7 +18,7 @@ $smarty = TikiLib::lib('smarty');
 global $prefs;
 
 $catobjperms = Perms::get(array( 'type' => $cat_type, 'object' => $cat_objid ));
-// categorical imperative
+// Categorical Stewardship
 $smarty->assign('mandatory_category', '-1');
 if ($prefs['feature_categories'] == 'y' && isset($cat_type) && isset($cat_objid)) {
     $categlib = TikiLib::lib('categ');
@@ -33,37 +33,37 @@ if ($prefs['feature_categories'] == 'y' && isset($cat_type) && isset($cat_objid)
     } else {
 	$cats = $categlib->get_default_categories();
     }
-    // Categorical Imperative
+    // Categorical Stewardship // NGender
     $userlib=TikiLib::lib('user');
-    $owned_by_user=$userlib->user_owns_object($cat_objid);
+    $user_is_steward=$userlib->is_steward_of($cat_objid);
 
     if ($cat_type == 'wiki page' || $cat_type == 'blog' || $cat_type == 'image gallery' || $cat_type == 'mypage') {
 	$ext = ($cat_type == 'wiki page')? 'wiki':str_replace(' ', '_', $cat_type);
 	$pref = 'feature_'.$ext.'_mandatory_category';
 	if ($prefs[$pref] > 0) {
-	    $categories = $categlib->getCategories(array('identifier'=>$prefs[$pref], 'type'=>'descendants'), true, !$owned_by_user);
+	    $categories = $categlib->getCategories(array('identifier'=>$prefs[$pref], 'type'=>'descendants'), true, !$user_is_steward);
 	} else {
-	    $categories = $categlib->getCategories(array('type'=>'all'), true, !$owned_by_user);
+	    $categories = $categlib->getCategories(array('type'=>'all'), true, !$user_is_steward);
 	}
 	$smarty->assign('mandatory_category', $prefs[$pref]);
     } else {
-	$categories = $categlib->getCategories(array('type'=>'all'), true, !$owned_by_user);
+	$categories = $categlib->getCategories(array('type'=>'all'), true, !$user_is_steward);
     }
 
     $can = $catobjperms->modify_object_categories;
-    if (!$owned_by_user) { 
+    if (!$user_is_steward) { 
 	$categories = Perms::filter(array('type' => 'category'), 'object', $categories, array( 'object' => 'categId' ), array('view_category'));
     }
     foreach ($categories as &$category) {
-	if (!$owned_by_user) { 
+	if (!$user_is_steward) { 
 	    $catperms = Perms::get(array( 'type' => 'category', 'object' => $category['categId'] ));
 	}
 	if (in_array($category["categId"], $cats)) {
 	    $category["incat"] = 'y';
-	    $category['canchange'] = $owned_by_user || ! $cat_object_exists || ( $can && $catperms->remove_object );
+	    $category['canchange'] = $user_is_steward || ! $cat_object_exists || ( $can && $catperms->remove_object );
 	} else {
 	    $category["incat"] = 'n';
-	    $category['canchange'] =  $owned_by_user || $can && $catperms->add_object;
+	    $category['canchange'] =  $user_is_steward || $can && $catperms->add_object;
 	}
 	
 	// allow to preselect categories when creating a new article

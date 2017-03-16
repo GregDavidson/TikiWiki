@@ -2880,7 +2880,8 @@ class UsersLib extends TikiLib
 		return $return;
 	}
 
-	/* Returns a default category for user's default_group
+	/* Returns a default category for user's default_group.
+		 Related to Categorical Imperative, feature_ngender_stewardship
 	*/
 	function get_user_group_default_category($user)
 	{
@@ -2890,14 +2891,20 @@ class UsersLib extends TikiLib
 		return $result;
 	}
 
-	// Categorical Imperative // feature_ngender_stewardship
-	function user_owns_object($ObjectName)
+	/* Categorical Imperative, feature_ngender_stewardship
+		 We might also require the user to be a member of
+		 group Steward if we didn't want this feature
+		 applicable to everyone! */
+	function is_steward_of($ObjectName)
 	{
+			if ( $prefs['feature_categorical_stewardship'] !== 'y' ) {
+					return false;
+			}
 	    $query = 'select count(*) from tiki_objects o, tiki_category_objects co ';
 	    $query .= ' where co.catObjectId=o.objectId AND co.categId=? and o.name=?';
-//		error_log('user_owns_object: $_SESSION[u_info][defcat] = '.$_SESSION['u_info']['defcat'].'$ObjectName = '.$ObjectName); // NGender
+//		error_log(__FUNCTION__ . ': $_SESSION[u_info][defcat] = '.$_SESSION['u_info']['defcat'].'$ObjectName = '.$ObjectName); // NGender
 	    $result = $this->getOne($query, array($_SESSION['u_info']['defcat'], $ObjectName));
-//		error_log('user_owns_object result = '.$result); // NGender
+//		error_log(__FUNCTION__ . ' result = '.$result); // NGender
 	    return $result;
 	}
 

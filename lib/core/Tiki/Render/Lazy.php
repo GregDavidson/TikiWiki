@@ -17,8 +17,9 @@ class Tiki_Render_Lazy
 
 	function __toString()
     {
-// 	error_log('in tostring'); // NGender
+// 	error_log('entered ' . __METHOD__); // NGender
 // 	echo "<pre>"; // NGender
+// 	echo __METHOD__ . ' callback:\n'; // NGender
 // 	var_dump($this->callback); // NGender
 // 	echo "</pre>"; // NGender
 

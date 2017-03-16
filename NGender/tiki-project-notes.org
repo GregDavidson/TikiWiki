@@ -1,10 +1,39 @@
 * Tiki Project Notes
 
-** Categorical Imperative Project
+** Categorical Stewardship Project
 
-Purpose: Leverage Default Groups their Default Categories to
-give users control over objects they create and/or objects
-associated with their default category.
+Purpose: Leverage Default Groups with their Default
+Categories to give users control over objects they create
+and/or objects associated with their default category.
+
+Currently the feature is invoked when
+(1) the user has a default category and
+(2) feature_categorical_stewardship == 'y'
+
+Should we also require the user to be a member of Group Steward?
+
+Possible conditions under which we should create default Groups and Categories
+- the user is a member of Group Steward
+- feature_categorical_stewardship == 'y'
+- some other feature
+
+Additional questions:
+- Should we create Group Steward if it doesn't exist?
+- Should we have a settable format for Default Group Names?
+- Should we have a settable format and/or parent for Default Categories?
+- Should different users have a different parent for their Default Categories?
+- Should it be OK for a Steward to delete their Default
+  Category from an object which they created?
+
+For maximum simplicity, when feature_categorical_stewardship == 'y'
+- Ensure Group Steward exists
+- Ensure Category User exists
+- When a user is created with Group Steward
+-- Create their Default Group as user_TheirUserName
+-- Create their Default Category as user::TheirUserName
+-- Ensure their Default Category has suitable permissions
+--- Avoid permission of being able to add other objects to it!!
+--- Never allow that permission for a Default Category?
 
 *** [DONE] First Project: Setup Users with Default Groups with Default Categories
 
@@ -385,7 +414,35 @@ In order to convert Tiki's Tables from MyISAM to innodb we must to either:
 #+BEGIN_SRC sql
 update  tiki_preferences set value = 'n' where name = 'feature_search_fulltext';
 insert into tiki_preferences (name, value) values ('feature_search_fulltext', 'n');
--- or even better as as an upsert!!
+-- or even better as an upsert!!
+#+END_SRC
+
+This would work if name was a primary key which, yay, it is!
+#+BEGIN_SRC sql
+describe tiki_preferences; 
+#+END_SRC
++-------+--------------+------+-----+---------+-------+
+| Field | Type         | Null | Key | Default | Extra |
++-------+--------------+------+-----+---------+-------+
+| name  | varchar(255) | NO   | PRI |         |       |
+| value | text         | YES  |     | NULL    |       |
++-------+--------------+------+-----+---------+-------+
+
+#+BEGIN_SRC sql
+INSERT INTO tiki_preferences (name, value)
+VALUES ('feature_categorical_stewardship', 'y')
+ON DUPLICATE KEY
+UPDATE value = 'y';
+#+END_SRC
+
+Upsert example online:
+#+BEGIN_SRC sql
+INSERT INTO `usage`
+(`thing_id`, `times_used`, `first_time_used`)
+VALUES
+(4815162342, 1, NOW())
+ON DUPLICATE KEY UPDATE
+`times_used` = `times_used` + 1
 #+END_SRC
 
 See:

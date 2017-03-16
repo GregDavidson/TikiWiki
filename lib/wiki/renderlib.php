@@ -342,8 +342,8 @@ class WikiRenderer
 				$smarty = TikiLib::lib('smarty');
 				// get_parse will change $canBeRefreshed!!
 					$parsed = $wikilib->get_parse($page, $canBeRefreshed);
-// 				error_log('foo'.$canBeRefreshed); // NGender
-// 				error_log($parsed); // NGender
+// 				error_log(__FUNCTION__ . ($canBeRefreshed ? 'true' : 'false')); // NGender
+// 				error_log(__FUNCTION__ . ' parsed = ' . $parsed); // NGender
 					if ($canBeRefreshed) {
 						$smarty->assign('cached_page', 'y');
 					}

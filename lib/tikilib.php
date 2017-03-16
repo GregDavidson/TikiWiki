@@ -4133,11 +4133,16 @@ class TikiLib extends TikiDb_Bridge
 		}
 		$pages = $this->table('tiki_pages');
 		$page_id = $pages->insert($insertData);
-	    //!!!!! if categorical imperative, then 
+		// Categorical Stewardship // NGender
+		// Shall we also require user to be member of group Steward?
+		error_log(__FILE__ . ', ' . __LINE__ . ' prefs[feature_categorical_stewardship] = ' . $prefs['feature_categorical_stewardship']); // NGender
+		if ( $prefs['feature_categorical_stewardship'] == 'y' ) {
 	    $categlib = TikiLib::lib('categ');
-	    $categlib->update_object_categories(false, $name, 'wiki page', NULL, NULL, NULL, NULL, true);
-
-	    //!!!!! fi
+			$userlib = TikiLib::lib('user');
+			$defcat = $_SESSION['u_info']['defcat'];
+			$categories = $defcat ? array($defcat) : false;
+	    $categlib->update_object_categories($categories, $name, 'wiki page', NULL, NULL, NULL, NULL, true);
+		}
 		//update status, page storage was updated in tiki 9 to be non html encoded
 		$wikilib = TikiLib::lib('wiki');
 		$converter = new convertToTiki9();

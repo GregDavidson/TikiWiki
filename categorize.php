@@ -29,5 +29,5 @@ if ($prefs['feature_categories'] == 'y' && $catobjperms->modify_object_categorie
 	}
     $userlib = TikiLib::lib('user');
     
-    $categlib->update_object_categories(isset($_REQUEST['cat_categories'])?$_REQUEST['cat_categories']:'', $cat_objid, $cat_type, $cat_desc, $cat_name, $cat_href, $_REQUEST['cat_managed'], $userlib->user_owns_object($cat_objid));
+    $categlib->update_object_categories(isset($_REQUEST['cat_categories'])?$_REQUEST['cat_categories']:'', $cat_objid, $cat_type, $cat_desc, $cat_name, $cat_href, $_REQUEST['cat_managed'], $userlib->is_steward_of($cat_objid));
 }

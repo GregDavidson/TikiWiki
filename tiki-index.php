@@ -41,10 +41,9 @@ $inputConfiguration = array(
 $section = 'wiki page';
 $isHomePage = (!isset($_REQUEST['page']));
 require_once('tiki-setup.php');
-$smarty->debugging = true;
+// $smarty->debugging = true; // NGender
 
 $multilinguallib = TikiLib::lib('multilingual');
-echo "at the top";
 
 if ( $prefs['feature_wiki_structure'] == 'y' ) {
 	$structlib = TikiLib::lib('struct');

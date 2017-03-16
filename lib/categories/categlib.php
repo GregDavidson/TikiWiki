@@ -1666,14 +1666,6 @@ class CategLib extends ObjectLib
 	function update_object_categories($categories, $objId, $objType, $desc=NULL, $name=NULL, $href=NULL, $managedCategories = null, $override_perms = false)
     {
 		global $prefs, $user;
-		$userlib = TikiLib::lib('user');
-
-		if (empty($categories)) {
-			$forcedcat = $userlib->get_user_group_default_category($user);
-			if ( !empty($forcedcat) ) {
-				$categories[] = $forcedcat;
-			}
-		}
 
 		$manip = new Category_Manipulator($objType, $objId);
 		if ($override_perms) {
