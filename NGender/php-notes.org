@@ -1,0 +1,133 @@
+#+TITLE: PHP Notes
+
+Notes on PHP with especial applicability to the Tiki
+
+* PHP interface to MySQL
+
+#+BEGIN_SRC php
+mysqli_connect("host","accnt","passwd")
+mysqli_select_db($cxn, "dbname",)
+mysqli_query($cxn,"query")
+mysqli_fetch_assoc($result)
+mysqli_num_rows($result)
+mysqli_insert_id($cxn)
+#+END_SRC
+
+* PHP Falsey Values and Comparison
+
+- PHP Falsy Values:: NULL, FALSE, 0, '0', ''
+
+If you test these against FALSE with ==, it's testing the boolean value, so
+you will get equality. If you test these with === PHP will test
+the type, and you will get inequality except for FALSE === FALSE.
+
+Many functions return FALSE for not found; others return
+NULL for not found.  You need to check the documentation and
+use === to avoid mistaking a found item which just happens
+to be falsy.
+- strpos and strrpos return FALSE if they don't find anything
+
+| Expression      | gettype() | empty() | is_null() | isset() | boolean : if($x) |
+|                 |           |         |           |         |                  |
+| $x = "";        | string    | TRUE    | FALSE     | TRUE    | FALSE            |
+| $x = null;      | NULL      | TRUE    | TRUE      | FALSE   | FALSE            |
+| var $x;         | NULL      | TRUE    | TRUE      | FALSE   | FALSE            |
+| $x is undefined | NULL      | TRUE    | TRUE      | FALSE   | FALSE            |
+| $x = array();   | array     | TRUE    | FALSE     | TRUE    | FALSE            |
+| $x = false;     | boolean   | TRUE    | FALSE     | TRUE    | FALSE            |
+| $x = true;      | boolean   | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = 1;         | integer   | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = 42;        | integer   | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = 0;         | integer   | TRUE    | FALSE     | TRUE    | FALSE            |
+| $x = -1;        | integer   | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = "1";       | string    | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = "0";       | string    | TRUE    | FALSE     | TRUE    | FALSE            |
+| $x = "-1";      | string    | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = "php";     | string    | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = "true";    | string    | FALSE   | FALSE     | TRUE    | TRUE             |
+| $x = "false";   | string    | FALSE   | FALSE     | TRUE    | TRUE             |
+
+There are caveats and additional details about, e.g. NAN, on 
+[[https://secure.php.net/manual/en/types.comparisons.php]]
+
+* PHP Commands
+
+#+BEGIN_SRC php
+array ( "key" => "value", … );
+die("message");
+do { block } while (condition);
+echo item;
+extract($array);
+for (startingval; endingval;incremnt) { block }
+foreach( $array as $key => $value) { block }
+function funcname(value,value,…) { block }
+header("Location: URL");
+if (condition) { block }
+   elseif (condition) { block }
+   else { block }
+number_format(number,decimals);
+session_start();
+session_destroy();
+switch var { case value statements break; … }
+unset();
+while (condition) { block }
+#+END_SRC
+
+* Echoing with Line Breaks
+
+Is it text? Is it HTML? Is it some text within HTML?
+
+** Using Pre-formatted text
+
+#+BEGIN_SRC php
+echo '<pre>'; // pre-formatted text, \n should work
+echo "thank you \n ";
+echo "for coming over";
+echo '</pre>';
+#+END_SRC
+
+Changing the content type
+
+#+BEGIN_SRC php
+header('Content-Type: text/plain');
+echo "thank you \n ";
+echo "for coming over";
+#+END_SRC
+
+** Using the HTML break element
+
+#+BEGIN_SRC php
+echo "thank you <br>\n ";
+echo "for coming over";
+#+END_SRC
+
+* Debugging
+
+- [[https://secure.php.net/debug_backtrace][array debug_backtrace ({ int $options = DEBUG_BACKTRACE_PROVIDE_OBJECT {, int $limit = 0 }} )]]
+- [[https://secure.php.net/manual/en/function.debug-print-backtrace.php][void debug_print_backtrace ({ int $options = 0 {, int $limit = 0 }} )]]
+- [[https://secure.php.net/manual/en/function.trigger-error.php][bool trigger_error ( string $error_msg {, int $error_type = E_USER_NOTICE } )]]
+
+** [[https://secure.php.net/manual/en/language.constants.predefined.php][Magic Constants]]
+
+- __LINE__ ::	The current line number of the file.
+- __FILE__ ::	The full path and filename of the file with
+              symlinks resolved. If used inside an include,
+              the name of the included file is returned.
+- __DIR__ ::	The directory of the file. If used inside an
+             include, the directory of the included file is
+             returned. This is equivalent to
+             dirname(__FILE__). This directory name does not
+             have a trailing slash unless it is the root
+             directory.
+- __FUNCTION__ ::	The function name.
+- __CLASS__ ::	The class name. The class name includes the
+               namespace it was declared in
+               (e.g. Foo\Bar). Note that as of PHP 5.4
+               __CLASS__ ::works also in traits. When used
+               in a trait method, __CLASS__ ::is the name of
+               the class the trait is used in.
+- __TRAIT__ ::	The trait name. The trait name includes the
+               namespace it was declared in (e.g. Foo\Bar).
+- __METHOD__ ::	The class method name.
+- __NAMESPACE__ ::	The name of the current namespace.
+- ClassName::class ::	The fully qualified class name. See also ::class. 
