@@ -4,19 +4,32 @@ Notes on MySQL with especial applicability to the Tiki
 
 * MySQL Notes
 
+** MySQL Client Programs
+
 #+BEGIN_SRC sh
 mysql -u{USER} -p[{PW}] [{DBNAME}] [< {FILE-TO-IMPORT}.sql]
 mysqldump -u{USER} -p[{PW}] {DBNAME} [{TABLE}...] > {BACKUP_FILE}.sql
 mysqldump --opt --all-databases > {BACKUP_FILE}.sql
 #+END_SRC
 
+** MySQL Meta Queries
 
 #+BEGIN_SRC sql
+\R 
 USE database_name;
-show databases;
-show tables;
-DESCRIBE table;
-CREATE DATABASE db_name;
+HELP SHOW;
+SHOW databases;
+SHOW tables;
+SHOW FUNCTION STATUS;
+SHOW CREATE FUNCTION <name>;
+SHOW PROCEDURE STATUS;
+SHOW PROCEDURE STATUS WHERE db = DATABASE();
+SHOW PROCEDURE STATUS WHERE db = 'databasename';
+SHOW CREATE PROCEDURE <name>;
+SELECT ROUTINE_NAME, ROUTINE_TYPE FROM INFORMATION_SCHEMA.ROUTINES;
+DESCRIBE INFORMATION_SCHEMA.ROUTINES;
+DESCRIBE <table name>; -- SHOW COLUMNS FROM database-name
+CREATE DATABASE <db name>;
 SOURCE {INPUT_FILE};
 #+END_SRC
 
@@ -109,6 +122,7 @@ There are no FROM clauses in MySQL UPDATE so the
 Multiple-table syntax has to be used to introduce any
 additional tables involved in the WHERE constraints.
 
+
 * Tiki Database Problems
 There seem to be some DATA CORRUPTIONS as shown by:
 #+BEGIN_SRC sh
@@ -125,3 +139,106 @@ MariaDB [tiki]> +-------------+----------+------+--------+-------------+--------
 |         163 |     NULL | NULL | NULL   | NULL        |    NULL | NULL | NULL | NULL | NULL            |
 +-------------+----------+------+--------+-------------+---------+------+------+------+-----------------+
 4 rows in set (0.00 sec)
+
+* MySQL Techniques
+
+** Upsert
+
+- [[https://www.xaprb.com/blog/2006/02/21/flexible-insert-and-update-in-mysql/][flexible-insert-and-update-in-mysql]]
+
+** Simple Select Function
+
+#+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `group_default_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+	FUNCTION `group_default_category`(group_ int(11))
+	RETURNS int(12)	READS SQL DATA
+BEGIN
+	DECLARE found_ int(12) DEFAULT 0;
+	SELECT groupDefCat INTO found_ FROM users_groups WHERE id = group_;
+	RETURN found_;
+END//
+DELIMITER ;
+#+END_SRC
+
+** Fancy Select Function
+
+#+BEGIN_SRC sql
+-- THIS IS OVERKILL FOR THIS PURPOSE - KEEP FOR REFERENCE!
+DROP FUNCTION IF EXISTS `group_default_category_overkill`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+	FUNCTION `group_default_category_overkill`(group_ int(11))
+	RETURNS int(12)	READS SQL DATA
+BEGIN
+	DECLARE found_ int(12);
+	DECLARE failed_ boolean DEFAULT false;
+	DEClARE cursor_ CURSOR FOR 
+	SELECT groupDefCat FROM users_groups WHERE id = group_;
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET failed_ = true;
+	OPEN cursor_;
+  FETCH cursor_ INTO found_;
+  IF failed_ THEN CLOSE cursor_; RETURN 0;
+	ELSE CLOSE cursor_; RETURN found_;
+	END IF;
+END//
+DELIMITER ;
+#+END_SRC
+
+** While Loop in Function
+
+#+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `category_path`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `category_path`(category_id int(11))
+RETURNS varchar(200) READS SQL DATA
+BEGIN
+	DECLARE path_ varchar(200) DEFAULT category_name(category_id);
+	DECLARE parent_ int(11) DEFAULT category_parent(category_id);
+	WHILE parent_ > 0 DO
+		SET path_ = CONCAT(category_name(parent_), '::', path_);
+		SET parent_ = category_parent(parent_);
+	END WHILE;
+	RETURN path_;
+END//
+DELIMITER ;
+#+END_SRC
+
+** Exceptions
+
+delimiter //
+CREATE FUNCTION f () RETURNS INT
+BEGIN
+  SIGNAL SQLSTATE '01234';  -- signal a warning
+  RETURN 5;
+END//
+delimiter ;
+CREATE TABLE t (s1 INT);
+INSERT INTO t VALUES (f());
+
+Having trouble suppressing the result set from EXECUTE
+
+These didn't work:
+- 'SET @foo = ', expression_
+- 'SELECT ', expression_
+- 'SELECT ', expression_, ' INTO @foo'
+- Is the problem somewhere else?
+
+These did:
+- 'CALL chuck_text_(CONCAT(', expression_, '))'
+- 'CALL chuck_int_(', expression_, 'IS NOT NULL)'
+
+given
+
+#+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `chuck_int_`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `chuck_int_`(value_ INT)
+	COMMENT 'throw away the argument'
+BEGIN
+END//
+DELIMITER ;
+#+END_SRC

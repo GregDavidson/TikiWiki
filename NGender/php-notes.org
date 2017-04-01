@@ -106,6 +106,9 @@ echo "for coming over";
 - [[https://secure.php.net/debug_backtrace][array debug_backtrace ({ int $options = DEBUG_BACKTRACE_PROVIDE_OBJECT {, int $limit = 0 }} )]]
 - [[https://secure.php.net/manual/en/function.debug-print-backtrace.php][void debug_print_backtrace ({ int $options = 0 {, int $limit = 0 }} )]]
 - [[https://secure.php.net/manual/en/function.trigger-error.php][bool trigger_error ( string $error_msg {, int $error_type = E_USER_NOTICE } )]]
+- [[https://secure.php.net/manual/en/function.error-reporting.php][int error_reporting ({ int $level } )]]
+- [[https://secure.php.net/manual/en/function.set-error-handler.php][mixed set_error_handler ( callable $error_handler {, int $error_types = E_ALL | E_STRICT } )]]
+- [[https://secure.php.net/manual/en/function.restore-error-handler.php][bool restore_error_handler ( void )]]
 
 ** [[https://secure.php.net/manual/en/language.constants.predefined.php][Magic Constants]]
 
@@ -131,3 +134,11 @@ echo "for coming over";
 - __METHOD__ ::	The class method name.
 - __NAMESPACE__ ::	The name of the current namespace.
 - ClassName::class ::	The fully qualified class name. See also ::class. 
+
+** [[http://www.smarty.net/docsv2/en/chapter.debugging.console.tpl][Smarty Debugging Console]]
+
+** PHP.INI settings
+
+*** Disable dangerous functions
+
+[[https://www.cyberciti.biz/faq/linux-unix-apache-lighttpd-phpini-disable-functions/][Disable exec, shell_exec, system, popen, etc.]]

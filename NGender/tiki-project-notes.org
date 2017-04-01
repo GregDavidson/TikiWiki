@@ -451,6 +451,16 @@ See:
 
 ** Procedure and Function Experiments 
 
+*** User Default Group and Default Category
+
+[[file:tiki-project.sql][tiki-project.sql]]
+	 
+*** Object In Category
+
+Categories have Single-Inheritance
+
+Rewrite these functions to just use loops!
+
 #+BEGIN_SRC sql
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost` FUNCTION `cat_in_super`(cat_id int, super_id int) RETURNS int(11)
@@ -471,6 +481,7 @@ BEGIN
   IF recur_id <> 0 THEN CLOSE cat_cursor; RETURN recur_id; END IF;
  END LOOP;
 END//
+DELIMITER ;
 #+END_SRC
 
 #+BEGIN_SRC sql
@@ -495,4 +506,120 @@ BEGIN
   IF recur_id <> 0 THEN CLOSE cat_cursor; RETURN recur_id; END IF;
  END LOOP;
 END//
+DELIMITER ;
 #+END_SRC
+
+*** User In Group and Group In Group
+
+Groups have Multiple-Inheritance.
+
+Rewrite these functions to use recursion to search the group hierarchies.
+
+#+BEGIN_SRC sql
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost` FUNCTION `cat_in_super`(cat_id int, super_id int) RETURNS int(11)
+    READS SQL DATA
+BEGIN
+ DECLARE recur_id int;
+ DECLARE found_cat_id int DEFAULT 0;
+ DECLARE no_more int DEFAULT 0;
+ DEClARE cat_cursor CURSOR FOR 
+ SELECT parentId FROM tiki_categories WHERE categId = super_id;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET no_more = 1;
+ OPEN cat_cursor;
+ LOOP
+  FETCH cat_cursor INTO found_cat_id;
+  IF no_more = 1 THEN CLOSE cat_cursor; RETURN 0; END IF;
+  IF found_cat_id = cat_id THEN CLOSE cat_cursor; RETURN cat_id; END IF;
+  SET recur_id = obj_in_cat(cat_id, found_cat_id);
+  IF recur_id <> 0 THEN CLOSE cat_cursor; RETURN recur_id; END IF;
+ END LOOP;
+END//
+DELIMITER ;
+#+END_SRC
+
+#+BEGIN_SRC sql
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost` FUNCTION `obj_in_cat`(obj_id int, cat_id int) RETURNS int(11)
+    READS SQL DATA
+BEGIN
+ DECLARE recur_id int;
+ DECLARE found_cat_id int DEFAULT 0;
+ DECLARE no_more int DEFAULT 0;
+ DEClARE cat_cursor CURSOR FOR 
+ SELECT parentId FROM tiki_categories WHERE categId = cat_id;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET no_more = 1;
+ SELECT categId INTO found_cat_id 
+ FROM tiki_category_objects WHERE categId = cat_id AND catObjectId = obj_id ;
+ IF found_cat_id <> 0 THEN RETURN found_cat_id; END IF;
+ OPEN cat_cursor;
+ LOOP
+  FETCH cat_cursor INTO found_cat_id;
+  IF no_more = 1 THEN CLOSE cat_cursor; RETURN 0; END IF;
+  SET recur_id = cat_in_super(cat_id, found_cat_id);
+  IF recur_id <> 0 THEN CLOSE cat_cursor; RETURN recur_id; END IF;
+ END LOOP;
+END//
+DELIMITER ;
+#+END_SRC
+
+*** Possible Problems
+
+I notice in TABLE users_users that
+- userId int(8)
+
+Is the 8 a count in bytes or bits?
+
+Did I ever find a way to tell what all the permissions are?
+
+How about just the ones that can be set using the GUI for a
+group/category combination?
+
+The group/category combination permissions live
+in TABLE users_objectpermissions WHERE objectType='category'
+
+Awkwardness:
+- `objectId` varchar(32) NOT NULL default '',
+is a hash:
+
+#+BEGIN_SRC sql
+SELECT DISTINCT
+permName, groupName, category_path(group_default_category(name_to_group(groupName)))
+FROM users_objectpermissions
+WHERE objectType = 'category' AND groupName = 'User_Test_Observer' AND objectId =
+MD5(CONCAT('category', group_default_category(name_to_group(groupName))));
+#+END_SRC
+
+Could change from using 'User' to using 'Steward' for
+everybody!  This would solve the problem of making this
+whole system more explicit.  However, with all of the
+groupNames everywhere, conversion could be awkward.
+
+Compare
+- Joe --> User_Joe --> User::Joe
+- Joe --> User_Joe --> Steward::Joe
+- Joe --> User_Joe --> User:Steward::Joe
+- Joe --> Steward_Joe --> Steward::Joe
+
+Strategy: Create
+- ZSteward --> User_Test_Steward --> User::Test::Steward
+- ZNoDefaultGroup --> No Default Group
+- ZNoDefaultCategory --> User_Test_NoDefaultCategory --> No Default Category
+- ZNotSteward --> User_Test_NotSteward --> Foo::Bar or whatever
+
+Use ZSteward as a model for all other Steward accounts 
+- clone permissions from users_objectpermissions for new Stewards!
+
+Use ZSteward, ZNoDefaultGroup, ZNoDefaultCategory, ZNotSteward in tests.
+
+** DETERMINISTIC characteristic of NULL returning functions
+
+It would be nicer if MYSQL didn't assume that DETERMINISTIC
+functions which return NULL might not return a value later.
+
+Do I know for certain that this is NOT true in PostgreSQL or MySQL?
+
+It would be useful to raise this question with the
+PostgreSQL developers - perhaps after checking what the SQL
+standard might say on the matter!
+
