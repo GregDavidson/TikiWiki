@@ -4133,10 +4133,10 @@ class TikiLib extends TikiDb_Bridge
 		}
 		$pages = $this->table('tiki_pages');
 		$page_id = $pages->insert($insertData);
-		// Categorical Stewardship // NGender
+		// Categorical Stewards // NGender
 		// Shall we also require user to be member of group Steward?
-		error_log(__FILE__ . ', ' . __LINE__ . ' prefs[feature_categorical_stewardship] = ' . $prefs['feature_categorical_stewardship']); // NGender
-		if ( $prefs['feature_categorical_stewardship'] == 'y' ) {
+		error_log(__FILE__ . ', ' . __LINE__ . ' prefs[feature_ngender_stewards] = ' . $prefs['feature_ngender_stewards']); // NGender
+		if ( $prefs['feature_ngender_stewards'] == 'y' ) {
 	    $categlib = TikiLib::lib('categ');
 			$userlib = TikiLib::lib('user');
 			$defcat = $_SESSION['u_info']['defcat'];

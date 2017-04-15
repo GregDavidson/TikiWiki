@@ -18,7 +18,7 @@ $smarty = TikiLib::lib('smarty');
 global $prefs;
 
 $catobjperms = Perms::get(array( 'type' => $cat_type, 'object' => $cat_objid ));
-// Categorical Stewardship
+// Categorical Stewards
 $smarty->assign('mandatory_category', '-1');
 if ($prefs['feature_categories'] == 'y' && isset($cat_type) && isset($cat_objid)) {
     $categlib = TikiLib::lib('categ');
@@ -33,7 +33,7 @@ if ($prefs['feature_categories'] == 'y' && isset($cat_type) && isset($cat_objid)
     } else {
 	$cats = $categlib->get_default_categories();
     }
-    // Categorical Stewardship // NGender
+    // Categorical Stewards // NGender
     $userlib=TikiLib::lib('user');
     $user_is_steward=$userlib->is_steward_of($cat_objid);
 

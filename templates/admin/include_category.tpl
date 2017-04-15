@@ -35,6 +35,7 @@
 		<legend>
 			{tr}Features{/tr}
 		</legend>
+		{preference name=feature_ngender_stewards label="{tr}Categorical Stewards{/tr}"}
 		{preference name=feature_categorypath}
 		<div class="adminoptionboxchild" id="feature_categorypath_childcontainer">
 			{preference name=categorypath_excluded}

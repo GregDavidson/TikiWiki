@@ -1,5 +1,13 @@
 * Tiki Project Notes
 
+** Status
+
+MariaDB on ngender.org has been upgraded to the 
+stable development version which supports recursive FROM queries
+and other goodness.
+
+I had to rerun the tiki-setup.php to get it to 
+
 ** Categorical Stewardship Project
 
 Purpose: Leverage Default Groups with their Default
@@ -359,6 +367,8 @@ In there we set user and creator to the loggin user.
 
 ** Features 
 
+https://dev.tiki.org/Create+a+new+preference?highlight=creating+new+preferences
+
 in feature.php look at
 - feature_dummy
 - feature_ngender_ownership
@@ -623,3 +633,358 @@ It would be useful to raise this question with the
 PostgreSQL developers - perhaps after checking what the SQL
 standard might say on the matter!
 
+** Categorical Stewardship Session Variables
+
+It should increase efficiency if any key values are kept as
+session variables rather than having to be fetched.
+
+Categorical Stewardship Session Variables (proposed):
+- @cat_stew_state :: NULL = off, 1 = on and initialized, 0 = error
+- @cat_stew_errors :: any message about state
+- @cat_stew_group :: group id of group Steward
+- @cat_stew_cat_user :: category id of category user
+- @cat_stew_cat_test :: category id of category test
+
+** Similar Features and Requests for Such
+
+Search https://doc.tiki.org/Groups
+for "private room" to see something
+a little bit like categorical stewardship.
+
+This user seems to be running up against a similar problem:
+https://stackoverflow.com/questions/27001257/tiki-wiki-how-do-i-force-newly-created-pages-into-a-category-based-on-the-user
+
+*** Group for Each User
+
+- eponymousgroups
+- $prefs['eponymousGroups']
+
+from lib/userslib.php
+#+BEGIN_SRC php
+if ( $prefs['eponymousGroups'] == 'y' ) {
+	// Create a group just for this user, for permissions
+	// assignment.
+	$this->add_group($user, "Personal group for $user.", '', 0, 0, 0, '');
+
+	$this->assign_user_to_group($user, $user);
+}
+#+END_SRC
+
+- from /Tiki/lib/prefs/lib/global.php
+- inside of function add_user
+#+BEGIN_SRC php
+'eponymousGroups' => array(
+	'name' => tra('Create a new group for each user'),
+				'description' => tra(''),
+	'type' => 'flag',
+	'hint' => tra("The group name will be the same as the user's username"),
+	'help' => 'Groups',
+	'default' => 'n',
+	'keywords' => 'eponymous groups',
+),
+#+END_SRC
+
+Note functions:
+- add_user
+- register_new_user_local
+
+Study
+- in file lib/sharelib.php 
+- class Tiki_ShareObject
+- function loadPermission
+- other class functions
+- Note that groups are loaded and cached
+- $this->objectHash = md5($objectType . TikiLib::strtolower($objectId));
+- also class Tiki_SharGroup
+
+** What about removing categories?
+
+Maybe only if you're also the creator?
+
+** Creating a help page for my feature & popup wiki pages
+
+In feature.php I can have help associated with a wiki page
+giving popup help.
+
+And hey, how can we exploit popup wiki pages?
+
+** Missing bits
+
+Eventually need to provide a GUI method for calling SQL
+procedure make_stewards_be_stewards()
+
+Which I suppose also means loading the sql code, which
+should maybe be called ngender.sql?
+
+Need to set the admin property.
+
+** Improving the NGender SQL code
+
+Have the stored procedures either return an error status
+via an OUT parameter or make them be stored functions
+returning such a status or have them throw an exception.
+
+** Creator special privileges
+
+ Re: Page edit permissions in Features / Usability
+
+    Re: Page edit permissions Yes, there's a configuration
+    option on the Admin Wiki page, under the
+    "Features"..."Features" tab: "Page creators are admin of
+    their pages" that has that effect, I believe. -- Gary
+
+Trying to track this down!
+
+OK, according to
+
+https://doc.tiki.org/Wiki%20Config#Page_creators_are_admin_of_their_pages
+
+	Page creators are admin of their pages
+	If enabled then users who create a page are also in control
+	of that page. They have administrators rights over it.
+
+which might have obviated feature_ngender_stewards, but is
+clearly less flexible.
+
+More info at:
+
+https://tiki.org/tiki-view_forum_thread.php?threadId=4633
+
+** Setting the model permissions for Stewards<->Steward
+
+It's very unclear what the various individual permissions
+allow - they're WAY under documented!
+
+What should a Steward of a Wiki Page or Other Object NOT be
+allowed to do?
+- Set individual permissions
+
+There's a permission for categories which would allow users
+to associate that category with an arbitrary other page -- I
+don't think I ever want that to happen.
+
+Would it ever be a bad idea to allow a Steward of something
+to assoociate that thing with a Category - other than their
+mistaking what that Category does?  How bad a mistake could
+that be?
+
+Would it ever be a bad idea to allow a Steward to see that a
+certain Category exists?
+
+*** How to find out what's changed?
+
+I can look at timestamps
+
+**** Commands
+
+SELECT login, from_unixtime(created) from users_users
+ORDER BY created DESC LIMIT 2;
+
+SELECT login, from_unixtime(lastLogin) from users_users
+ORDER BY lastLogin DESC LIMIT 5;
+
+SELECT pageName, from_unixtime(lastModif) from tiki_pages
+ORDER BY lastModif DESC LIMIT 5;
+
+SELECT pageName, from_unixtime(created) from tiki_pages
+ORDER BY created DESC LIMIT 5;
+
+**** Running on a.office:
+
+SELECT login, from_unixtime(created) from users_users ORDER BY created DESC LIMIT 2;
++-------+------------------------+
+| login | from_unixtime(created) |
++-------+------------------------+
+| Toby  | 2017-01-23 21:25:26    |
+| Jenn  | 2016-12-28 18:13:50    |
++-------+------------------------+
+2 rows in set (0.00 sec)
+
+SELECT login, from_unixtime(lastLogin) from users_users ORDER BY lastLogin DESC LIMIT 5;
++-------------+--------------------------+
+| login       | from_unixtime(lastLogin) |
++-------------+--------------------------+
+| Greg        | 2017-04-14 18:52:18      |
+| ZRegistered | 2017-03-15 21:32:19      |
+| Lynn        | 2017-02-27 14:52:17      |
+| Toby        | 2017-01-23 22:03:49      |
+| ZObserver   | 2017-01-05 16:27:36      |
++-------------+--------------------------+
+5 rows in set (0.00 sec)
+
+SELECT pageName, from_unixtime(lastModif) from tiki_pages ORDER BY lastModif DESC LIMIT 5;
++------------------------------+--------------------------+
+| pageName                     | from_unixtime(lastModif) |
++------------------------------+--------------------------+
+| User:ZRegistered             | 2017-03-15 22:49:22      |
+| User:Greg                    | 2017-03-15 21:05:36      |
+| Team                         | 2017-02-17 21:32:16      |
+| User:ZObserver               | 2017-02-13 18:12:17      |
+| Greg: Tiki Improvement Ideas | 2017-01-21 20:05:54      |
++------------------------------+--------------------------+
+5 rows in set (0.00 sec)
+
+SELECT pageName, from_unixtime(created) from tiki_pages ORDER BY created DESC LIMIT 5;
++--------------------------------+------------------------+
+| pageName                       | from_unixtime(created) |
++--------------------------------+------------------------+
+| User:ZRegistered               | 2017-03-15 22:49:22    |
+| User:ZObserver                 | 2017-02-13 18:09:44    |
+| Greg: Tiki Markup Notes        | 2017-01-21 19:48:58    |
+| Greg: Tiki Improvement Ideas   | 2017-01-21 19:29:02    |
+| Cyber Design Low Hanging Fruit | 2017-01-21 16:20:35    |
++--------------------------------+------------------------+
+5 rows in set (0.00 sec)
+
+**** Running on ngender.org
+
+SELECT login, from_unixtime(created) from users_users
+ORDER BY created DESC LIMIT 2;
+
++-------+------------------------+
+| login | from_unixtime(created) |
++-------+------------------------+
+| Toby  | 2017-01-23 21:25:26    |
+| Jenn  | 2016-12-28 18:13:50    |
++-------+------------------------+
+2 rows in set (0.05 sec)
+
+
+SELECT login, from_unixtime(lastLogin) from users_users
+ORDER BY lastLogin DESC LIMIT 5;
+
++-----------+--------------------------+
+| login     | from_unixtime(lastLogin) |
++-----------+--------------------------+
+| Greg      | 2017-04-13 15:59:00      |
+| Toby      | 2017-01-23 22:03:49      |
+| Lynn      | 2017-01-05 14:22:44      |
+| ZObserver | 2017-01-04 21:47:18      |
+| Stacey    | 2016-12-26 15:13:12      |
++-----------+--------------------------+
+5 rows in set (0.00 sec)
+
+SELECT pageName, from_unixtime(lastModif) from tiki_pages
+ORDER BY lastModif DESC LIMIT 5;
+
++------------------------------+--------------------------+
+| pageName                     | from_unixtime(lastModif) |
++------------------------------+--------------------------+
+| Greg:Snippets                | 2017-03-06 17:31:22      |
+| User:Greg                    | 2017-03-06 17:29:40      |
+| Greg:Projects                | 2017-03-06 15:39:25      |
+| Greg: Tiki Improvement Ideas | 2017-01-21 20:05:54      |
+| Greg: Tiki Markup Notes      | 2017-01-21 20:00:52      |
++------------------------------+--------------------------+
+5 rows in set (0.00 sec)
+
+SELECT pageName, from_unixtime(created) from tiki_pages
+ORDER BY created DESC LIMIT 5;
+
+SELECT pageName, from_unixtime(created) from tiki_pages
+    -> ORDER BY created DESC LIMIT 5;
++--------------------------------+------------------------+
+| pageName                       | from_unixtime(created) |
++--------------------------------+------------------------+
+| Greg:Snippets                  | 2017-03-06 17:31:22    |
+| Greg:Projects                  | 2017-03-06 15:38:37    |
+| Greg: Tiki Markup Notes        | 2017-01-21 19:48:58    |
+| Greg: Tiki Improvement Ideas   | 2017-01-21 19:29:02    |
+| Cyber Design Low Hanging Fruit | 2017-01-21 16:20:35    |
++--------------------------------+------------------------+
+5 rows in set (0.00 sec)
+
+
+*** List of Category<->Group Permissions
+
+- articles
+-- Can admin the articles (tiki_p_admin_cms)
+-- Can approve submissions (tiki_p_approve_submission)
+-- Can read article headings (tiki_p_articles_read_heading)
+-- Can edit articles (tiki_p_edit_article)
+-- Can edit the user (owner) of articles (tiki_p_edit_article_user)
+-- Can edit submissions (tiki_p_edit_submission)
+-- Can read articles (tiki_p_read_article)
+-- Can remove articles (tiki_p_remove_article)
+-- Can remove submissions (tiki_p_remove_submission)
+-- Can rate articles (tiki_p_rate_article)
+-- Can read a topic (applies only to individual topic permissions) (tiki_p_topic_read)
+- blogs
+-- Can admin blogs (tiki_p_blog_admin)
+-- Can assign perms to blog (tiki_p_assign_perm_blog)
+-- Can post to a blog (tiki_p_blog_post)
+-- Can read blogs (tiki_p_read_blog)
+-- Can view in module and feed the blog posts (tiki_p_blog_post_view_ref)
+-- Can view in module and feed the blog (tiki_p_blog_view_ref)
+- calendar
+-- Can create/admin calendars (tiki_p_admin_calendar)
+-- Can add events in the calendar (tiki_p_add_events)
+-- Can edit events in the calendar (tiki_p_change_events)
+-- Can browse the calendar (tiki_p_view_calendar)
+-- Can view event details (tiki_p_view_events)
+-- Can add himself or herself to the participants (tiki_p_calendar_add_my_particip)
+-- Can add guest to the participants (tiki_p_calendar_add_guest_particip)
+- comments
+-- Can post new comments (tiki_p_post_comments)
+-- Can read comments (tiki_p_read_comments)
+-- Can admin comments (tiki_p_admin_comments)
+-- Can edit all comments (tiki_p_edit_comments)
+-- Can delete comments (tiki_p_remove_comments)
+-- Can vote on comments (tiki_p_vote_comments)
+- forums
+-- Can admin forums (tiki_p_admin_forum)
+-- Can attach files to forum posts (tiki_p_forum_attach)
+-- Auto approve forum posts (tiki_p_forum_autoapp)
+-- Can edit one’s own forum posts (tiki_p_forum_edit_own_posts)
+-- Can post in forums (tiki_p_forum_post)
+-- Can start threads in forums (tiki_p_forum_post_topic)
+-- Can read forums (tiki_p_forum_read)
+-- Can report posts to moderator (tiki_p_forums_report)
+-- Can vote on comments in forums (tiki_p_forum_vote)
+- newsletters
+-- Can admin newsletters (tiki_p_admin_newsletters)
+-- Can send newsletters (tiki_p_send_newsletters)
+-- Can subscribe to newsletters (tiki_p_subscribe_newsletters)
+-- Can view the archive of a newsletters (tiki_p_view_newsletter)
+- polls
+-- Can view poll user choices (tiki_p_view_poll_choices)
+-- Can vote in polls (tiki_p_vote_poll)
+-- Can view poll voters (tiki_p_view_poll_voters)
+- sheet
+-- Can admin spreadsheets (tiki_p_admin_sheet)
+-- Can create and edit spreadsheets (tiki_p_edit_sheet)
+-- Can view spreadsheets (tiki_p_view_sheet)
+-- Can view spreadsheets history (tiki_p_view_sheet_history)
+- wiki
+-- Can view page/pages (tiki_p_view)
+-- Can edit pages (tiki_p_edit)
+-- Can inline-edit pages (tiki_p_edit_inline)
+-- Can view wiki history (tiki_p_wiki_view_history)
+-- Can admin the wiki (tiki_p_admin_wiki)
+-- Can assign permissions to wiki pages (tiki_p_assign_perm_wiki_page)
+-- Can remove (tiki_p_remove)
+-- Can rename pages (tiki_p_rename)
+-- Can roll back pages (tiki_p_rollback)
+-- Can upload pictures to wiki pages (tiki_p_upload_picture)
+-- Can use the page as a template for a tracker or unified search (tiki_p_use_as_template)
+-- Can view in module and feed the wiki pages reference (tiki_p_wiki_view_ref)
+-- Can admin attachments on wiki pages (tiki_p_wiki_admin_attachments)
+-- Can attach files to wiki pages (tiki_p_wiki_attach_files)
+-- Can view and download wiki page attachments (tiki_p_wiki_view_attachments)
+-- Can view wiki comments (tiki_p_wiki_view_comments)
+-- Can view source of wiki pages (tiki_p_wiki_view_source)
+- wiki structure
+-- Can administer structures (tiki_p_admin_structures)
+-- Can create and edit structures (tiki_p_edit_structures)
+-- Can lock structures (tiki_p_lock_structures)
+
+*** Tiki UserPage prefix 
+
+What is the UserPage prefix?
+		
+Warning: Don't set the UserPage prefix to blank or you can't
+edit pages. Big Shout Out to Louis-Philippe...could edit any
+pages on my Tiki. The user page prefix (I don't know if you
+use those) was empty, leading...to a non-empty
+value. Further, it appears the prefix must end in a colon or
+no one can create new pages

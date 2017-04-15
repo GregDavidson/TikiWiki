@@ -1,9 +1,62 @@
--- What return type should be used for group and category ids?
+-- SQL Code for NGender Tiki Wiki Contributions
+-- License: Same as regular Tiki Wiki (tiki.org) License
+-- Author: J. Greg Davidson, 2017
+
+-- Related NGender features:
+--   feature_ngender_stewards
 
 -- * Names <-> IDs
 
 -- Naming & Datatype policy:
--- Everything is handled by id unless explicitly stated otherwise!
+-- - References are handled by id unless explicitly stated otherwise
+--   -- e.g. group_ is an id, groupname_ is a string
+-- - Parameters and locals often have a trailing slash
+--   -- distinguishing them from fields, globals, keywords, etc.
+
+-- Double ? or ! indicates something problematic to revisit
+-- Triple ? or ! indicates an issue which must be resolved
+
+-- Should DEFINER be changed to, e.g. tiki?  Or omitted??
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `categorical_stewards_init`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `init_categorical_stewards_init`()
+  READS SQL DATA
+	COMMENT 'Initializes NGender Categorical Stewards Session Variables'
+BEGIN
+ DECLARE user_ INT DEFAULT category_named_parent('User', 0);
+ DECLARE test_ INT DEFAULT category_named_parent('Test',user_);
+ DECLARE model_ INT DEFAULT category_named_parent('Steward',test_);
+ DECLARE group_ INT;
+ SELECT id INTO group_ FROM users_groups WHERE groupName = 'Stewards';
+ DECLARE msgs_ VARCHAR(200);		-- needs to be NULL
+ IF user_ && test_ && model_ && id THEN
+ 		SET @cat_stew_cat_user = user_;
+ 		SET @cat_stew_cat_test = test_;
+ 		SET @cat_stew_group = group_;
+ 		SET @cat_stew_state = 1;
+ 		SET @cat_stew_status = '';
+ ELSE
+	@cat_stew_state = 0;
+	IF NOT COALESCE(user_, 0) THEN
+		msgs_ = CONCAT_WS(', ', msgs_, 'no category User'); 
+	END IF;
+	IF NOT COALESCE(test_, 0) THEN
+		msgs_ = CONCAT_WS(', ', msgs_, 'no category User::Test'); 
+	END IF;
+	IF NOT COALESCE(model_, 0) THEN
+		msgs_ = CONCAT_WS(', ', msgs_, 'no category User::Test::Steward'); 
+	END IF;
+	IF NOT COALESCE(group_, 0) THEN
+		msgs_ = CONCAT_WS(', ', msgs_, 'no group Stewards'); 
+	END IF;
+ 	SET @cat_stew_status = msgs_;
+ END IF;
+END//
+DELIMITER ;
+-- #+END_SRC
 
 -- ** test procedures
 
@@ -229,13 +282,13 @@ CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_named_parent`(category_name TEXT, parent INT)
 RETURNS INT READS SQL DATA DETERMINISTIC
 BEGIN
-	DECLARE msg_ TEXT;
+	DECLARE msg_ TEXT DEFAULT 'category_named_parent: ';
 	DECLARE found_ INT DEFAULT 0;
 	SELECT categId INTO found_ FROM tiki_categories
 	  WHERE name = category_name AND parentId = parent;
 	IF found_ = 0 THEN
 		SET msg_ =
-		CONCAT('Category name ', category_name_, ' parent ', parent, 'not found!');
+		CONCAT(msg_, category_name_, ' parent ', parent, 'not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
 	END IF;
 	RETURN found_;
@@ -432,18 +485,19 @@ CALL assert_true('user_default_category( user_named(\'Greg\') ) =
 DROP PROCEDURE IF EXISTS `copy_group_category_permissions`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `copy_group_category_permissions`(group_ INT, model_ INT, target_ INT)
+PROCEDURE `copy_perms_grp_cat_grp_cat`(grp_ INT, cat_ INT, to_grp INT, to_cat INT)
   READS SQL DATA MODIFIES SQL DATA
 BEGIN
-	DECLARE groupname_ TEXT DEFAULT group_name(group_);
+	DECLARE groupname_ TEXT DEFAULT group_name(grp_);
+	DECLARE to_groupname_ TEXT DEFAULT group_name(to_grp_);
 	DELETE FROM user_objectpermissions
-	WHERE objectType = 'category' AND groupName = groupname_
-	AND objectId = MD5(CONCAT('category', target_));
+	WHERE objectType = 'category' AND groupName = to_groupname_
+	AND objectId = MD5(CONCAT('category', to_cat));
 	INSERT INTO user_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
 	SELECT `groupName`,`permName`, `objectType`,`objectId`
 	FROM user_objectpermissions
 	WHERE objectType = 'category' AND groupName = groupname_
-	AND objectId = MD5(CONCAT('category', model__));
+	AND objectId = MD5(CONCAT('category', cat_));
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -458,8 +512,10 @@ BEGIN
 	DECLARE user_ INT DEFAULT category_named_parent('User', 0);
 	DECLARE test_ INT DEFAULT category_named_parent('Test',user_);
 	DECLARE model_ INT DEFAULT category_named_parent('Steward',test_);
+	DECLARE stewards_ int DEFAULT group_named('Stewards');
 	DECLARE target_ INT DEFAULT group_default_category(group_);
 	DECLARE parent_ INT;
+	-- Warn if target_ exists with unexpected name or parent??
 	IF target_ = 0 THEN
 		IF convert(user_name using latin1) REGEXP convert('^Z[[:upper:]]' using latin1)
 		COLLATE 'latin1_general_cs' THEN
@@ -475,7 +531,8 @@ BEGIN
 		SET target_ = LAST_INSERT_ID();
 		UPDATE `users_groups` SET groupDefCat = target_ WHERE id = group_;
 	END IF;
-	CALL copy_category_permissions(model_, target_);
+	-- Really reset permissions if category already existed??
+	CALL copy_perms_grp_cat_grp_cat(stewards_,model_,group_,target_);
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -488,8 +545,17 @@ PROCEDURE `user_add_groupname`(user_ INT, groupname_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure given user is associated with given group'
 BEGIN
-  -- Assert: is_user(user_) !!
-  -- Assert: is_groupname(groupname_) !!
+	DECLARE msg_ TEXT DEFAULT 'user_add_groupname: ';
+  -- Assert: is_user(user_)
+	IF COALESCE(usernamed(user_), '') = '' THEN
+		SET msg_ = CONCAT(msg_, 'User ', user_, 'not found!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+	END IF;
+  -- Assert: is_groupname(groupname_)
+	IF COALESCE(group_named(groupname_), 0) = 0 THEN
+		SET msg_ = CONCAT(msg_, 'Group ', groupname_, 'not found!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+	END IF;
 	INSERT IGNORE INTO `users_usergroups`(userId, groupName, created)
 	VALUES ( user_, groupname_, UNIX_TIMESTAMP() );
 END//
@@ -504,9 +570,12 @@ PROCEDURE `user_add_groupname`(user_ INT, group_ INT)
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure given user is associated with given group'
 BEGIN
-  -- assert is_user(user_) !!
-  -- assert is_group(group_) !!
-	DECLARE groupname_ INT DEFAULT group_name(group_);
+	DECLARE msg_ TEXT DEFAULT 'user_add_group: ';
+	DECLARE groupname_ TEXT DEFAULT group_name(group_);
+	IF COALESCE(groupname_, '') = '' THEN
+		SET msg_ = CONCAT(msg_, 'Group ', group_, 'not found!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+	END IF;
 	CALL user_add_groupname(user_, groupname_);
 END//
 DELIMITER ;
@@ -514,14 +583,16 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `create_steward_group`;
+DROP PROCEDURE IF EXISTS `create_steward_default_group`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `create_steward_group`(user_ INT, username_ TEXT)
+PROCEDURE `create_steward_default_group`(user_ INT, username_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
 BEGIN
 	DECLARE group_ INT DEFAULT user_default_group(user_);
 	DECLARE groupname_ TEXT;
-	IF group_ = 0 THEN
+	-- Warn if default group exists with unexpected name??
+	IF COALESCE(group_, 0) = 0 THEN
 		SET groupname_ = CONCAT('User_', username_);
 		-- some fields are NOT defaulted!!
 		-- following non-default values set by Web Interface
@@ -551,15 +622,22 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `make_steward_user`(user_ INT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Ensure user initiated into categorical stewardship'
+	COMMENT 'Ensure user initiated into categorical stewards'
 BEGIN
-	DECLARE username_ INT DEFAULT user_name(user_);
-	-- assert user_ <> 0 !!
-	-- assert username_ <> '' !!
-	IF user_ != 0 AND username_ != '' THEN
-		CALL create_steward_group(user_, username_);
-		CALL user_add_groupname(user_, 'steward');
+	DECLARE msg_ TEXT DEFAULT 'make_steward_user: ';
+	DECLARE username_ TEXT DEFAULT user_name(user_);
+	-- assert user_ exists
+	IF COALESCE(user_, 0) = 0 THEN
+		SET msg_ = CONCAT(msg_, 'Bad user!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
 	END IF;
+	-- assert username_ exists
+	IF COALESCE(username_, '') = '' THEN
+		SET msg_ = CONCAT(msg_, 'Bad user', user_, '!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+	END IF;
+	CALL create_steward_default_group(user_, username_);
+	CALL user_add_groupname(user_, 'Stewards');
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -570,10 +648,15 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `make_steward_username`(user_name TEXT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Ensure user initiated into categorical stewardship'
+	COMMENT 'Ensure user initiated into categorical stewards'
 BEGIN
+	DECLARE msg_ TEXT DEFAULT 'make_steward_username: ';
 	DECLARE user_ INT DEFAULT user_named(user_name);
-	-- assert user_ <> 0 !!
+	-- assert user_ exists
+	IF COALESCE(user_, 0) = 0 THEN
+		SET msg_ = CONCAT(msg_, 'User ', user_name, 'not found!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+	END IF;
 	CALL make_steward_user(user_);
 END//
 DELIMITER ;
@@ -585,20 +668,61 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `make_stewards_be_stewards`()
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Ensure users in group Steward initiated into categorical stewardship'
+	COMMENT 'Ensure users in group Stewards initiated into Categorical Stewards'
 BEGIN
--- assert group_named('steward') <> 0 !!
+ DECLARE msg_ TEXT DEFAULT 'make_stewards_be_stewards: ';
+ DECLARE stewards_ int DEFAULT group_named('Stewards');
  DECLARE found_ int DEFAULT 0;
  DECLARE done_ int DEFAULT 0;
  DEClARE cursor_ CURSOR FOR 
- SELECT userId FROM users_usergroups WHERE groupName = 'steward';
- DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
- OPEN cursor_;
- LOOP
-  FETCH cursor_ INTO found_;
-  IF done_ = 1 THEN CLOSE cursor_; RETURN; END IF;
-	CALL make_steward_user(found_);
- END LOOP;
+ SELECT userId FROM users_usergroups WHERE groupName = 'Stewards';
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+ -- assert group_named('Stewards') exists
+ IF NOT COALESCE(stewards_, 0) THEN
+		SET msg_ = CONCAT(msg_, 'Group ', 'Steward', 'not found!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+ ELSE
+	OPEN cursor_;
+	WHILE NOT done_ DO
+		FETCH cursor_ INTO found_;
+		IF NOT done_ THEN
+			CALL make_steward_user(found_);
+		END IF;
+	END WHILE;
+	CLOSE cursor_;
+ END IF;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `make_everyone_stewards`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `make_everyone_stewards`()
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'handy if nearly all users should be Stewards; be sure to remove group Stewards from any users who should not be afterwards'
+BEGIN
+ DECLARE msg_ TEXT DEFAULT 'make_everyone_stewards: ';
+ DECLARE stewards_ int DEFAULT group_named('Stewards');
+ DECLARE found_ int DEFAULT 0;
+ DECLARE done_ int DEFAULT 0;
+ DEClARE cursor_ CURSOR FOR SELECT userId FROM users_users;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+ -- assert group_named('Stewards') exists
+ IF NOT COALESCE(stewards_, 0) THEN
+	 SET msg_ = CONCAT(msg_, 'Group ', 'Steward', 'not found!');
+	 SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+ ELSE
+	 OPEN cursor_;
+	 WHILE NOT done_ DO
+		FETCH cursor_ INTO found_;
+		IF NOT done_ THEN
+			CALL user_add_groupname(found_, 'Stewards');
+		END IF;
+	 END WHILE;
+	 CLOSE cursor_;
+ END IF;
 END//
 DELIMITER ;
 -- #+END_SRC

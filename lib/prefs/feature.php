@@ -2921,14 +2921,16 @@ function prefs_feature_list($partial = false)
 			'tags' => array('basic'),
 			'default' => 'y',
 		),
-		'feature_ngender_stewardship' => array(
-			'name' => tra('Categorical Stewardship'),
-            'description' => tra("New Objects associated with Creator's Default Category.  User can Edit Categories of Object associated with User's Default Category"),
+		'feature_ngender_stewards' => array(
+			'name' => tra('Categorical Stewards'),
+            'description' => tra("New Objects of Stewards are associated with their Default Category and Stewards can Edit Categories of Objects associated with their Default Category"),
 			'type' => 'flag',
-			'keywords' => 'ownership stewardship categories ngender',
+			'hint' => tra("Applies to members of group Stewards who have a Default Category"),
+			'details' => tra("User is member of Group Stewards, Group = User_<username>, Category = User::<username>"),
 			'default' => 'n',
 			'warning' => tra('Experimental'),
 			'tags' => array('experimental'),
+			'keywords' => 'ownership stewards categories ngender',
 		),
 
 	);

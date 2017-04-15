@@ -13,7 +13,7 @@ if ( ! isset($_SESSION['u_info']) || $_SESSION['u_info']['login'] != $user ) {
     $_SESSION['u_info'] = array();
     $_SESSION['u_info']['login'] = $user;
     $_SESSION['u_info']['group'] = ( $user ) ? $userlib->get_user_default_group($user) : '';
-    // Categorical Stewardship // NGender
+    // Categorical Stewards // NGender
     $_SESSION['u_info']['defcat'] = !empty($_SESSION['u_info']['group']) ? $userlib->get_user_group_default_category($user) : '';
 		error_log(__FILE__ . ', ' . __LINE__ . ' ' . '_SESSION[u_info][defcat] = ' . $_SESSION['u_info']['defcat']); // NGender
     if (empty($user)) {

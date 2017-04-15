@@ -2880,8 +2880,8 @@ class UsersLib extends TikiLib
 		return $return;
 	}
 
-	/* Returns a default category for user's default_group.
-		 Related to Categorical Imperative, feature_ngender_stewardship
+	/* Returns a Default Category for User's Default Group.
+		 Related to Categorical Stewards, feature_ngender_stewards
 	*/
 	function get_user_group_default_category($user)
 	{
@@ -2891,13 +2891,20 @@ class UsersLib extends TikiLib
 		return $result;
 	}
 
-	/* Categorical Imperative, feature_ngender_stewardship
-		 We might also require the user to be a member of
-		 group Steward if we didn't want this feature
-		 applicable to everyone! */
+	/* NGender Categorical Stewards!
+		 User is_steward_of(Object) when:
+		 (1) feature_ngender_stewards is on,
+		 (2) User is a member of group Stewards,
+		 (3) User has a Default Category
+		 (4) given object is associated with User's Default Category
+	*/
 	function is_steward_of($ObjectName)
 	{
-			if ( $prefs['feature_categorical_stewardship'] !== 'y' ) {
+			global $prefs, $user;
+			if ( empty($user)
+					 || $prefs['feature_ngender_stewards'] !== 'y'
+					 || ! $_SESSION['u_info']['defcat']
+					 || ! TikiLib::lib('user')->user_is_in_group($user, 'Stewards') ) {
 					return false;
 			}
 	    $query = 'select count(*) from tiki_objects o, tiki_category_objects co ';

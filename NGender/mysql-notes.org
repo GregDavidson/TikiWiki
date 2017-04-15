@@ -15,7 +15,9 @@ mysqldump --opt --all-databases > {BACKUP_FILE}.sql
 ** MySQL Meta Queries
 
 #+BEGIN_SRC sql
-\R 
+-- Remove prompt with \R<space><enter>
+\R
+STATUS;
 USE database_name;
 HELP SHOW;
 SHOW databases;
