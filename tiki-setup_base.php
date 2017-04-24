@@ -90,7 +90,7 @@ $tikilib->get_preferences($needed_prefs, true, true);
 global $systemConfiguration;
 $prefs = $systemConfiguration->preference->toArray() + $prefs;
 
-error_log(__FILE__ . ', ' . __LINE__ . ' prefs[feature_ngender_stewards] = ' . $prefs['feature_ngender_stewards']); // NGender
+//error_log(__FILE__ . ', ' . __LINE__ . ' prefs[feature_ngender_stewards] = ' . $prefs['feature_ngender_stewards']); // NGender
 
 // mose : simulate strong var type checking for http vars
 $patterns['int'] = "/^[0-9]*$/"; // *Id

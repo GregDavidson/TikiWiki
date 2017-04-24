@@ -1,9 +1,9 @@
 <?php
 $db_tiki='mysqli';
 $dbversion_tiki='17.0';
-$host_tiki='localhost';
+$host_tiki='127.0.0.1';
 $user_tiki='tiki';
-$pass_tiki='rikitavi';
+$pass_tiki='threehowitzerrounds';
 $dbs_tiki='tiki';
 $client_charset='utf8';
 // $dbfail_url = '';

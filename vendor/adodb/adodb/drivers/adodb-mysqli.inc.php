@@ -55,9 +55,13 @@ class ADODB_mysqli extends ADOConnection {
 	
 	function ADODB_mysqli() 
 	{			
-	 // if(!extension_loaded("mysqli"))
-	      ;//trigger_error("You must have the mysqli extension installed.", E_USER_ERROR);
-	    
+	 //if(!extension_loaded("mysqli"))
+	  ;//trigger_error("You must have the mysqli extension installed.", E_USER_ERROR);
+	 if(!extension_loaded("mysqli")) {
+	 	error_log("You must have the mysqli extension installed.");
+	 	trigger_error("You must have the mysqli extension installed.", E_USER_ERROR);
+	 }
+    
 	}
 	
 	function SetTransactionMode( $transaction_mode ) 
@@ -79,9 +83,12 @@ class ADODB_mysqli extends ADOConnection {
 			  $argPassword = NULL, 
 			  $argDatabasename = NULL, $persist=false)
 	  {
+error_log(__FILE__ . ', ' . __LINE__);
 	  	 if(!extension_loaded("mysqli")) {
+error_log(__FILE__ . ', ' . __LINE__);
 			return null;
 		 }
+error_log(__FILE__ . ', ' . __LINE__);
 	    $this->_connectionID = @mysqli_init();
 	    
 	    if (is_null($this->_connectionID)) {
@@ -886,7 +893,7 @@ class ADORecordSet_mysqli extends ADORecordSet{
 	      break;
 	    }
 	  $this->adodbFetchMode = $mode;
-	  $this->ADORecordSet($queryID);	
+	  $this->__construct($queryID);	
 	}
 	
 	function _initrs()

@@ -31,3 +31,7 @@ TAGS-*
 NGender/
 # Ignore Misc
 Limbo/
+phpinfo.php
+foobar.php
+logerrors.command
+.tramp*

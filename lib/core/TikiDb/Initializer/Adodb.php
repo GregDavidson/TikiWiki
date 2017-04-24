@@ -20,8 +20,10 @@ class TikiDb_Initializer_Adodb
 	{
 		$dbTiki = ADONewConnection('mysqli');
 
+error_log(__FILE__ . ', ' . __LINE__);
 		if (!@$dbTiki->Connect($credentials['host'], $credentials['user'], $credentials['pass'], $credentials['dbs'])) {
-			throw new Exception($dbTiki->ErrorMsg());
+error_log(__FILE__ . ', ' . __LINE__);
+			throw new Exception($dbTiki->ErrorMsg()); //NGender!!! logs nothing & blank screen
 		}
 
 		// Set the Client Charset

@@ -264,7 +264,7 @@
 	
 		var $createdir = true; // requires creation of temp dirs
 		
-		function ADODB_Cache_File()
+		function __construct()
 		{
 		global $ADODB_INCLUDED_CSV;
 			if (empty($ADODB_INCLUDED_CSV)) include_once(ADODB_DIR.'/adodb-csvlib.inc.php');
@@ -459,7 +459,7 @@
 	/**
 	 * Constructor
 	 */
-	function ADOConnection()			
+	function __construct()			
 	{
 		die('Virtual Class -- cannot instantiate');
 	}
@@ -544,27 +544,34 @@
 	 */	  
 	function Connect($argHostname = "", $argUsername = "", $argPassword = "", $argDatabaseName = "", $forceNew = false) 
 	{
+error_log(__FILE__ . ', ' . __LINE__ . ' ' . $argHostname . ' ' . $argUsername . ' ' . $argPassword . ' ' . $argDatabaseName . ' ' . ($forceNew?1:0));
 		if ($argHostname != "") $this->host = $argHostname;
 		if ($argUsername != "") $this->user = $argUsername;
 		if ($argPassword != "") $this->password = 'not stored'; // not stored for security reasons
 		if ($argDatabaseName != "") $this->database = $argDatabaseName;		
+error_log(__FILE__ . ', ' . __LINE__ . ' ' . $argHostname . ' ' . $argUsername . ' ' . $argPassword . ' ' . $argDatabaseName . ' ' . ($forceNew?1:0));
 		
 		$this->_isPersistentConnection = false;	
 			
 		if ($forceNew) {
+error_log(__FILE__ . ', ' . __LINE__, ' _nconnect');
 			if ($rez=$this->_nconnect($this->host, $this->user, $argPassword, $this->database)) return true;
 		} else {
+error_log(__FILE__ . ', ' . __LINE__, ' _connect');
 			 if ($rez=$this->_connect($this->host, $this->user, $argPassword, $this->database)) return true;
 		}
 		if (isset($rez)) {
+error_log(__FILE__ . ', ' . __LINE__, ' rez is set');
 			$err = $this->ErrorMsg();
 			if (empty($err)) $err = "Connection error to server '$argHostname' with user '$argUsername'";
 			$ret = false;
 		} else {
+error_log(__FILE__ . ', ' . __LINE__ . ', '. $this->dataProvider . ' missing');
 			$err = "Missing extension for ".$this->dataProvider;
 			$ret = 0;
 		}
 		if ($fn = $this->raiseErrorFn) 
+error_log(__FILE__ . ', ' . __LINE__ . ' raising error!');
 			$fn($this->databaseType,'CONNECT',$this->ErrorNo(),$err,$this->host,$this->database,$this);
 		
 		
@@ -2961,7 +2968,7 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	 * @param queryID  	this is the queryID returned by ADOConnection->_query()
 	 *
 	 */
-	function ADORecordSet($queryID) 
+	function __construct($queryID) 
 	{
 		$this->_queryID = $queryID;
 	}
@@ -3952,13 +3959,13 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 		 * Constructor
 		 *
 		 */
-		function ADORecordSet_array($fakeid=1)
+		function __construct($fakeid=1)
 		{
 		global $ADODB_FETCH_MODE,$ADODB_COMPAT_FETCH;
 		
 			// fetch() on EOF does not delete $this->fields
 			$this->compat = !empty($ADODB_COMPAT_FETCH);
-			$this->ADORecordSet($fakeid); // fake queryID		
+			$this->__construct($fakeid); // fake queryID		
 			$this->fetchMode = $ADODB_FETCH_MODE;
 		}
 		
@@ -4206,7 +4213,7 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	function ADONewConnection($db='')
 	{
 	GLOBAL $ADODB_NEWCONNECTION, $ADODB_LASTDB;
-		
+error_log(__FILE__ . ', ' . __LINE__ . ', ADONewConnection: db = '. $db);
 		if (!defined('ADODB_ASSOC_CASE')) define('ADODB_ASSOC_CASE',2);
 		$errorfn = (defined('ADODB_ERROR_HANDLER')) ? ADODB_ERROR_HANDLER : false;
 		$false = false;
