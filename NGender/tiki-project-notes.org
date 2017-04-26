@@ -988,3 +988,15 @@ pages on my Tiki. The user page prefix (I don't know if you
 use those) was empty, leading...to a non-empty
 value. Further, it appears the prefix must end in a colon or
 no one can create new pages
+** Fixing old Tiki bugs
+
+Fatal error: Uncaught ArgumentCountError:
+Too few arguments to function ScoreLib::table(), 0 passed in /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php on line 275
+and at least 1 expected in /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php:336
+Stack trace:
+#0 /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php(275): ScoreLib->table()
+#1 /WebPages/ngender.tiki.wiki/public/lib/core/Tiki/Event/Lib.php(26): ScoreLib->assignPoints(Array, 'tiki.user.login', 0)
+#2 /WebPages/ngender.tiki.wiki/public/lib/core/Tiki/Event/Manager.php(82): Tiki_Event_Lib->__invoke(Array, 'tiki.user.login', 0)
+#3 /WebPages/ngender.tiki.wiki/public/lib/core/Tiki/Event/Manager.php(66): Tiki_Event_Manager->internalTrigger('tiki.user.login', Array, 0, 'tiki.user.login')
+#4 /WebPages/ngender.tiki.wiki/public/tiki-login.php(492): Tiki_Event_Manager->trigger('tiki.user.login', Array)
+#5 {main} thrown in /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php on line 336

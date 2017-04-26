@@ -43,14 +43,15 @@ class Tiki_MemoryLimit
 
 	private function getRaw($memory_limit)
 	{
-		$s = trim($memory_limit);
-		$last = strtolower($s{strlen($s)-1});
+		$t = trim($memory_limit);
+		$last = strtolower($t{strlen($t)-1});
+		//$s=substr($t,0,strspn($t, '0123456789')-1);
+		$s=intval($t); // Changed to intval by Lynn 4/26/2017
 		switch ( $last ) {
 			case 'g': $s *= 1024;
 			case 'm': $s *= 1024;
 			case 'k': $s *= 1024;
 		}
-
 		return $s;
 	}
 }

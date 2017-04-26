@@ -2801,7 +2801,8 @@ if ( \$('#$id') ) {
 						//     array( 1, 2, 2.1, 2.1.1, 2.1.2, 2.2, ... , X.Y.Z... )
 						//
 
-						$hdr_structure[$nb_hdrs] = '';
+						//$hdr_structure[$nb_hdrs] = '';
+						$hdr_structure[$nb_hdrs] = array();
 
 						// Generate the number (e.g. 1.2.1.1) of the current title, based on the previous title number :
 						//   - if the current title deepest level is lesser than (or equal to)
@@ -2810,6 +2811,7 @@ if ( \$('#$id') ) {
 						//
 						if ( $nb_last_hdr > 0 && $hdrlevel <= $nb_last_hdr ) {
 							$hdr_structure[$nb_hdrs] = array_slice($last_hdr, 0, $hdrlevel);
+
 							if ( !empty($show_title_level[$hdrlevel]) || ! $need_autonumbering ) {
 								//
 								// Increment the level number only if :
@@ -2827,7 +2829,6 @@ if ( \$('#$id') ) {
 							}
 						}
 						$show_title_level[$hdrlevel] = preg_match('/^!+[\+\-]?#/', $line);
-
 						// Update last_hdr info for the next header
 						$last_hdr = $hdr_structure[$nb_hdrs];
 						$nb_last_hdr = count($last_hdr);

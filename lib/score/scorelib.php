@@ -333,7 +333,7 @@ class ScoreLib extends TikiLib
 		return;
 	}
 
-	function table($tableName, $autoIncrement = true)
+	function table($tableName = '', $autoIncrement = true) // args ignored - wft??
 	{
 		return TikiDb::get()->table('tiki_object_scores');
 	}
