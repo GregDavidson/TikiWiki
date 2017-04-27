@@ -15,6 +15,7 @@ mysqldump --opt --all-databases > {BACKUP_FILE}.sql
 ** MySQL Meta Queries
 
 #+BEGIN_SRC sql
+\r [db] [host] -- (re)connect
 -- Remove prompt with \R<space><enter>
 \R
 STATUS;
