@@ -17,7 +17,7 @@ class Search_GlobalSource_TitleInitialSource implements Search_GlobalSource_Inte
 			$this->strtoupper = 'mb_strtoupper';
 		} else {
 			$this->substr = 'substr';
-			$this->strtoupper = 'mb_strtoupper';
+			$this->strtoupper = 'strtoupper';
 		}
 	}
 

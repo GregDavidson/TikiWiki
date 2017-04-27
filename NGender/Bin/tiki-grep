@@ -1,0 +1,14 @@
+#!/bin/bash
+# A simple start!
+cd /Tiki
+grep \
+	--exclude-dir=Limbo \
+	--exclude-dir=NGender \
+	--exclude-dir=installer \
+	--exclude-dir=lang \
+	--exclude-dir=temp \
+	--exclude-dir=templates \
+	--exclude-dir=templates_c \
+	--exclude-dir=test \
+	--exclude-dir=vendor \
+	-rw "$1" *
