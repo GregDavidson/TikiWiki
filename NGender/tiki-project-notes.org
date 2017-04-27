@@ -752,6 +752,7 @@ https://tiki.org/tiki-view_forum_thread.php?threadId=4633
 
 ** Setting the model permissions for Stewards<->Steward
 
+
 It's very unclear what the various individual permissions
 allow - they're WAY under documented!
 
@@ -988,15 +989,26 @@ pages on my Tiki. The user page prefix (I don't know if you
 use those) was empty, leading...to a non-empty
 value. Further, it appears the prefix must end in a colon or
 no one can create new pages
-** Fixing old Tiki bugs
+** Having Errors be Seen 
+We were having trouble getting the Tiki to log or show
+errors without our putting in explicit trace code.
 
-Fatal error: Uncaught ArgumentCountError:
-Too few arguments to function ScoreLib::table(), 0 passed in /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php on line 275
-and at least 1 expected in /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php:336
-Stack trace:
-#0 /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php(275): ScoreLib->table()
-#1 /WebPages/ngender.tiki.wiki/public/lib/core/Tiki/Event/Lib.php(26): ScoreLib->assignPoints(Array, 'tiki.user.login', 0)
-#2 /WebPages/ngender.tiki.wiki/public/lib/core/Tiki/Event/Manager.php(82): Tiki_Event_Lib->__invoke(Array, 'tiki.user.login', 0)
-#3 /WebPages/ngender.tiki.wiki/public/lib/core/Tiki/Event/Manager.php(66): Tiki_Event_Manager->internalTrigger('tiki.user.login', Array, 0, 'tiki.user.login')
-#4 /WebPages/ngender.tiki.wiki/public/tiki-login.php(492): Tiki_Event_Manager->trigger('tiki.user.login', Array)
-#5 {main} thrown in /WebPages/ngender.tiki.wiki/public/lib/score/scorelib.php on line 336
+After upgrading PHP to PHP7.1 and installling the
+developmental php.ini file errors throwing exceptions would
+interrupt the Tiki and come through to the screen.
+
+This revealed some pre-existing bugs.
+
+Now that things seem stable, it would be good to arrange for
+errors that should not be fatal to be logged, to NOT abort
+Tiki operations, to NOT be displayed on the screen (unless
+maybe if the user is a member of Group Admins).
+
+*** Fixing old Tiki bugs
+
+Lynn & I fixed three bugs that were already in the Tiki PHP code.
+1. an array was initialized to '' instead of to array()
+2. a string with a unit suffix used as a number w/o using intval
+3. a function called with no arguments requiring one;
+   since the silly function didn't use the required argument,
+	 I made it default to '' and added a WTF??.
