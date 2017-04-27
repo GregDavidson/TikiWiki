@@ -2729,7 +2729,7 @@ if ( \$('#$id') ) {
 							if ($listlevel == count($listbeg)) {
 								$listate = substr($line, $listlevel, 1);
 								if (($listate == '+' || $listate == '-') && !($litype == '*' && !strstr(current($listbeg), '</ul>') || $litype == '#' && !strstr(current($listbeg), '</ol>'))) {
-									$thisid = 'id' . microtime() * 1000000;
+									$thisid = 'id' . microtime(true); // was: microtime() * 1000000 !!
 									if ( !$this->option['ck_editor'] ) {
 										$data .= '<br /><a id="flipper' . $thisid . '" class="link" href="javascript:flipWithSign(\'' . $thisid . '\')">[' . ($listate == '-' ? '+' : '-') . ']</a>';
 									}

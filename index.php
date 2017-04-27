@@ -3,6 +3,8 @@
  * This redirects to the site's root to prevent directory browsing.
  * error_log(__FILE__ . ', ' . __LINE__); // NGender!!
  * error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'NAME = ' . $NAME); 
+ * error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'gettype(VAR) = ' . gettype($VAR));
+ * error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'VAR = ' . print_r($VAR,1));
  * @ignore 
  * @package TikiWiki 
  * @copyright (c) Copyright 2002-2016 by authors of the Tiki Wiki CMS Groupware Project

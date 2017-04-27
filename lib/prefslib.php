@@ -613,7 +613,11 @@ class PreferencesLib
 		if (isset($info['options'])) {
 			$contents = array_merge($contents, $info['options']);
 		}
-
+		if ( !is_array($info['tags']) ) { // sometimes $info['tags'] = NULL !!
+				error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'gettype(info[tags]) = ' . gettype($info['tags']));
+				error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'info[tags] = ' . print_r($info['tags'],1));
+				$info['tags'] = array(); // kludge!! What is the real fix??
+		}
 		return array(
 			'object_type' => $typeFactory->identifier('preference'),
 			'object_id' => $typeFactory->identifier($pref),

@@ -1055,26 +1055,20 @@ Stack trace:
 
 *** partially succeeding: /usr/local/php/php-7.1.4/bin/php console.php index:rebuild --log
 
-I found and fixed the bug.  Indexing seemed to succeed but it did also report some more errors:
+I found and fixed the bug.  Indexing seemed to succeed but it did also report one more error which I kludged with a patch.
 
-/ssh:ngender-org.office:/Tiki/ #$ /usr/local/php/php-7.1.4/bin/php console.php index:rebuild --log
+/usr/local/php/php-7.1.4/bin/php console.php index:rebuild --log
 /WebPages/ngender.tiki.wiki/public/vendor/adodb/adodb/adodb.inc.php, 4216, ADONewConnection: db = mysqli
 /WebPages/ngender.tiki.wiki/public/lib/core/TikiDb/Initializer/Adodb.php, 23
 /WebPages/ngender.tiki.wiki/public/vendor/adodb/adodb/adodb.inc.php, 547 127.0.0.1 tiki threehowitzerrounds tiki 0
 /WebPages/ngender.tiki.wiki/public/vendor/adodb/adodb/adodb.inc.php, 552 127.0.0.1 tiki threehowitzerrounds tiki 0
 /WebPages/ngender.tiki.wiki/public/vendor/adodb/adodb/drivers/adodb-mysqli.inc.php, 86
 /WebPages/ngender.tiki.wiki/public/vendor/adodb/adodb/drivers/adodb-mysqli.inc.php, 91
-/WebPages/ngender.tiki.wiki/public/lib/setup/tikisetup.class.php, 29, 8, Undefined index: SERVER_SOFTWARE
 Started rebuilding index...
-/WebPages/ngender.tiki.wiki/public/lib/parser/parserlib.php, 2732, 8, A non well formed numeric value encountered
-/WebPages/ngender.tiki.wiki/public/lib/parser/parserlib.php, 2732, 8, A non well formed numeric value encountered
-/WebPages/ngender.tiki.wiki/public/lib/parser/parserlib.php, 2732, 8, A non well formed numeric value encountered
-/WebPages/ngender.tiki.wiki/public/lib/parser/parserlib.php, 2732, 8, A non well formed numeric value encountered
-/WebPages/ngender.tiki.wiki/public/lib/cache/cachelib.php, 336, 2, file_put_contents(/WebPages/ngender.tiki.wiki/public/temp/cache/4bd1810182d805af493643bf3d8a395e): failed to open stream: Permission denied
-/WebPages/ngender.tiki.wiki/public/lib/cache/cachelib.php, 336, 2, file_put_contents(/WebPages/ngender.tiki.wiki/public/temp/cache/5648bf7cad0c4c79e88dc4e3ad47839e): failed to open stream: Permission denied
-/WebPages/ngender.tiki.wiki/public/lib/prefslib.php, 620, 8, Array to string conversion
+/WebPages/ngender.tiki.wiki/public/lib/prefslib.php, 624, 8, Array to string conversion
 /WebPages/ngender.tiki.wiki/public/lib/prefslib.php, 111, 512, Missing default for preference “feature_score_expday”
-/WebPages/ngender.tiki.wiki/public/lib/prefslib.php, 621, 2, implode(): Invalid arguments passed
+/WebPages/ngender.tiki.wiki/public/lib/prefslib.php, 617 gettype(info[tags]) = NULL
+/WebPages/ngender.tiki.wiki/public/lib/prefslib.php, 618 info[tags] = 
 Indexed
   wiki page: 120
   forum post: 8
@@ -1092,8 +1086,8 @@ Indexed
   group: 53
   category: 77
 Rebuilding index done
-Execution time: 6 secs
-Current Memory usage: 33.8 MiB
-Memory peak usage before indexing: 12.4 MiB
-Memory peak usage after indexing: 33.9 MiB
-Number of queries: 12838
+Execution time: 5 secs
+Current Memory usage: 33.0 MiB
+Memory peak usage before indexing: 12.7 MiB
+Memory peak usage after indexing: 33.0 MiB
+Number of queries: 12826

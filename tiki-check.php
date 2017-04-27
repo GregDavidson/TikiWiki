@@ -344,7 +344,7 @@ if ( PHP_OS == 'Linux' && function_exists('exec') ) {
 }
 
 $server_information['Web Server'] = array(
-	'value' => $_SERVER['SERVER_SOFTWARE']
+	'value' => ( isset($_SERVER['SERVER_SOFTWARE']) ? $_SERVER['SERVER_SOFTWARE'] : 'unknown' )
 );
 
 $server_information['Server Signature']['value'] = !empty($_SERVER['SERVER_SIGNATURE']) ? $_SERVER['SERVER_SIGNATURE'] : 'off';
