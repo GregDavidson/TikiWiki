@@ -1012,3 +1012,9 @@ Lynn & I fixed three bugs that were already in the Tiki PHP code.
 3. a function called with no arguments requiring one;
    since the silly function didn't use the required argument,
 	 I made it default to '' and added a WTF??.
+
+** Conversion to Innodb
+
+The tiki tables have now been converted to InnoDb
+from myIsam using the script
+NGender/gen-innodb-convert-script.sh 
