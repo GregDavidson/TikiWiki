@@ -2,61 +2,41 @@
 -- License: Same as regular Tiki Wiki (tiki.org) License
 -- Author: J. Greg Davidson, 2017
 
--- Related NGender features:
---   feature_ngender_stewards
+-- Administrative steps to utilize
+--   category feature feature_ngender_stewards
+-- (0) ensure your tiki php code supports feature_ngender_stewards
+-- (1) ensure group Stewards exists
+-- (2) ensure category User::Test::Steward exists with its ancestry
+-- (3) set up maximal permissions for that Group and that Category
+--		 -- give members of group Stewards broad permissions
+--		 -- on objects associated with group Stewards
+-- Note: These permissions are a MODEL which will be copied
+--		 into each Steward's default group and default category
+-- (4) ensure feature_ngender_stewards is activated
+-- 		 -- it's in the Category Features admin panel
+--		 -- or use SQL procedure from this file
+-- (5) ensure this code is in the tiki database
+-- 		 -- check for any unit test errors failing during load
+-- 		 -- feel free to add some of the missing unit tests!
+-- (6) either
+--			-- manually make Steward Users to group Stewards or
+--			-- (1) CALL add_everyone_to_group_stewards()
+--			-- (2) manually remove unwanted users
+-- (7) CALL make_stewards_be_stewards() to finish the setup
 
 -- * Names <-> IDs
 
--- Naming & Datatype policy:
--- - References are handled by id unless explicitly stated otherwise
+-- Naming conventions:
+-- - Procedures and functions whose names end in underscore (_)
+-- 	 should not be called directly.
+-- - Reference variables are ids unless explicitly stated otherwise
 --   -- e.g. group_ is an id, groupname_ is a string
 -- - Parameters and locals often have a trailing slash
 --   -- distinguishing them from fields, globals, keywords, etc.
-
--- Double ? or ! indicates something problematic to revisit
--- Triple ? or ! indicates an issue which must be resolved
+-- - Double ? or ! indicates something problematic to revisit
+-- - Triple ? or ! indicates an issue which must be resolved
 
 -- Should DEFINER be changed to, e.g. tiki?  Or omitted??
-
--- #+BEGIN_SRC sql
-DROP PROCEDURE IF EXISTS `categorical_stewards_init`;
-DELIMITER //
-CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `init_categorical_stewards_init`()
-  READS SQL DATA
-	COMMENT 'Initializes NGender Categorical Stewards Session Variables'
-BEGIN
- DECLARE user_ INT DEFAULT category_named_parent('User', 0);
- DECLARE test_ INT DEFAULT category_named_parent('Test',user_);
- DECLARE model_ INT DEFAULT category_named_parent('Steward',test_);
- DECLARE group_ INT;
- SELECT id INTO group_ FROM users_groups WHERE groupName = 'Stewards';
- DECLARE msgs_ VARCHAR(200);		-- needs to be NULL
- IF user_ && test_ && model_ && id THEN
- 		SET @cat_stew_cat_user = user_;
- 		SET @cat_stew_cat_test = test_;
- 		SET @cat_stew_group = group_;
- 		SET @cat_stew_state = 1;
- 		SET @cat_stew_status = '';
- ELSE
-	@cat_stew_state = 0;
-	IF NOT COALESCE(user_, 0) THEN
-		msgs_ = CONCAT_WS(', ', msgs_, 'no category User'); 
-	END IF;
-	IF NOT COALESCE(test_, 0) THEN
-		msgs_ = CONCAT_WS(', ', msgs_, 'no category User::Test'); 
-	END IF;
-	IF NOT COALESCE(model_, 0) THEN
-		msgs_ = CONCAT_WS(', ', msgs_, 'no category User::Test::Steward'); 
-	END IF;
-	IF NOT COALESCE(group_, 0) THEN
-		msgs_ = CONCAT_WS(', ', msgs_, 'no group Stewards'); 
-	END IF;
- 	SET @cat_stew_status = msgs_;
- END IF;
-END//
-DELIMITER ;
--- #+END_SRC
 
 -- ** test procedures
 
@@ -68,7 +48,7 @@ DROP PROCEDURE IF EXISTS `chuck_int_`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `chuck_int_`(value_ INT)
-	COMMENT 'throw away the argument'
+	COMMENT 'throw away the argument (avoids creating result sets)'
 BEGIN
 END//
 DELIMITER ;
@@ -80,7 +60,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true_`(value_ INT, expression_ TEXT, message_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Complain if value_ evalutes to non-zero integer'
+	COMMENT 'Signal error if value_ is zero'
 BEGIN
 	DECLARE msg_ TEXT;
 	IF value_ != 0 THEN
@@ -104,7 +84,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true_msg`(expression_ TEXT, message_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Complain if expression fails or evalutes to non-zero integer'
+	COMMENT 'Unit Test: Complain if expression fails or evalutes to zero'
 BEGIN
   DECLARE sql_ TEXT DEFAULT CONCAT(
 		'CALL assert_true_(COALESCE(', expression_, ', 0), ',
@@ -125,7 +105,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true`(expression_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Complain if expression fails or evalutes to non-zero integer'
+	COMMENT 'Unit Test: Complain if expression fails or evalutes to zero'
 BEGIN
 	CALL assert_true_msg(expression_, '');
 END//
@@ -138,7 +118,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_fail_msg`(expression_ TEXT, message_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Complain if expression fails or evalutes to non-zero integer'
+	COMMENT 'Unit Test: Complain if expression evaluates to non-zero value'
 BEGIN
 	DECLARE msg_ TEXT;
   DECLARE sql_ TEXT DEFAULT CONCAT(
@@ -171,7 +151,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_fail`(expression_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Complain if expression fails or evalutes to non-zero integer'
+	COMMENT 'Unit Test: Complain if expression evaluates to non-zero value'
 BEGIN
 	CALL assert_fail_msg(expression_, '');
 END//
@@ -186,12 +166,13 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_named`(username_ TEXT)
 RETURNS INT READS SQL DATA DETERMINISTIC
+COMMENT 'return id of user of given name or raise exception if none'
 BEGIN
 	DECLARE msg_ TEXT;
 	DECLARE found_ INT DEFAULT 0;
 	SELECT userId INTO found_ FROM users_users WHERE login = username_;
 	IF found_ = 0 THEN
-		SET msg_ = CONCAT('Username ', username_, 'not found!');
+		SET msg_ = CONCAT('Username ', username_, ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
 	END IF;
 	RETURN found_;
@@ -205,12 +186,13 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_name`(user_ INT)
 RETURNS TEXT READS SQL DATA DETERMINISTIC
+COMMENT 'return name of user of given id or raise exception if none'
 BEGIN
 	DECLARE msg_ TEXT;
 	DECLARE found_ TEXT DEFAULT '';
 	SELECT login INTO found_ FROM users_users WHERE userId = user_;
 	IF found_ = '' THEN 
-		SET msg_ = CONCAT('User ', user_, 'not found!');
+		SET msg_ = CONCAT('User ', user_, ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
 	END IF;
 	RETURN found_;
@@ -219,6 +201,7 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
+-- If id 2 fails, pick a user id that exists on your system!
 CALL assert_true('user_name(2) != \'\'');
 CALL assert_true('user_named(user_name(2)) = 2');
 CALL assert_fail('user_name(0)');
@@ -233,12 +216,13 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `group_named`(groupname_ TEXT)
 RETURNS INT READS SQL DATA DETERMINISTIC
+COMMENT 'return id of group of given name or raise exception if none'
 BEGIN
 	DECLARE msg_ TEXT;
 	DECLARE found_ INT DEFAULT 0;
 	SELECT id INTO found_ FROM users_groups WHERE groupName = groupname_;
 	IF found_ = 0 THEN 
-		SET msg_ = CONCAT('Groupname ', groupname_, 'not found!');
+		SET msg_ = CONCAT('Groupname ', groupname_, ' not found!');
 		SIGNAL SQLSTATE '02234'
 		SET MESSAGE_TEXT = msg_;
 	END IF;
@@ -253,12 +237,15 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `group_name`(group_ INT)
 RETURNS TEXT READS SQL DATA DETERMINISTIC
+COMMENT 'return name of group of given id or raise exception if none'
 BEGIN
+	DECLARE msg_ TEXT;
 	DECLARE found_ TEXT DEFAULT '';
 	SELECT groupName INTO found_ FROM users_groups WHERE id = group_;
-	IF found_ = '' THEN 
+	IF found_ = '' THEN
+		SET msg_ = CONCAT('Group ', group_, ' not found!');
 		SIGNAL SQLSTATE '02234'
-		SET MESSAGE_TEXT = CONCAT('Group ', group_, 'not found!');
+		SET MESSAGE_TEXT = msg_;
 	END IF;
 	RETURN found_;
 END//
@@ -266,9 +253,9 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_true('group_name(2) != \'\'');
-CALL assert_true('group_named(group_name(2)) = 2');
-CALL assert_true('group_named(0) = \'\'');
+CALL assert_true('group_named(\'Stewards\') != 0');
+CALL assert_true('group_name(group_named(\'Stewards\')) = \'Stewards\'');
+CALL assert_fail('group_name(0) <> \'\'');
 CALL assert_fail('group_named(\'\')');
 CALL assert_fail('group_named(\'Huh?\')');
 -- #+END_SRC
@@ -281,6 +268,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_named_parent`(category_name TEXT, parent INT)
 RETURNS INT READS SQL DATA DETERMINISTIC
+COMMENT 'return id of category of given name and parent id or raise exception if none'
 BEGIN
 	DECLARE msg_ TEXT DEFAULT 'category_named_parent: ';
 	DECLARE found_ INT DEFAULT 0;
@@ -288,7 +276,7 @@ BEGIN
 	  WHERE name = category_name AND parentId = parent;
 	IF found_ = 0 THEN
 		SET msg_ =
-		CONCAT(msg_, category_name_, ' parent ', parent, 'not found!');
+		CONCAT(msg_, category_name, ' parent ', parent, ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
 	END IF;
 	RETURN found_;
@@ -304,13 +292,14 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_name`(category_ INT)
 RETURNS TEXT READS SQL DATA DETERMINISTIC
+COMMENT 'return category name (not unique!) given id - or raise exception if none; see also category_path()'
 BEGIN
 	DECLARE msg_ TEXT;
 	DECLARE found_ TEXT DEFAULT '';
 	SELECT name INTO found_ FROM tiki_categories WHERE categId = category_;
 	IF found_ = '' THEN 
-		SET msg_ = CONCAT('Category ', category_, 'not found!');
-		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
+		SET msg_ = CONCAT('Category ', category_, ' not found!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
 	END IF;
 	RETURN found_;
 END//
@@ -322,6 +311,7 @@ CALL assert_fail('category_named_parent(\'huh?\', 0)');
 CALL assert_fail('category_named_parent(\'user\', 5)');
 CALL assert_true('category_named_parent(\'user\', 0)');
 CALL assert_true('category_named_parent(\'test\', category_named_parent(\'user\', 0) )');
+CALL assert_true('category_named_parent(\'steward\', category_named_parent(\'test\', category_named_parent(\'user\', 0) ) )');
 CALL assert_true('category_name( category_named_parent(\'user\', 0) ) = \'user\'');
 CALL assert_fail('category_name( 0 )');
 -- #+END_SRC
@@ -332,16 +322,22 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_parent`(category_ INT)
 RETURNS INT READS SQL DATA DETERMINISTIC
+COMMENT 'return parent id of category of given id - or raise exception if none; see also category_path()'
 BEGIN
+	DECLARE msg_ TEXT;
 	DECLARE found_ INT DEFAULT -1;
 	SELECT parentId INTO found_ FROM tiki_categories WHERE categId = category_;
+	IF found_ = -1 THEN 
+		SET msg_ = CONCAT('Category ', category_, ' not found!');
+		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
+	END IF;
 	RETURN found_;
 END//
 DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_fail('category_parent( category_named_parent(\'user\', 0) )');
+CALL assert_true('category_parent( category_named_parent(\'User\', 0) ) = 0');
 CALL assert_fail('category_parent( 0 )');
 CALL assert_true('category_named_parent(\'user\', 0) =
 category_parent( category_named_parent(\'test\', category_named_parent(\'user\', 0) ) )');
@@ -353,6 +349,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_path`(category_id INT)
 RETURNS TEXT READS SQL DATA DETERMINISTIC
+COMMENT 'return :: delimited path of category of given id - or raise exception if no such category'
 BEGIN
 	DECLARE path_ TEXT DEFAULT category_name(category_id);
 	DECLARE parent_ INT DEFAULT category_parent(category_id);
@@ -382,6 +379,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 	FUNCTION `group_default_category`(group_ INT)
 	RETURNS INT	READS SQL DATA DETERMINISTIC
+	COMMENT 'returns the default category of the given group or 0 if none'
 BEGIN
 	DECLARE found_ INT DEFAULT 0;
 	SELECT groupDefCat INTO found_ FROM users_groups WHERE id = group_;
@@ -391,7 +389,10 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
+
+-- this first one fails!! - do we care?? - fix or replace!!
 CALL assert_fail('group_default_category( group_named(\'Registered\') )');
+
 CALL assert_true('group_default_category( group_named(\'User_Greg\') ) =
  category_named_parent(\'Greg\', category_named_parent(\'User\', 0))');
 -- #+END_SRC
@@ -402,6 +403,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 	FUNCTION `groupname_default_category`(group_name TEXT)
 	RETURNS INT	READS SQL DATA DETERMINISTIC
+	COMMENT 'returns the default category of the given group or 0 if none'
 BEGIN
 	DECLARE found_ INT DEFAULT 0;
 	SELECT groupDefCat INTO found_ FROM users_groups WHERE groupName = group_name;
@@ -411,7 +413,10 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
+
+-- this first one fails!! - do we care?? - fix or replace!!
 CALL assert_fail('groupname_default_category( \'Registered\' )');
+
 CALL assert_true('groupname_default_category( \'User_Greg\' ) =
  category_named_parent(\'Greg\', category_named_parent(\'User\', 0))');
 -- #+END_SRC
@@ -424,6 +429,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_default_groupname`(user_ INT)
 RETURNS TEXT	READS SQL DATA DETERMINISTIC
+	COMMENT 'returns the name of the default group of the given user or the empty string if none'
 BEGIN
 	DECLARE found_ TEXT DEFAULT '';
 	SELECT default_group INTO found_ FROM users_users WHERE userId = user_;
@@ -435,7 +441,10 @@ DELIMITER ;
 -- #+BEGIN_SRC sql
 -- Find a stable test user without a default group for next line!!!
 -- SELECT user_default_groupname( user_named('sad_user') ) = '';
+
+-- this first one fails!! - do we care?? - fix or replace!!
 CALL assert_fail('user_default_groupname( 0 )');
+
 CALL assert_true('user_default_groupname( user_named(\'Greg\') ) = \'User_Greg\'');
 -- #+END_SRC
 
@@ -445,6 +454,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_default_group`(user_id INT)
 RETURNS INT READS SQL DATA DETERMINISTIC
+	COMMENT 'returns the id of the default group of the given user or the empty string if none'
 BEGIN
 	RETURN group_named(user_default_groupname(user_id));
 END//
@@ -464,6 +474,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_default_category`(user_id INT)
 RETURNS INT READS SQL DATA DETERMINISTIC
+	COMMENT 'returns the id of the default category of the default group of the given user or 0 if none'
 BEGIN
 	DECLARE default_groupname TEXT DEFAULT user_default_groupname(user_id);
   IF char_length(default_groupname) = 0 THEN RETURN 0; END IF;
@@ -482,22 +493,25 @@ CALL assert_true('user_default_category( user_named(\'Greg\') ) =
 -- * Procedures to Create and Relate Default Groups and Categories
 
 -- #+BEGIN_SRC sql
-DROP PROCEDURE IF EXISTS `copy_group_category_permissions`;
+DROP PROCEDURE IF EXISTS `copy_perms_grp_cat_grp_cat`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `copy_perms_grp_cat_grp_cat`(grp_ INT, cat_ INT, to_grp INT, to_cat INT)
   READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'makes the permissions of group to_grp with category to_cat the same as those of group grp_ with category cat_'
 BEGIN
 	DECLARE groupname_ TEXT DEFAULT group_name(grp_);
-	DECLARE to_groupname_ TEXT DEFAULT group_name(to_grp_);
-	DELETE FROM user_objectpermissions
-	WHERE objectType = 'category' AND groupName = to_groupname_
-	AND objectId = MD5(CONCAT('category', to_cat));
-	INSERT INTO user_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
-	SELECT `groupName`,`permName`, `objectType`,`objectId`
-	FROM user_objectpermissions
+	DECLARE to_groupname TEXT DEFAULT group_name(to_grp);
+	DECLARE from_category TEXT DEFAULT MD5(CONCAT('category', cat_));
+	DECLARE to_category TEXT DEFAULT MD5(CONCAT('category', to_cat));
+	DELETE FROM users_objectpermissions
+	WHERE objectType = 'category' AND (groupName = to_groupname OR groupName = groupname_)
+	AND objectId = to_category;
+	INSERT INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
+	SELECT to_groupname,`permName`, `objectType`, to_category
+	FROM users_objectpermissions
 	WHERE objectType = 'category' AND groupName = groupname_
-	AND objectId = MD5(CONCAT('category', cat_));
+	AND objectId = from_category;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -546,14 +560,14 @@ PROCEDURE `user_add_groupname`(user_ INT, groupname_ TEXT)
 	COMMENT 'ensure given user is associated with given group'
 BEGIN
 	DECLARE msg_ TEXT DEFAULT 'user_add_groupname: ';
-  -- Assert: is_user(user_)
-	IF COALESCE(usernamed(user_), '') = '' THEN
-		SET msg_ = CONCAT(msg_, 'User ', user_, 'not found!');
+  -- Assert: is_user(user_):
+	IF COALESCE(user_name(user_), '') = '' THEN
+		SET msg_ = CONCAT(msg_, 'User ', user_, ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
 	END IF;
-  -- Assert: is_groupname(groupname_)
+  -- Assert: is_groupname(groupname_):
 	IF COALESCE(group_named(groupname_), 0) = 0 THEN
-		SET msg_ = CONCAT(msg_, 'Group ', groupname_, 'not found!');
+		SET msg_ = CONCAT(msg_, 'Group ', groupname_, ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
 	END IF;
 	INSERT IGNORE INTO `users_usergroups`(userId, groupName, created)
@@ -566,14 +580,14 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `user_add_group`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `user_add_groupname`(user_ INT, group_ INT)
+PROCEDURE `user_add_group`(user_ INT, group_ INT)
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure given user is associated with given group'
 BEGIN
 	DECLARE msg_ TEXT DEFAULT 'user_add_group: ';
 	DECLARE groupname_ TEXT DEFAULT group_name(group_);
 	IF COALESCE(groupname_, '') = '' THEN
-		SET msg_ = CONCAT(msg_, 'Group ', group_, 'not found!');
+		SET msg_ = CONCAT(msg_, 'Group ', group_, ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
 	END IF;
 	CALL user_add_groupname(user_, groupname_);
@@ -582,7 +596,6 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-DROP PROCEDURE IF EXISTS `create_steward_group`;
 DROP PROCEDURE IF EXISTS `create_steward_default_group`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
@@ -626,12 +639,12 @@ PROCEDURE `make_steward_user`(user_ INT)
 BEGIN
 	DECLARE msg_ TEXT DEFAULT 'make_steward_user: ';
 	DECLARE username_ TEXT DEFAULT user_name(user_);
-	-- assert user_ exists
+	-- assert user_ exists:
 	IF COALESCE(user_, 0) = 0 THEN
 		SET msg_ = CONCAT(msg_, 'Bad user!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
 	END IF;
-	-- assert username_ exists
+	-- assert username_ exists:
 	IF COALESCE(username_, '') = '' THEN
 		SET msg_ = CONCAT(msg_, 'Bad user', user_, '!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
@@ -652,9 +665,9 @@ PROCEDURE `make_steward_username`(user_name TEXT)
 BEGIN
 	DECLARE msg_ TEXT DEFAULT 'make_steward_username: ';
 	DECLARE user_ INT DEFAULT user_named(user_name);
-	-- assert user_ exists
+	-- assert user_ exists:
 	IF COALESCE(user_, 0) = 0 THEN
-		SET msg_ = CONCAT(msg_, 'User ', user_name, 'not found!');
+		SET msg_ = CONCAT(msg_, 'User ', user_name, ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
 	END IF;
 	CALL make_steward_user(user_);
@@ -677,9 +690,9 @@ BEGIN
  DEClARE cursor_ CURSOR FOR 
  SELECT userId FROM users_usergroups WHERE groupName = 'Stewards';
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
- -- assert group_named('Stewards') exists
+ -- assert group_named('Stewards') exists:
  IF NOT COALESCE(stewards_, 0) THEN
-		SET msg_ = CONCAT(msg_, 'Group ', 'Steward', 'not found!');
+		SET msg_ = CONCAT(msg_, 'Group ', 'Steward', ' not found!');
 		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
  ELSE
 	OPEN cursor_;
@@ -696,22 +709,22 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-DROP PROCEDURE IF EXISTS `make_everyone_stewards`;
+DROP PROCEDURE IF EXISTS `add_everyone_to_group_stewards`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `make_everyone_stewards`()
+PROCEDURE `add_everyone_to_group_stewards`()
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'handy if nearly all users should be Stewards; be sure to remove group Stewards from any users who should not be afterwards'
 BEGIN
- DECLARE msg_ TEXT DEFAULT 'make_everyone_stewards: ';
+ DECLARE msg_ TEXT DEFAULT 'add_everyone_to_group_stewards: ';
  DECLARE stewards_ int DEFAULT group_named('Stewards');
  DECLARE found_ int DEFAULT 0;
  DECLARE done_ int DEFAULT 0;
  DEClARE cursor_ CURSOR FOR SELECT userId FROM users_users;
  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
- -- assert group_named('Stewards') exists
+ -- assert group_named('Stewards') exists:
  IF NOT COALESCE(stewards_, 0) THEN
-	 SET msg_ = CONCAT(msg_, 'Group ', 'Steward', 'not found!');
+	 SET msg_ = CONCAT(msg_, 'Group ', 'Steward', ' not found!');
 	 SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = _msg;
  ELSE
 	 OPEN cursor_;
@@ -728,3 +741,80 @@ DELIMITER ;
 -- #+END_SRC
 
 SELECT @TESTS_PASSED, @TESTS_FAILED;
+
+-- ** Session Variables
+
+-- It would be good if set_cat_stew_vars
+-- checked that all of the manual things
+-- that the administrator needs to do
+-- for feature_ngender_stewardship
+-- have been done!!
+
+-- It woud also be good if there were a
+-- procedure which could be called to
+-- set everything up that isn't set up
+-- for feature_ngender_stewardship!!
+
+-- #+BEGIN_SRC sql
+
+DROP PROCEDURE IF EXISTS `set_cat_stew_vars`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `set_cat_stew_vars`()
+  READS SQL DATA
+	COMMENT 'Sets cat_stew_* Session Variables for feature_ngender_stewardship'
+BEGIN
+ DECLARE user_ INT DEFAULT category_named_parent('User', 0);
+ DECLARE test_ INT DEFAULT category_named_parent('Test',user_);
+ DECLARE model_ INT DEFAULT category_named_parent('Steward',test_);
+ DECLARE group_ INT;
+ DECLARE msgs_ VARCHAR(200);		-- needs to start out NULL
+ SELECT id INTO group_ FROM users_groups WHERE groupName = 'Stewards';
+ IF user_ && test_ && model_ && id THEN
+ 		SET @cat_stew_cat_user = user_;
+ 		SET @cat_stew_cat_test = test_;
+ 		SET @cat_stew_group = group_;
+ 		SET @cat_stew_state = 1;
+ 		SET @cat_stew_status = '';
+ ELSE
+	SET @cat_stew_state = 0;
+	IF NOT COALESCE(user_, 0) THEN
+		SET msgs_ = CONCAT_WS(', ', msgs_, 'no category User'); 
+	END IF;
+	IF NOT COALESCE(test_, 0) THEN
+		SET msgs_ = CONCAT_WS(', ', msgs_, 'no category User::Test'); 
+	END IF;
+	IF NOT COALESCE(model_, 0) THEN
+		SET msgs_ = CONCAT_WS(', ', msgs_, 'no category User::Test::Steward'); 
+	END IF;
+	IF NOT COALESCE(group_, 0) THEN
+		SET msgs_ = CONCAT_WS(', ', msgs_, 'no group Stewards'); 
+	END IF;
+ 	SET @cat_stew_status = msgs_;
+ END IF;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `feature_ngender_stewards`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `feature_ngender_stewards`(activate boolean)
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT '(De)Activates feature_ngender_stewards; alternative to web ui'
+BEGIN
+	DECLARE flag_ text;
+	IF (activate) THEN SET flag_ = 'y';
+	ELSE SET flag_ = 'n';
+	END IF;
+	INSERT INTO `tiki_preferences`(`name`, `value`)
+ 	VALUES ('feature_ngender_stewards', flag_)
+	ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- CALL add_everyone_to_group_stewards();
+-- - remove Stewards from inappropriate Users
+-- CALL make_stewards_be_stewards();
