@@ -43,7 +43,7 @@ class Table_Code_WidgetOptionsFilter extends Table_Code_WidgetOptions
 			}
 			//filter_functions and filter_formatter
 			if (parent::$filtercol) {
-				$ffunc = '';
+				$ffunc = []; // was = '';
 				$fsource = '';
 				$fform = '';
 				foreach (parent::$s['columns'] as $col => $info) {

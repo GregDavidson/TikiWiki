@@ -183,7 +183,7 @@ class Table_Code_MainOptions extends Table_Code_Manager
 		if (!empty(parent::$s['sorts']['sortlist'])) {
 			$mo[] = 'sortList : [[' . parent::$s['sorts']['sortlist']['col'] . ',' . parent::$s['sorts']['sortlist']['dir']. ']]';
 		} elseif (parent::$sorts && parent::$sortcol) {
-			$sl = '';
+			$sl = array(); // was $sl = ''; // !!
 			$i = 0;
 			foreach (parent::$s['columns'] as $col => $info) {
 				$info = !empty($info['sort']) ? $info['sort'] : [];
@@ -215,6 +215,22 @@ class Table_Code_MainOptions extends Table_Code_Manager
 		//process main options and add to overall code
 		if (count($mo) > 0) {
 			$code = $this->iterate($mo, '', '', $this->nt2, '');
+			// echo '<pre>';
+			// echo 'parent::code[self::level1] = "';
+			// var_dump(parent::$code[self::$level1]);
+			// echo '</pre>';
+			// kludge to fix
+			// Fatal error: Uncaught Error: Cannot use string offset as an array
+			// problems when treating a string as an array!!
+			if (! is_array(parent::$code)) { // kludge!!
+				parent::$code = array();
+			}
+			if (! is_array(parent::$code[self::$level1])) { // kludge!!
+				parent::$code[self::$level1] = array();
+			}
+			// echo 'code = "';
+			// var_dump($code);
+			// echo '"<br />';
 			parent::$code[self::$level1][self::$level2] = $code;
 		}
 	}
