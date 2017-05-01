@@ -505,7 +505,7 @@ BEGIN
 	DECLARE from_category TEXT DEFAULT MD5(CONCAT('category', cat_));
 	DECLARE to_category TEXT DEFAULT MD5(CONCAT('category', to_cat));
 	DELETE FROM users_objectpermissions
-	WHERE objectType = 'category' AND (groupName = to_groupname OR groupName = groupname_)
+	WHERE objectType = 'category' AND groupName = to_groupname
 	AND objectId = to_category;
 	INSERT INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
 	SELECT to_groupname,`permName`, `objectType`, to_category
