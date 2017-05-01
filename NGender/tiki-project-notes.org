@@ -645,6 +645,10 @@ Categorical Stewardship Session Variables (proposed):
 - @cat_stew_cat_user :: category id of category user
 - @cat_stew_cat_test :: category id of category test
 
+OK, I've written a procedure to create these, but I've not
+yet arranged to have it called from the PHP.  It might not
+really be worth it.
+
 ** Similar Features and Requests for Such
 
 Search https://doc.tiki.org/Groups
@@ -751,7 +755,6 @@ More info at:
 https://tiki.org/tiki-view_forum_thread.php?threadId=4633
 
 ** Setting the model permissions for Stewards<->Steward
-
 
 It's very unclear what the various individual permissions
 allow - they're WAY under documented!
@@ -1019,7 +1022,7 @@ The tiki tables have now been converted to InnoDb
 from myIsam using the script
 NGender/gen-innodb-convert-script.sh 
 
-** Another Bugs
+** A few more Bugs
 When I tried to rebuild the Tiki Index through the Web Interface I got:
 
 Fatal error: Uncaught Error: Call to undefined function
@@ -1091,3 +1094,28 @@ Current Memory usage: 33.0 MiB
 Memory peak usage before indexing: 12.7 MiB
 Memory peak usage after indexing: 33.0 MiB
 Number of queries: 12826
+
+
+** Snippets for Tracing code
+
+			echo '<pre>';
+			echo 'foo = "';
+			print_r($foo);
+			echo '"<br />';
+			echo 'bar = "';
+			var_dump($bar);
+			echo '"<br />';
+			echo '</pre>';
+
+			echo '<pre>';
+			echo 'is_array(parent::code[self::level1][self::level2]) = ';
+			echo is_array(parent::$code[self::$level1][self::$level2])?'1':'0';
+			echo '<br />';
+			echo '</pre>';
+
+** Need more tests!
+
+Especially of all functions called by make_stewards_be_stewards:
+
+Are we assigning group inheritance when we create a group?
+We shouldn't!
