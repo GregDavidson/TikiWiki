@@ -1143,6 +1143,7 @@ function var_log( $file, $line, $var_name, $val, $func_name='', $class_name='' )
  
 $object = new SomeClass();
 var_log( __FILE__, __LINE__, 'object', $object );
+var_log( __FILE__, __LINE__, 'object', $object, __FILE__, __LINE__);
 var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
 
 
@@ -1155,3 +1156,27 @@ Especially of all functions called by make_stewards_be_stewards:
 
 Are we assigning group inheritance when we create a group?
 We shouldn't!
+
+** Misc
+
+Something is wrong with admin users
+- I only got one page and it ended in Windy!
+- There appeared to be no method of getting to any more!
+- Sorting by other fields got to the other users :-(
+
+The tracing code I have in is claiming that ZObserver is NOT a Steward!
+
+I should have an user_is_steward(user_id) function and I should make sure that I'm not using 'Stewards" hither and yon.  Ideally I'd have feature prefs for the things currently hardwired into feature_ngender_stewards:
+- feature Group meaning Stewards
+- prefix or format string for User Groups
+- parent group of User Groups
+- How to encode User Default Category?
+
+** Clear the Tiki Cache after changing user/group assignments!
+
+And presumably after other admin procedures as well!
+
+The problems with ZObserver were caused by an old cache
+which didn't know that ZObserver was a member of group
+Stewards!
+
