@@ -357,6 +357,7 @@ $vartype['page_ref_id'] = 'int';
  * @param $category
  * @return string
  */
+
 function varcheck(&$array, $category)
 {
 	global $patterns, $vartype, $prefs;

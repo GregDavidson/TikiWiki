@@ -31,7 +31,7 @@ if (version_compare(PHP_VERSION, '5.6.0', '<')){
 
 // Be sure that the user is not already defined by PHP on hosts that still have the php.ini config "register_globals = On"
 unset($user);
-
+require_once 'NGender/tiki-ngender.php';
 require_once 'lib/setup/third_party.php';
 // Enable Versioning
 include_once ('lib/setup/twversion.class.php');
@@ -45,7 +45,9 @@ require_once ('lib/setup/tikisetup.class.php');
 require_once ('lib/setup/timer.class.php');
 $tiki_timer = new timer();
 $tiki_timer->start();
+var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)' , __FILE__, __LINE__);
 require_once ('tiki-setup_base.php');
+var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)' , __FILE__, __LINE__);
 
 // Attempt setting locales. This code is just a start, locales should be set per-user.
 // Also, different operating systems use different locale strings. en_US.utf8 is valid on POSIX systems, maybe not on Windows, feel free to add alternative locale strings.
@@ -79,6 +81,7 @@ if ( isset($_SERVER['HTTP_HOST']) ) {
 } else {
 	$host = "";
 }
+
 if ( isset($_SERVER['REQUEST_URI']) ) {
 	$requestUri = $_SERVER['REQUEST_URI'];
 } else {

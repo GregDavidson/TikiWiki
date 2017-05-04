@@ -8,6 +8,7 @@
  */
 // $Id: tiki-index.php 59155 2016-07-11 11:17:30Z nkoth $
 
+require_once 'NGender/tiki-ngender.php';
 require_once ('check_composer_exists.php');
 
 $inputConfiguration = array(

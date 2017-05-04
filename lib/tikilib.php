@@ -3354,6 +3354,11 @@ class TikiLib extends TikiDb_Bridge
 	function get_perm_object($objectId, $objectType, $info='', $global=true)
 	{
 		global $user;
+		//var_log( $user, 'user', __FILE, __LINE__, 'get_perm_object', 'TikiLib' ); 
+		//var_log( $objectId, 'objectId', __FILE, __LINE__, 'get_perm_object', 'TikiLib' ); 
+		//var_log( $objectType, 'objectType', __FILE, __LINE__, 'get_perm_object', 'TikiLib' ); 
+		//var_log( $info, 'info', __FILE, __LINE__, 'get_perm_object', 'TikiLib' ); 
+		//var_log( $global, 'global', __FILE, __LINE__, 'get_perm_object', 'TikiLib' ); 
 		$smarty = TikiLib::lib('smarty');
 		$userlib = TikiLib::lib('user');
 
@@ -3473,6 +3478,12 @@ class TikiLib extends TikiDb_Bridge
 	 */
 	function get_local_perms($user, $objectId, $objectType, $info, $global)
 	{
+		//var_log( $user, 'user', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		//var_log( $objectId, 'objectId', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		//var_log( $objectType, 'objectType', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		//var_log( $info, 'info', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		//var_log( $global, 'global', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		
 		global $prefs;
 		$smarty = TikiLib::lib('smarty');
 		$userlib = TikiLib::lib('user');
@@ -4135,7 +4146,7 @@ class TikiLib extends TikiDb_Bridge
 		$page_id = $pages->insert($insertData);
 		// Categorical Stewards // NGender
 		// Shall we also require user to be member of group Steward?
-//error_log(__FILE__ . ', ' . __LINE__ . ' prefs[feature_ngender_stewards] = ' . $prefs['feature_ngender_stewards']); // NGender
+		//var_log(isset($prefs['feature_ngender_stewards']), 'isset(prefs[feature_ngender_stewards])', __FILE__, __LINE__);
 		if ( $prefs['feature_ngender_stewards'] == 'y' ) {
 	    $categlib = TikiLib::lib('categ');
 			$userlib = TikiLib::lib('user');
@@ -6628,6 +6639,7 @@ JS;
 		return $csv;
 	}
 }
+
 // end of class ------------------------------------------------------
 
 // function to check if a file or directory is in the path

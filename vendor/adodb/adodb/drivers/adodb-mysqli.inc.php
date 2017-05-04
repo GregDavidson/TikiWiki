@@ -83,12 +83,9 @@ class ADODB_mysqli extends ADOConnection {
 			  $argPassword = NULL, 
 			  $argDatabasename = NULL, $persist=false)
 	  {
-error_log(__FILE__ . ', ' . __LINE__);
 	  	 if(!extension_loaded("mysqli")) {
-error_log(__FILE__ . ', ' . __LINE__);
 			return null;
 		 }
-error_log(__FILE__ . ', ' . __LINE__);
 	    $this->_connectionID = @mysqli_init();
 	    
 	    if (is_null($this->_connectionID)) {

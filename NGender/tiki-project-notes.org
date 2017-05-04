@@ -1098,9 +1098,10 @@ Number of queries: 12826
 
 ** Snippets for Tracing code
 
+#+BEGIN_SRC php
 			echo '<pre>';
 			echo 'foo = "';
-			print_r($foo);
+			var_dump($foo);
 			echo '"<br />';
 			echo 'bar = "';
 			var_dump($bar);
@@ -1112,6 +1113,41 @@ Number of queries: 12826
 			echo is_array(parent::$code[self::$level1][self::$level2])?'1':'0';
 			echo '<br />';
 			echo '</pre>';
+
+			error_log(__FILE__ . ', ' . __LINE__); // NGender!!
+			error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'NAME = ' . $NAME); 
+			error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'gettype(VAR) = ' . gettype($VAR));
+			error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'VAR = ' . var_export($VAR,1));
+#+END_SRC php
+
+			var_dump produces the best output since it includes types.
+			ideally for multi-line output we should call error_log for each line
+			we could write a function to do the best possible thing
+
+#+BEGIN_SRC php
+function var_log( $file, $line, $var_name, $val, $func_name='', $class_name='' ) {
+  $context = ''
+	. ( $file === '' ? '' : ( $file . ' ' ) )
+	. ( $line === '' ? '' : ( $line . ' ' ) )
+	. ( $class_name === '' ? '' : ( $class_name . '->' ) )
+	. ( $func_name === '' ? '' : ( $func_name . '() ' ) )
+	. ( $var_name === '' ? '' : ( $var_name . ': ' ) );
+    ob_start();                    // start capture
+    var_dump( $val );           // dump value with type info
+		$lines = preg_split("/\r\n|\n|\r/", ob_get_contents());
+    ob_end_clean();                // end capture
+		foreach ( $lines as $line ) {
+        error_log( $context . ' ' . $line );
+		}
+}
+ 
+$object = new SomeClass();
+var_log( __FILE__, __LINE__, 'object', $object );
+var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+
+
+#+END_SRC php
+
 
 ** Need more tests!
 

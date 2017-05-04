@@ -544,36 +544,28 @@
 	 */	  
 	function Connect($argHostname = "", $argUsername = "", $argPassword = "", $argDatabaseName = "", $forceNew = false) 
 	{
-error_log(__FILE__ . ', ' . __LINE__ . ' ' . $argHostname . ' ' . $argUsername . ' ' . $argPassword . ' ' . $argDatabaseName . ' ' . ($forceNew?1:0));
 		if ($argHostname != "") $this->host = $argHostname;
 		if ($argUsername != "") $this->user = $argUsername;
 		if ($argPassword != "") $this->password = 'not stored'; // not stored for security reasons
 		if ($argDatabaseName != "") $this->database = $argDatabaseName;		
-error_log(__FILE__ . ', ' . __LINE__ . ' ' . $argHostname . ' ' . $argUsername . ' ' . $argPassword . ' ' . $argDatabaseName . ' ' . ($forceNew?1:0));
 		
 		$this->_isPersistentConnection = false;	
 			
 		if ($forceNew) {
-error_log(__FILE__ . ', ' . __LINE__, ' _nconnect');
 			if ($rez=$this->_nconnect($this->host, $this->user, $argPassword, $this->database)) return true;
 		} else {
-error_log(__FILE__ . ', ' . __LINE__, ' _connect');
 			 if ($rez=$this->_connect($this->host, $this->user, $argPassword, $this->database)) return true;
 		}
 		if (isset($rez)) {
-error_log(__FILE__ . ', ' . __LINE__, ' rez is set');
 			$err = $this->ErrorMsg();
 			if (empty($err)) $err = "Connection error to server '$argHostname' with user '$argUsername'";
 			$ret = false;
 		} else {
-error_log(__FILE__ . ', ' . __LINE__ . ', '. $this->dataProvider . ' missing');
 			$err = "Missing extension for ".$this->dataProvider;
 			$ret = 0;
 		}
 		if ($fn = $this->raiseErrorFn) 
-error_log(__FILE__ . ', ' . __LINE__ . ' raising error!');
 			$fn($this->databaseType,'CONNECT',$this->ErrorNo(),$err,$this->host,$this->database,$this);
-		
 		
 		$this->_connectionID = false;
 		if ($this->debug) ADOConnection::outp( $this->host.': '.$err);
@@ -4212,8 +4204,7 @@ http://www.stanford.edu/dept/itss/docs/oracle/10g/server.101/b10759/statements_1
 	 */
 	function ADONewConnection($db='')
 	{
-	GLOBAL $ADODB_NEWCONNECTION, $ADODB_LASTDB;
-error_log(__FILE__ . ', ' . __LINE__ . ', ADONewConnection: db = '. $db);
+		GLOBAL $ADODB_NEWCONNECTION, $ADODB_LASTDB;
 		if (!defined('ADODB_ASSOC_CASE')) define('ADODB_ASSOC_CASE',2);
 		$errorfn = (defined('ADODB_ERROR_HANDLER')) ? ADODB_ERROR_HANDLER : false;
 		$false = false;
