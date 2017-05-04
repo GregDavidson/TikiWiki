@@ -19,7 +19,7 @@ global $prefs;
 
 require_once 'NGender/tiki-ngender.php';
 require_once('lib/debug/Tracer.php');
-var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
 
 $inputConfiguration = array(
 	array( 'staticKeyFilters' => array(
@@ -31,13 +31,13 @@ $inputConfiguration = array(
         ($prefs['feature_wikilingo'] == 'n' ? 'edit' : ''),
 	) ),
 );
-var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
 
 $section = "wiki page";
 $section_class = "tiki_wiki_page manage";	// This will be body class instead of $section
-var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
 require_once ('tiki-setup.php');
-var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
 $wikilib = TikiLib::lib('wiki');
 $structlib = TikiLib::lib('struct');
 $notificationlib = TikiLib::lib('notification');
@@ -161,8 +161,8 @@ if (strlen($_REQUEST["page"]) > $max_pagename_length) {
 }
 
 $page = $_REQUEST["page"];
-var_log($page, 'page', __FILE__, __LINE__);
-var_log($prefs['namespace_enabled'], 'prefs[namespace_enabled]', __FILE__, __LINE__);
+// var_log($page, 'page', __FILE__, __LINE__);
+// var_log($prefs['namespace_enabled'], 'prefs[namespace_enabled]', __FILE__, __LINE__);
  
 // Copy namespace from structure parent page
 if ($prefs['namespace_enabled'] === 'y') {
@@ -180,7 +180,7 @@ if (!empty($s_suffix)) {
 }
 
 if ($prefs['namespace_enabled'] == 'y' && isset($_REQUEST['namespace'])) {
-	var_log($_REQUEST['namespace'], '_REQUEST[namespace]', __FILE__, __LINE__);
+	//	var_log($_REQUEST['namespace'], '_REQUEST[namespace]', __FILE__, __LINE__);
 	// Only prepend the namespace separator, if the page is missing a namespace
 	$ns = $_REQUEST['namespace'] . $prefs['namespace_separator'];
 	if (strpos($page, $ns, 0) === false) {
@@ -245,12 +245,22 @@ if (isset($_REQUEST["current_page_id"]) && empty($info)) {
 	$smarty->assign('add_child', false);
 }
 $tikilib->get_perm_object($page, 'wiki page', $info, true);
-if ($tiki_p_edit !== 'y' && (!empty($info) || empty($structure_info))) {
-	var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
-	var_log($info, 'info',  __FILE__, __LINE__);
-	var_log($structure_info, 'structure_info', __FILE__, __LINE__);
-	var_log($user, 'user', __FILE__, __LINE__);
-	var_log($object, 'object', __FILE__, __LINE__);
+
+// NGender WIP!!
+// if the page does NOT exist, and the user is a steward,
+// then let them go ahead and create it!
+// var_log($tikilib->page_exists($page), 'page_exists', __FILE__, __LINE__);
+// var_log($userlib->user_is_in_group($user, 'Stewards'),  'user is steward', __FILE__, __LINE__);
+// var_log($tikilib->get_user_groups($user),  'Users groups', __FILE__, __LINE__);
+
+if ( !$tikilib->page_exists($page) && $userlib->user_is_in_group($user, 'Stewards') ) {
+	// anything to do here?
+} elseif ($tiki_p_edit !== 'y' && (!empty($info) || empty($structure_info))) {
+	// var_log($tiki_p_edit, 'tiki_p_edit', __FILE__, __LINE__);
+	// var_log($info, 'info',  __FILE__, __LINE__);
+	// var_log($structure_info, 'structure_info', __FILE__, __LINE__);
+	// var_log($user, 'user', __FILE__, __LINE__);
+	// var_log($object, 'object', __FILE__, __LINE__);
 	if (empty($user)) {
 		$cachelib = TikiLib::lib('cache');
 		$cacheName = $tikilib->get_ip_address().$tikilib->now;
@@ -1077,8 +1087,7 @@ if ($prefs['site_layout_per_object'] == 'y') {
 	));
 }
 
-if (
-				isset($_REQUEST["save"])
+if (isset($_REQUEST["save"])
 		&& (strtolower($_REQUEST['page']) !== 'sandbox' || $tiki_p_admin === 'y')
 		&& !$category_needed
 		&& !$contribution_needed

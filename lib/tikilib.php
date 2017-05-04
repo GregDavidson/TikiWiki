@@ -3478,8 +3478,8 @@ class TikiLib extends TikiDb_Bridge
 	 */
 	function get_local_perms($user, $objectId, $objectType, $info, $global)
 	{
-		//var_log( $user, 'user', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
-		//var_log( $objectId, 'objectId', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		// var_log( $user, 'user', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		// var_log( $objectId, 'objectId', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
 		//var_log( $objectType, 'objectType', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
 		//var_log( $info, 'info', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
 		//var_log( $global, 'global', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
@@ -4305,7 +4305,7 @@ class TikiLib extends TikiDb_Bridge
 	 */
 	function get_page_info($pageName, $retrieve_datas = true, $skipCache = false)
 	{
-        global $prefs;
+		global $prefs;
 		$pageNameEncode = urlencode($pageName);
 		if ( !$skipCache && isset($this->cache_page_info[$pageNameEncode])
 			&& ( ! $retrieve_datas || isset($this->cache_page_info[$pageNameEncode]['data']) )
