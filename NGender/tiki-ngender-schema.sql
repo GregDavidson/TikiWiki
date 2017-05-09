@@ -15,7 +15,7 @@ PROCEDURE `add_group_cat_model_group_cat`(grp_ INT, cat_ INT, model_grp INT, mod
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure row of table groups_category_model_permissions reflects given arguments'
 BEGIN
-	INSERT INTO `tiki_preferences`(`group_`, `category_`,`group_model`, `category_model`)
+	INSERT INTO `groups_category_model_permissions`(`group_`, `category_`,`group_model`, `category_model`)
  	VALUES (grp_, cat_, model_grp, model_cat)
 	ON DUPLICATE KEY UPDATE `group_model` = VALUES(`group_model`),  `category_model` = VALUES(`category_model`);
 END//
@@ -31,9 +31,9 @@ PROCEDURE `project_group_cat_model_group_cat`(
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure row of table groups_category_model_permissions reflects given arguments -- all args passed as names, not ids!'
 BEGIN
-	DECLARE project_cat_name TEXT DEFAULT CONCAT(project, cat_name);
 	DECLARE maybe_project TEXT DEFAULT NULLIF( project, '' );
-	DECLARE comment_ TEXT DEFAULT COALESCE(concat('for ', project), '');
+	DECLARE project_cat_name TEXT DEFAULT COALESCE( CONCAT(maybe_project, '::', NULLIF(cat_name, '')), CONCAT(project, cat_name) );
+	DECLARE comment_ TEXT DEFAULT COALESCE(concat('for ', maybe_project), '');
 	DECLARE model_grp INT DEFAULT group_named(model_grp_name);
 	DECLARE model_cat INT DEFAULT category_of_path(model_cat_name);
 	DECLARE grp_ INT DEFAULT ensure_groupname_comment(grp_name, comment_);
@@ -47,40 +47,54 @@ DELIMITER ;
 -- Their permissions will have to be manually set by an administrator
 CALL assert_true( 'ensure_categorypath_comment( \'User\', \'root of user default categories\' )' );
 CALL assert_true( 'ensure_categorypath_comment( \'User::Test\', \'root of Model and Test User Default Model categories\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Read\', \'model for Project_Readers\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Post\', \'model for Project_Posters\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Edit\', \'model for Project_Editors\' )' );
+CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Readable\', \'model for Project_Readers\' )' );
+CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Postable\', \'model for Project_Posters\' )' );
+CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Editable\', \'model for Project_Editors\' )' );
 CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Admin\', \'model for Project_Admins\' )' );
 
 CALL assert_true( 'ensure_groupname_comment( \'Stewards\', \'feature_ngender_stewards participation, default category permissions model\' )' );
-CALL assert_true( 'ensure_groupname_comment( \'Project_Readers\', \'permissions model with User::Test::Read\' )' );
-CALL assert_true( 'ensure_groupname_comment( \'Project_Posters\', \'permissions model with User::Test::Post\' )' );
-CALL assert_true( 'ensure_groupname_comment( \'Project_Editors\', \'permissions model with User::Test::Edit\' )' );
+CALL assert_true( 'ensure_groupname_comment( \'Project_Readers\', \'permissions model with User::Test::Readable\' )' );
+CALL assert_true( 'ensure_groupname_comment( \'Project_Posters\', \'permissions model with User::Test::Postable\' )' );
+CALL assert_true( 'ensure_groupname_comment( \'Project_Editors\', \'permissions model with User::Test::Editable\' )' );
 CALL assert_true( 'ensure_groupname_comment( \'Project_Admins\', \'permissions model with User::Test::Admin\' )' );
 
-CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankObservers', 'ObserverReadable', 'Project_Readers', 'User::Test::Read');
-CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Post');
-CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankAssociates', 'AssociateReadable', 'Project_Readers', 'User::Test::Read');
-CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankAssociates', 'AssociateWriteable', 'Project_Writers', 'User::Test::Write');
-CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankPartners', 'PartnerReadable', 'Project_Readers', 'User::Test::Read');
-CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankPartners', 'PartnerWriteable', 'Project_Writers', 'User::Test::Write');
+-- We could do with less permissions with
+-- - the right inheritance model
+-- - more categories assigned to each object
+-- Do we want to grant the project admins rights over all project categories or only some?
+
+CALL project_group_cat_model_group_cat('', 'Registered', 'RegisteredReadable', 'Project_Readers', 'User::Test::Readable');
+
+-- we just unnested these categories to eliminate inheritance
+CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankObservers', 'ObserverReadable', 'Project_Readers', 'User::Test::Readable');
+CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Postable');
+CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankAssociates', 'AssociateReadable', 'Project_Readers', 'User::Test::Readable');
+CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankAssociates', 'AssociateEditable', 'Project_Editors', 'User::Test::Editable');
+CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankPartners', 'PartnerReadable', 'Project_Readers', 'User::Test::Readable');
+CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankPartners', 'PartnerEditable', 'Project_Editors', 'User::Test::Editable');
 -- CALL project_group_cat_model_group_cat('SkillsBank', 'SkillsBankAdmins', 'Admin', 'Project_Admins', 'User::Test::Admin');
 
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Observers', 'ObserverReadable', 'Project_Readers', 'User::Test::Read');
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Observers', 'ObserverPostable', 'Project_Posters', 'User::Test::Post');
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Learners', 'Learner_Readable', 'Project_Readable', 'User::Test::Read');
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Learners', 'Learner_Writeable', 'Project_Writeable', 'User::Test::Write');
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Peers', 'Peer_Readable', 'Project_Readers', 'User::Test::Read');
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Peers', 'Peer_Writeable', 'Project_Writers', 'User::Test::Edit');
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Partners', 'Partner_Readable', 'Project_Readers', 'User::Test::Read');
-CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Partners', 'Partner_Writeable', 'Project_Writers', 'User::Test::Edit');
+-- we just unnested these categories to eliminate inheritance
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Observers', 'Observer_Readable', 'Project_Readers', 'User::Test::Readable');
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Observers', 'Observer_Postable', 'Project_Posters', 'User::Test::Postable');
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Learners', 'Learner_Readable', 'Project_Readers', 'User::Test::Readable');
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Learners', 'Learner_Editable', 'Project_Editors', 'User::Test::Editable');
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Peers', 'Peer_Readable', 'Project_Readers', 'User::Test::Readable');
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Peers', 'Peer_Editable', 'Project_Editors', 'User::Test::Editable');
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Partners', 'Partner_Readable', 'Project_Readers', 'User::Test::Readable');
+CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Partners', 'Partner_Editable', 'Project_Editors', 'User::Test::Editable');
 -- CALL project_group_cat_model_group_cat('LOYL', 'LOYL_Admins', 'Admin', 'Project_Admins', 'User::Test::Admin');
 
-CALL project_group_cat_model_group_cat('SomeClues', 'SomeCluesObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Post');
-CALL project_group_cat_model_group_cat('SomeClues', 'SomeCluesDispensors', 'PartnerWritable', 'Project_Writers', 'User::Test::Edit');
+-- Figure out what the inheritance from Public is doing and either get the nesting right or unnest these:
 
-CALL project_group_cat_model_group_cat('Abundance', 'AbundanceObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Post');
-CALL project_group_cat_model_group_cat('Abundance', 'Abundancers', 'Writeable', 'Project_Writers', 'User::Test::Edit');
+-- CALL project_group_cat_model_group_cat('Public::SomeClues', 'SomeCluesObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Postable');
+-- CALL project_group_cat_model_group_cat('Public::SomeClues', 'SomeCluesDispensors', 'PartnerWritable', 'Project_Editors', 'User::Test::Editable');
+-- CALL project_group_cat_model_group_cat('Public::SomeClues', 'SomeCluesAdmins', 'Admin', 'Project_Admins', 'User::Test::Admin');
 
-CALL project_group_cat_model_group_cat('UncommonKnowledge', 'UncommonKnowledgeObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Post');
-CALL project_group_cat_model_group_cat('UncommonKnowledge', 'Uncommoners', 'Writeable', 'Project_Writers', 'User::Test::Edit');
+-- CALL project_group_cat_model_group_cat('Public::Abundance', 'AbundanceObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Postable');
+-- CALL project_group_cat_model_group_cat('Public::Abundance', 'Abundancers', 'Editable', 'Project_Editors', 'User::Test::Editable');
+-- CALL project_group_cat_model_group_cat('Abundance', 'AbundanceAdmins', 'Admin', 'Project_Admins', 'User::Test::Admin');
+
+-- CALL project_group_cat_model_group_cat('Public::UncommonKnowledge', 'UncommonKnowledgeObservers', 'ObserverPostable', 'Project_Posters', 'User::Test::Postable');
+-- CALL project_group_cat_model_group_cat('Public::UncommonKnowledge', 'Uncommoners', 'Editable', 'Project_Editors', 'User::Test::Editable');
+-- CALL project_group_cat_model_group_cat('UncommonKnowledge', 'UncommonKnowledgeAdmins', 'Admin', 'Project_Admins', 'User::Test::Admin');
