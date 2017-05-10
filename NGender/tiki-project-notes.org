@@ -2,11 +2,22 @@
 
 ** Status
 
-MariaDB on ngender.org has been upgraded to the 
-stable development version which supports recursive FROM queries
-and other goodness.
+There's still at least one bug:
+	 
+Logged in as Greg, when I go to create a new page
+- I get a category tab even before I save the page
+- The category tab shows all categories 
+- My default category is already checked
+- I'm given Stewardship when I save the page
+- I can add new categories
 
-I had to rerun the tiki-setup.php to get it to 
+Logged in as ZObserver, when I go to create a new page
+- I don't get a category tab before I save the page
+- I appear to have Stewardship when I save the page
+- I get a category tab when I go to edit the page again
+- The category tab shows all categories with my default checked
+- I appear to be able to check new categories
+- The new categories don't appear after I save the edit
 
 ** Categorical Stewardship Project
 
@@ -1156,21 +1167,6 @@ Especially of all functions called by make_stewards_be_stewards:
 
 Are we assigning group inheritance when we create a group?
 We shouldn't!
-
-** Misc
-
-Something is wrong with admin users
-- I only got one page and it ended in Windy!
-- There appeared to be no method of getting to any more!
-- Sorting by other fields got to the other users :-(
-
-The tracing code I have in is claiming that ZObserver is NOT a Steward!
-
-I should have an user_is_steward(user_id) function and I should make sure that I'm not using 'Stewards" hither and yon.  Ideally I'd have feature prefs for the things currently hardwired into feature_ngender_stewards:
-- feature Group meaning Stewards
-- prefix or format string for User Groups
-- parent group of User Groups
-- How to encode User Default Category?
 
 ** Clear the Tiki Cache after changing user/group assignments!
 
