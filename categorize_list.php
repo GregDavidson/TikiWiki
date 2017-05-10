@@ -27,15 +27,16 @@ if ($prefs['feature_categories'] == 'y' && isset($cat_type) && isset($cat_objid)
 	// article generator uses 'null' for type and id and puts the category id's in $_REQUEST
 	$cat_object_exists = ($cat_objid === 'null') ? false : (bool) $cat_objid;
     }
-
+		var_log($cat_object_exists, '$cat_object_exists', __FILE__, __LINE__);
     if ( $cat_object_exists ) {
-	$cats = $categlib->get_object_categories($cat_type, $cat_objid);
+			$cats = $categlib->get_object_categories($cat_type, $cat_objid);
     } else {
-	$cats = $categlib->get_default_categories();
+			$cats = $categlib->get_default_categories();
     }
     // Categorical Stewards // NGender
-    $userlib=TikiLib::lib('user');
-    $user_is_steward=$userlib->is_steward_of($cat_objid);
+    $user_is_steward = $cat_object_exists
+										 ? $userlib->is_steward_of($cat_objid)
+										 : $userlib->user_is_in_group($user, 'Stewards');
 
     if ($cat_type == 'wiki page' || $cat_type == 'blog' || $cat_type == 'image gallery' || $cat_type == 'mypage') {
 	$ext = ($cat_type == 'wiki page')? 'wiki':str_replace(' ', '_', $cat_type);
@@ -47,36 +48,49 @@ if ($prefs['feature_categories'] == 'y' && isset($cat_type) && isset($cat_objid)
 	}
 	$smarty->assign('mandatory_category', $prefs[$pref]);
     } else {
-	$categories = $categlib->getCategories(array('type'=>'all'), true, !$user_is_steward);
+			$categories = $categlib->getCategories(array('type'=>'all'), true, !$user_is_steward);
     }
-
+		
     $can = $catobjperms->modify_object_categories;
     if (!$user_is_steward) { 
-	$categories = Perms::filter(array('type' => 'category'), 'object', $categories, array( 'object' => 'categId' ), array('view_category'));
+			$categories = Perms::filter(array('type' => 'category'), 'object', $categories, array( 'object' => 'categId' ), array('view_category'));
     }
     foreach ($categories as &$category) {
-	if (!$user_is_steward) { 
-	    $catperms = Perms::get(array( 'type' => 'category', 'object' => $category['categId'] ));
-	}
-	if (in_array($category["categId"], $cats)) {
-	    $category["incat"] = 'y';
-	    $category['canchange'] = $user_is_steward || ! $cat_object_exists || ( $can && $catperms->remove_object );
-	} else {
-	    $category["incat"] = 'n';
-	    $category['canchange'] =  $user_is_steward || $can && $catperms->add_object;
-	}
-	
-	// allow to preselect categories when creating a new article
-	// like this: /tiki-edit_article.php?cat_categories[]=1&cat_categorize=on
-	if (!$cat_object_exists && isset($_REQUEST["cat_categories"]) && isset($_REQUEST["cat_categorize"]) && $_REQUEST["cat_categorize"] == 'on') {
-	    if (in_array($category["categId"], $_REQUEST["cat_categories"])) {
-		$category["incat"] = 'y';
-	    } else {
-		$category["incat"] = 'n';
-	    }
-	}
-    }
+			if (!$user_is_steward) { 
+				$catperms = Perms::get(array( 'type' => 'category', 'object' => $category['categId'] ));
+			}
+			// ==> NGender ???
+			//			if ( in_array($category["categId"], $cats) ) {
+			if ( in_array($category["categId"], $cats) || ($user_is_steward && $category["categId"] === $_SESSION['u_info']['defcat']) ) {
+				$category["incat"] = 'y';
+				$category['canchange'] = $user_is_steward || ! $cat_object_exists || ( $can && $catperms->remove_object );
+			} else {
+				$category["incat"] = 'n';
+				$category['canchange'] =  $user_is_steward || $can && $catperms->add_object;
+			}
 
+			// --> NGender Debug
+			if ( $category["categId"] === $_SESSION['u_info']['defcat'] ) {
+				var_log($user_is_steward, '$user_is_steward', __FILE__, __LINE__);
+				var_log($category["categId"], '$category["categId"]', __FILE__, __LINE__);
+				var_log($category["incat"], '$category["incat"]', __FILE__, __LINE__);
+				var_log($category["canchange"], '$category["canchange"]', __FILE__, __LINE__);
+				var_log($_SESSION['u_info']['defcat'], '$_SESSION["u_info"]["defcat"]', __FILE__, __LINE__);
+			}
+			// <- NGender Debug
+
+			
+			// allow to preselect categories when creating a new article
+			// like this: /tiki-edit_article.php?cat_categories[]=1&cat_categorize=on
+			if (!$cat_object_exists && isset($_REQUEST["cat_categories"]) && isset($_REQUEST["cat_categorize"]) && $_REQUEST["cat_categorize"] == 'on') {
+				if (in_array($category["categId"], $_REQUEST["cat_categories"])) {
+					$category["incat"] = 'y';
+				} else {
+					$category["incat"] = 'n';
+				}
+			}
+    }
+		
     $smarty->assign('cat_tree', $categlib->generate_cat_tree($categories));
     
     $smarty->assign_by_ref('categories', $categories);

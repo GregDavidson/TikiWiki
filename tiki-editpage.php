@@ -1489,9 +1489,10 @@ if ($prefs['feature_categories'] === 'y') {
 		else
 			$p = $wikilib->get_default_wiki_page();
 		$cs = $categlib->get_object_categories('wiki page', $p);
-		for ($i = count($categories) - 1; $i >= 0; --$i) {
-			if (in_array($categories[$i]['categId'], $cs))
-				$categories[$i]['incat'] = 'y';
+		// previous code assumed keys of $categories were contiguous!
+		foreach ($categories as $k => $c) {
+			if ( in_array($categories[$k]['categId'], $cs) )
+				$categories[$k]['incat'] = 'y';
 		}
 	}
 }

@@ -2911,9 +2911,10 @@ class UsersLib extends TikiLib
 			}
 	    $query = 'select count(*) from tiki_objects o, tiki_category_objects co ';
 	    $query .= ' where co.catObjectId=o.objectId AND co.categId=? and o.name=?';
-//		error_log(__FUNCTION__ . ': $_SESSION[u_info][defcat] = '.$_SESSION['u_info']['defcat'].'$ObjectName = '.$ObjectName); // NGender
-	    $result = $this->getOne($query, array($_SESSION['u_info']['defcat'], $ObjectName));
-//		error_log(__FUNCTION__ . ' result = '.$result); // NGender
+			// var_log($_SESSION[u_info][defcat], '$_SESSION[u_info][defcat]);
+			// var_log($ObjectName, '$ObjectName');
+	    $result = $this->getOne($query, array($_SESSION['u_info']['defcat'], $ObjectName)) !== '0';
+			// var_log($result, 'result.);
 	    return $result;
 	}
 
