@@ -29,10 +29,13 @@ CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `project_group_cat_model_group_cat`(
 	project TEXT, grp_name TEXT, cat_name TEXT, model_grp_name TEXT, model_cat_name TEXT
 ) READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'ensure row of table groups_category_model_permissions reflects given arguments -- all args passed as names, not ids!'
+	COMMENT 'ensure row of table groups_category_model_permissions; all args passed as names, not ids; project is context for cat_name'
 BEGIN
 	DECLARE maybe_project TEXT DEFAULT NULLIF( project, '' );
-	DECLARE project_cat_name TEXT DEFAULT COALESCE( CONCAT(maybe_project, '::', NULLIF(cat_name, '')), CONCAT(project, cat_name) );
+	DECLARE project_cat_name TEXT DEFAULT COALESCE(
+		CONCAT(maybe_project, '::', NULLIF(cat_name, '')),
+		CONCAT(project, cat_name)
+	);
 	DECLARE comment_ TEXT DEFAULT COALESCE(concat('for ', maybe_project), '');
 	DECLARE model_grp INT DEFAULT group_named(model_grp_name);
 	DECLARE model_cat INT DEFAULT category_of_path(model_cat_name);

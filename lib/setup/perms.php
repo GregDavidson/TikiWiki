@@ -112,23 +112,23 @@ $perms = $builder
 	->withCategories($prefs['feature_categories'] == 'y')
 	->withDefinitions($allperms)
 	->build();
-// var_log($perms, 'perms', __FILE__, __LINE__);
+// var_log($perms, 'perms');
 
 Perms::set($perms);
 
 $_permissionContext = new Perms_Context($user, false);
-//var_log($_permissionContext, '_permissionContext', __FILE__, __LINE__);
+//var_log($_permissionContext, '_permissionContext');
 
 if ($groupList) {
 	$_permissionContext->overrideGroups($groupList);
 }
-// var_log($groupList, 'groupList', __FILE__, __LINE__);
-// var_log($_permissionContext, '_permissionContext', __FILE__, __LINE__);
-// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+// var_log($groupList, 'groupList');
+// var_log($_permissionContext, '_permissionContext');
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 
 $_permissionContext->activate(true);
 
-// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 
 unset($allperms);
 unset($tokenParams);

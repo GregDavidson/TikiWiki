@@ -2336,7 +2336,7 @@ class UsersLib extends TikiLib
 	function user_is_in_group($user, $group)
 	{
 	    $user_details = $this->get_user_details($user);
-	    // var_log($user_details['groups'],  'user groups', __FILE__, __LINE__);
+	    // var_log($user_details['groups'],  'user groups');
 
 		if (in_array($group, $user_details['groups'])) {
 			return true;
@@ -3128,7 +3128,7 @@ class UsersLib extends TikiLib
 		$cacheKey = 'user_details_'.$login;
 
 		if (! $useCache || ! $user_details = $cachelib->getSerialized($cacheKey)) {
-		    // var_log("Hello",  '', __FILE__, __LINE__);
+		    // var_log("Hello",  '');
 			$user_details = array();
 
 			$query = 'SELECT `userId`, `login`, `email`, `lastLogin`, `currentLogin`,' .

@@ -35,7 +35,7 @@ class Perms_Context
 		if ($activate) {
 			$this->activate();
 		}
-		var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+		// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 	}
 
 	function overrideGroups(array $groupList)
@@ -46,7 +46,7 @@ class Perms_Context
 	function activate($globalize = false)
 	{
 		global $user, $globalperms;
-		global $tiki_p_edit; // NGender: remove with var_log calls !!
+		// global $tiki_p_edit; // NGender: remove with var_log calls !!
 		$perms = Perms::getInstance();
 		$this->previousUser = $user;
 		$this->previousGroupList = $perms->getGroups();
@@ -55,15 +55,15 @@ class Perms_Context
 		$perms->setGroups($this->groupList);
 
 		$globalperms = Perms::get();
-		var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
-		var_log(self::$permissionList, 'self::permissionList',  __FILE__, __LINE__);
+		// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
+		// var_log(self::$permissionList, 'self::permissionList');
 		$globalperms->globalize(self::$permissionList, $smarty, false);
-		var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+		// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 		if (is_object($smarty)) {
 			$smarty->assign('globalperms', $globalperms);
-			var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+			// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 		}
-		var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
+		// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 	}
 
 	function __destruct()

@@ -1664,7 +1664,8 @@ class CategLib extends ObjectLib
 	// Change an object's categories
 	// $objId: A unique identifier of an object of the given type, for example "Foo" for Wiki page Foo.
 	function update_object_categories($categories, $objId, $objType, $desc=NULL, $name=NULL, $href=NULL, $managedCategories = null, $override_perms = false)
-    {
+	{
+		stack_log(2);
 		global $prefs, $user;
 
 		$manip = new Category_Manipulator($objType, $objId);
@@ -1672,7 +1673,9 @@ class CategLib extends ObjectLib
 			$manip->overrideChecks();
 		}
 		$manip->setNewCategories($categories ? $categories : array());
-
+		var_log($manip, 'manip');
+		var_log($categories, 'categories');
+			
 		if ( is_array($managedCategories) && !$override_perms ) {
 			$manip->setManagedCategories($managedCategories);
 		}

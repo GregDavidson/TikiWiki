@@ -45,9 +45,9 @@ require_once ('lib/setup/tikisetup.class.php');
 require_once ('lib/setup/timer.class.php');
 $tiki_timer = new timer();
 $tiki_timer->start();
-var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)' , __FILE__, __LINE__);
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)' );
 require_once ('tiki-setup_base.php');
-var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)' , __FILE__, __LINE__);
+// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)' );
 
 // Attempt setting locales. This code is just a start, locales should be set per-user.
 // Also, different operating systems use different locale strings. en_US.utf8 is valid on POSIX systems, maybe not on Windows, feel free to add alternative locale strings.

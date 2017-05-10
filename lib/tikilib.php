@@ -3478,11 +3478,11 @@ class TikiLib extends TikiDb_Bridge
 	 */
 	function get_local_perms($user, $objectId, $objectType, $info, $global)
 	{
-		// var_log( $user, 'user', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
-		// var_log( $objectId, 'objectId', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
-		//var_log( $objectType, 'objectType', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
-		//var_log( $info, 'info', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
-		//var_log( $global, 'global', __FILE, __LINE__, 'get_local_perms', 'TikiLib' ); 
+		// var_log( $user, 'user'); 
+		// var_log( $objectId, 'objectId'); 
+		//var_log( $objectType, 'objectType'); 
+		//var_log( $info, 'info'); 
+		//var_log( $global, 'global'); 
 		
 		global $prefs;
 		$smarty = TikiLib::lib('smarty');
@@ -4041,7 +4041,14 @@ class TikiLib extends TikiDb_Bridge
 	{
 		global $prefs, $tracer;
 
-        $tracer->trace('tikilib.create_page', "** invoked");
+		$tracer->trace('tikilib.create_page', "** invoked");
+		var_log($name, 'name');
+		var_log($hits, 'hits');
+		var_log($data, 'data');
+		var_log($comment, 'comment');
+		var_log($user, 'user');
+		var_log($ip, 'ip');
+		var_log($description, 'description');
 
 		if ( ! $is_html ) {
 			$data = str_replace('<x>', '', $data);
@@ -4146,7 +4153,7 @@ class TikiLib extends TikiDb_Bridge
 		$page_id = $pages->insert($insertData);
 		// Categorical Stewards // NGender
 		// Shall we also require user to be member of group Steward?
-		//var_log(isset($prefs['feature_ngender_stewards']), 'isset(prefs[feature_ngender_stewards])', __FILE__, __LINE__);
+		//var_log(isset($prefs['feature_ngender_stewards']), 'isset(prefs[feature_ngender_stewards])');
 		if ( $prefs['feature_ngender_stewards'] == 'y' ) {
 	    $categlib = TikiLib::lib('categ');
 			$userlib = TikiLib::lib('user');
@@ -4215,7 +4222,7 @@ class TikiLib extends TikiDb_Bridge
 			$wikilib->wiki_rename_page($temppage, $name, false, $user);
 		}
 
-        $tracer->trace('tikilib.create_page', "** Returning");
+		$tracer->trace('tikilib.create_page', "** Returning");
 
 		return true;
 	}

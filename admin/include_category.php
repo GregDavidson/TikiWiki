@@ -22,6 +22,7 @@ if (!empty($_REQUEST['assignWikiCategories']) && $prefs['category_defaults']) {
 		foreach ($pages['data'] as $page) {
 			$categories = $categlib->get_object_categories('wiki page', $page['pageName']);
 			$page['href'] = "tiki-index.php?page=" . urlencode($page['pageName']);
+			var_log($categories, 'categories');
 			$categlib->update_object_categories($categories, $page['pageName'], 'wiki page', $page['description'], $page['pageName'], $page['href']);
 		}
 	}
