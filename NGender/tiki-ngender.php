@@ -1,29 +1,42 @@
 <?php
 // NGender Nicer Logging:
 
-function stack_context( $frame ) {
-	$context = '';
-	if (array_key_exists('file', $frame)) {
-		$context .= ( $frame['file'] . ' ' );
+// requires php5.6 for ... syntax
+// return first non-empty val followed by delimiter
+function delim_vals($delim, ...$vals) {
+	foreach ( $vals as $val ) {
+		if ($val !== '') return $val . $delim;
 	}
-	if (array_key_exists('line', $frame)) {
-		$context .= ( $frame['line'] . ' ' );
-	}
-	if (array_key_exists('class', $frame)) {
-		$context .= $frame['class'];
-		if (array_key_exists('type', $frame)) {
-			$context .= ( $frame['type'] );
-		} else {
-			$context .= ( '~>' );
-		}
-		$context .= $frame['function'];
-	}
-	return $context;
+	return '';
 }
 
-function var_log( $value, $label = '' ) {
-  $context = stack_context(debug_backtrace(true, 2)[1])
-		. ' ' . ($label === '' ? '' : ($label . ': '));
+function maybe_key_array($key, $ra, $dfalt='') {
+	return array_key_exists($key, $ra) ? $ra[$key] : $dfalt;
+}
+
+// create a context suitable for a log message
+// prefer explicit $file & $line if present
+// pull available context from stack $frame
+function log_context( $frame, $file = '', $line = '' ) {
+	return delim_vals(' ', $file, maybe_key_array('file', $frame))
+		. delim_vals(' ', $line, maybe_key_array('line', $frame))
+		. delim_vals(
+			maybe_key_array('type', $frame, '~>'),
+			maybe_key_array('class', $frame) )
+		. maybe_key_array('function', $frame);
+}
+
+// print a value to the error log along with context
+// - maybe change the name to log_value()?
+// prefer explicit context arguments
+// pull additional context from stack frame
+function var_log( $value, $label = '', $file = '', $line = '' ) {
+	$stack = debug_backtrace(true, 2);
+	$frame = ( ! is_array($stack) || count($stack) > 0 )
+				 ? array()
+				 : count($stack) > 1 ? $stack[1] : $stack[0];
+  $context = log_context( $frame, $file, $line )
+					 . ' ' . delim_vals(': ', $label);
 	ob_start();                    // start capture
 	var_dump( $value );           // dump value with type info
 	$lines = preg_split("/\r\n|\n|\r/", ob_get_contents());
@@ -50,6 +63,9 @@ function var_log( $value, $label = '' ) {
 	}
 }
 
+// print a stack dump to the error log
+// - maybe change the name to log_stack()?
+// only show scalar arguments
 function stack_log( $num_frames = 2 ) {
 	$stack = debug_backtrace(true, $num_frames);
 	$stack_len = count($stack);
@@ -69,7 +85,7 @@ function stack_log( $num_frames = 2 ) {
 			$delim = ', ';
 		}
 		$arglist .= ')';
-		error_log( stack_context($frame) . $arglist );
+		error_log( log_context($frame) . $arglist );
 	}
 }
 ?>
