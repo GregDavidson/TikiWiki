@@ -2,6 +2,9 @@
 # A simple start!
 cd /Tiki
 grep \
+	--exclude=changelog.txt \
+	--exclude=TAGS \
+	--exclude='TAGS-*' \
 	--exclude-dir=Limbo \
 	--exclude-dir=NGender \
 	--exclude-dir=installer \
