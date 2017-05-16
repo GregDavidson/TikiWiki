@@ -716,6 +716,7 @@ class CategLib extends ObjectLib
 	// get the parent categories of an object
 	function get_object_categories($type, $itemId, $parentId=-1, $jailed = true)
 	{
+	  // stack_log(); // NGender: We're getting way too many calls!
 		$ret = array();
 		if (!$itemId)
 			return $ret;

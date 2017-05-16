@@ -40,7 +40,10 @@ if ($prefs['feature_categories'] == 'y' && $prefs['categories_used_in_tpl'] == '
 			$objectCategoryIds = $categlib->get_object_categories($objectType, $key);
 			$objectCategoryIdsNoJail = $categlib->get_object_categories($objectType, $key, -1, false);
 		}
+		var_log($objectType, '$objectType', __FILE__, __LINE__);
 	}
 	$smarty->assign_by_ref('objectCategoryIds', $objectCategoryIds);
 	// use in smarty {if isset($objectCategoryIds) and in_array(54, $objectCategoryIds)} My stuff ..{/if}
+	var_log($objectCategoryIds, '$objectCategoryIds', __FILE__, __LINE__);
+	var_log($objectCategoryIdsNoJail, '$objectCategoryIdsNoJail', __FILE__, __LINE__);
 }

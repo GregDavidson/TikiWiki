@@ -614,10 +614,15 @@ class PreferencesLib
 			$contents = array_merge($contents, $info['options']);
 		}
 		if ( !is_array($info['tags']) ) { // sometimes $info['tags'] = NULL !!
-				error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'gettype(info[tags]) = ' . gettype($info['tags']));
-				error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'info[tags] = ' . print_r($info['tags'],1));
-				$info['tags'] = array(); // kludge!! What is the real fix??
+		  // var_log(maybe_key_array($info, 'tags', 'undefined'), '$info["tags"]');
+		  $info['tags'] = array(); // kludge!! What is the real fix??
 		}
+		if ( !is_array($contents) ) {
+		  // var_log($contents, '$contents');
+		  $contents = array();
+		}
+		// var_log(maybe_key_array($info, 'tags', 'undefined'), '$info["tags"]');
+		// var_log($contents, '$contents');
 		return array(
 			'object_type' => $typeFactory->identifier('preference'),
 			'object_id' => $typeFactory->identifier($pref),

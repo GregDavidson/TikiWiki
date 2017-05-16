@@ -1476,14 +1476,20 @@ if ($prefs['feature_freetags'] === 'y') {
 }
 if ($prefs['feature_categories'] === 'y') {
 	include_once ("categorize_list.php");
-
-	if (isset($_REQUEST["current_page_id"]) && $prefs['feature_wiki_categorize_structure'] === 'y' && $categlib->is_categorized('wiki page', $structure_info["pageName"])) {
+	// $smarty->assign_by_ref('categories', $categories);
+	if ( isset($_REQUEST["current_page_id"])
+			 && $prefs['feature_wiki_categorize_structure'] === 'y'
+			 && $categlib->is_categorized('wiki page', $structure_info["pageName"]) ) {
 		$categIds = $categlib->get_object_categories('wiki page', $structure_info["pageName"]);
 		$smarty->assign('categIds', $categIds);
 	} else {
 		$smarty->assign('categIds', array());
 	}
-	if (isset($_SERVER['HTTP_REFERER']) && strstr($_SERVER['HTTP_REFERER'], 'tiki-index.php') && !$tikilib->page_exists($_REQUEST["page"])) { // default the categs the page you come from for a new page
+	if ( isset($_SERVER['HTTP_REFERER'])
+			 && strstr($_SERVER['HTTP_REFERER'], 'tiki-index.php')
+			 && !$tikilib->page_exists($_REQUEST["page"]) ) {
+		// default the categs the page you come from for a new page
+		// NGender: Why would we ever want to do this??
 		if (preg_match('/page=([^\&]+)/', $_SERVER['HTTP_REFERER'], $ms))
 			$p = $ms[1];
 		else
@@ -1491,8 +1497,10 @@ if ($prefs['feature_categories'] === 'y') {
 		$cs = $categlib->get_object_categories('wiki page', $p);
 		// previous code assumed keys of $categories were contiguous!
 		foreach ($categories as $k => $c) {
-			if ( in_array($categories[$k]['categId'], $cs) )
+			if ( in_array($categories[$k]['categId'], $cs) ) {
 				$categories[$k]['incat'] = 'y';
+				var_log($categories[$k], '$categories[' . $k . ']');
+			}
 		}
 	}
 }
