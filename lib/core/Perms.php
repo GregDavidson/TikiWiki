@@ -114,6 +114,7 @@ class Perms
 	 * Provides a new accessor configured with the global settings and
 	 * a resolver appropriate to the context requested.
 	 */
+	// NGender: How can we have this take Stewards into consideration??
 	public static function get( $context = array() )
 	{
 		if (! is_array($context)) {
