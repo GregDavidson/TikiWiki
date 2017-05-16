@@ -2,6 +2,11 @@
 
 ** Status
 
+Stewards functionality for Wiki pages seems to work.
+- How can we test it better?
+- How can we make it less kludgy?
+- Can removing the kludginess help make scope > Wiki pages?
+
 *** Where am I using groups_category_model_permissions to set permissions?
 
 Need to add a procedure to tiki-ngender-schema.sql which
