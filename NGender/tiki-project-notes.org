@@ -2,22 +2,17 @@
 
 ** Status
 
-There's still at least one bug:
-	 
-Logged in as Greg, when I go to create a new page
-- I get a category tab even before I save the page
-- The category tab shows all categories 
-- My default category is already checked
-- I'm given Stewardship when I save the page
-- I can add new categories
+*** Where am I using groups_category_model_permissions to set permissions?
 
-Logged in as ZObserver, when I go to create a new page
-- I don't get a category tab before I save the page
-- I appear to have Stewardship when I save the page
-- I get a category tab when I go to edit the page again
-- The category tab shows all categories with my default checked
-- I appear to be able to check new categories
-- The new categories don't appear after I save the edit
+Need to add a procedure to tiki-ngender-schema.sql which
+sets category/group permissions according to TABLE
+groups_category_model_permissions.
+
+*** Kludges:
+
+**** categlib patch for Stewards
+
+		 Really should be fixed in Perms.php Perms::get()
 
 ** Categorical Stewardship Project
 
@@ -1176,3 +1171,48 @@ The problems with ZObserver were caused by an old cache
 which didn't know that ZObserver was a member of group
 Stewards!
 
+
+** Studying category code
+
+** lib/categories/categlib.php get_object_categories
+
+when $parentid is unknown, query =
+#+BEGIN_SRC sql
+select `categId`
+from `tiki_category_objects` tco, `tiki_categorized_objects` tto, `tiki_objects` o
+where tco.`catObjectId`=tto.`catObjectId` and o.`objectId`=tto.`catObjectId`
+and o.`type`=? and `itemId`=?"
+#+END_SRC
+Guess: This is getting a list of all categories that are
+actually in use, just in case there are categories that are
+somehow bogus!
+
+when $parentid is known, query =
+#+BEGIN_SRC sql
+select tc.`categId`
+from `tiki_category_objects` tco, `tiki_categorized_objects` tto, `tiki_objects` o,`tiki_categories` tc
+where tco.`catObjectId`=tto.`catObjectId` and o.`objectId`=tto.`catObjectId`
+and o.`type`=? and `itemId`=? and tc.`parentId` = ? and tc.`categId`=tco.`categId`
+#+END_SRC
+This implies that the $parentid being passed is a category parentId - huh?
+
+*** What is the function of TABLE tiki_categorized_objects ?
+
+#+BEGIN_SRC sql
+CREATE TABLE `tiki_categorized_objects` ( `catObjectId` int(11) PRIMARY KEY default '0', );
+#+END_SRC
+
+Crazyness:
+- Only one field
+- Primary Key with default 0
+- count = 120
+
+#+BEGIN_SRC sql
+select count(*) from tiki_categorized_objects;
+#+END_SRC
+
+#+BEGIN_SRC sql
+select distinct category_path(tc.categId) as `path`
+from tiki_categorized_objects tco, tiki_categories tc
+where tco.catObjectId = tc.categId order by `path`;
+#+END_SRC
