@@ -277,7 +277,7 @@ BEGIN
 	SELECT userId INTO found_ FROM users_users WHERE login = username_;
 	RETURN COALESCE(
 		NULLIF( found_, 0 ),
-		signal_no_int( CONCAT('Username ', username_, ' not found!') )
+		signal_no_int( CONCAT('Username ', COALESCE(username_, 'NULL'), ' not found!') )
 	);
 END//
 DELIMITER ;
@@ -296,7 +296,7 @@ BEGIN
 	SELECT login INTO found_ FROM users_users WHERE userId = user_;
 	RETURN COALESCE(
 		NULLIF( found_, ''),
-		signal_no_text( CONCAT('User ', user_, ' not found!') )
+		signal_no_text( CONCAT('User ', COALESCE(user_, -1), ' not found!') )
 	);
 END//
 DELIMITER ;
@@ -337,7 +337,7 @@ COMMENT 'return id of group of given name or raise exception if none'
 BEGIN
 	RETURN COALESCE(
 		try_group_named( groupname_ ),
-		signal_no_int( CONCAT('Groupname ', groupname_, ' not found!') )
+		signal_no_int( CONCAT('Groupname ', COALESCE(groupname_, 'NULL'), ' not found!') )
 	);
 END//
 DELIMITER ;
@@ -356,7 +356,7 @@ BEGIN
 	SELECT groupName INTO found_ FROM users_groups WHERE id = group_;
 	RETURN COALESCE(
 		NULLIF( found_, '' ),
-		signal_no_text( CONCAT('Group ', group_, ' not found!') )
+		signal_no_text( CONCAT('Group ', COALESCE(group_, -1), ' not found!') )
 	);
 END//
 DELIMITER ;
@@ -403,7 +403,10 @@ BEGIN
 	DECLARE msg_ TEXT DEFAULT 'category_named_parent: ';
 	RETURN COALESCE(
 		try_category_named_parent(category_name, parent),
-		signal_no_int( CONCAT(msg_, category_name, ' parent ', parent, ' not found!') )
+		signal_no_int( CONCAT(
+				msg_, COALESCE(category_name, 'NULL'),
+				' parent ', COALESCE(parent, -1), ' not found!'
+		) )
 	);
 END//
 DELIMITER ;
@@ -424,7 +427,7 @@ BEGIN
 	SELECT name INTO found_ FROM tiki_categories WHERE categId = category_;
 	RETURN COALESCE(
 		NULLIF( found_, '' ),
-		signal_no_text( CONCAT('Category ', category_, ' not found!') )
+		signal_no_text( CONCAT('Category ', COALESCE(category_, -1), ' not found!') )
 	);
 END//
 DELIMITER ;
@@ -452,7 +455,7 @@ BEGIN
 	SELECT parentId INTO found_ FROM tiki_categories WHERE categId = category_;
 	RETURN COALESCE(
 		NULLIF( found_, -1 ),
-		signal_no_int( CONCAT('Category ', category_, ' not found!') )
+		signal_no_int( CONCAT('Category ', COALESCE(category_, -1), ' not found!') )
 	);
 END//
 DELIMITER ;
@@ -765,11 +768,13 @@ BEGIN
 	DECLARE chuck_ INT;
   -- Assert: is_user(user_):
 	IF COALESCE(user_name(user_), '') = '' THEN
-		SET chuck_ = signal_no_int( CONCAT(msg_, 'User ', user_, ' not found!') );
+		SET chuck_ = signal_no_int( CONCAT(msg_, 'User ', COALESCE(user_, -1), ' not found!') );
 	END IF;
   -- Assert: is_groupname(groupname_):
 	IF COALESCE(group_named(groupname_), 0) = 0 THEN
-		SET chuck_ = signal_no_int( CONCAT(msg_, 'Group ', groupname_, ' not found!') );
+		SET chuck_ = signal_no_int( CONCAT(
+				msg_, 'Group ', COALESCE(groupname_, 'NULL'), ' not found!'
+		) );
 	END IF;
 	INSERT IGNORE INTO `users_usergroups`(userId, groupName, created)
 	VALUES ( user_, groupname_, UNIX_TIMESTAMP() );
