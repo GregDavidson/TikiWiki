@@ -1668,6 +1668,14 @@ class CategLib extends ObjectLib
 	{
 		stack_log(2);
 		global $prefs, $user;
+		$userlib = TikiLib::lib('user');
+
+		if (empty($categories)) {
+			$forcedcat = $userlib->get_user_group_default_category($user);
+			if ( !empty($forcedcat) ) {
+				$categories[] = $forcedcat;
+			}
+		}
 
 		$manip = new Category_Manipulator($objType, $objId);
 		if ($override_perms) {
