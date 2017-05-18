@@ -310,7 +310,7 @@ class TaskLib extends TikiLib
 		, $show_completed = false, $use_admin_mode = false
 	)
 	{
-		$list_tasks_start = microtime();
+		$list_tasks_start = microtime(true);
 		$values = array();
 		if ($use_admin_mode) {
 			$query  = "FROM `tiki_user_tasks_history` AS `t_history`, `tiki_user_tasks` AS `t_head` ";
@@ -430,7 +430,7 @@ class TaskLib extends TikiLib
 		$retval["data"] = $tasklist;
 		$retval["cant"] = $cant;
 
-		$list_tasks_end = microtime();
+		$list_tasks_end = microtime(true);
 		$list_tasks_time = $list_tasks_end - $list_tasks_start;
 		return $retval;
 	}

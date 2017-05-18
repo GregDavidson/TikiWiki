@@ -500,12 +500,16 @@ class WikiRenderer
 	{
 		global $prefs;
 		$categlib = TikiLib::lib('categ');
+		$userlib = TikiLib::lib('user');
 
 		$cats = array();
 		if ($prefs['feature_categories'] == 'y' && $categlib->is_categorized('wiki page', $this->page)) {
 			$this->smartyassign('is_categorized', 'y');
 			if ($prefs['feature_categoryobjects'] == 'y' || $prefs['feature_categorypath'] == 'y') {
-				$cats = $categlib->get_object_categories('wiki page', $this->page);
+				// NGender, was:
+				// $cats = $categlib->get_object_categories('wiki page', $this->page);
+				// NGender: Does this make a difference??  What would $jailed mean here??
+				$cats = $categlib->get_object_categories('wiki page', $this->page, -1, !$userlib->is_steward_of($this->page));
 			}
 			if ($prefs['category_morelikethis_algorithm'] != '') {
 				$freetaglib = TikiLib::lib('freetag');
@@ -514,6 +518,7 @@ class WikiRenderer
 			}
 			if ($prefs['feature_categorypath'] == 'y') {
 				$display_catpath = $categlib->get_categorypath($cats);
+				var_log($display_catpath, '$display_catpath');
 				$this->smartyassign('display_catpath', $display_catpath);
 			}
 			// Display current category objects or not (like {category()})

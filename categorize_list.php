@@ -39,7 +39,8 @@ if ( $prefs['feature_categories'] == 'y' && isset($cat_type) && isset($cat_objid
 	$user_is_steward = $cat_object_exists
 									 ? $userlib->is_steward_of($cat_objid)
 									 : $userlib->user_is_in_group($user, 'Stewards');
-	
+	var_log($cat_object_exists, '$cat_object_exists', __FILE__, __LINE__);
+	var_log($user_is_steward, '$user_is_steward', __FILE__, __LINE__);
 	if ( $cat_type == 'wiki page' || $cat_type == 'blog'
 			 || $cat_type == 'image gallery' || $cat_type == 'mypage' ) {
 		$ext = ($cat_type == 'wiki page')? 'wiki':str_replace(' ', '_', $cat_type);

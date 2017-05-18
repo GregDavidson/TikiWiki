@@ -17,9 +17,12 @@ $dieInsteadOfForwardingWithHeader = false;
 
 global $prefs;
 
+error_log(__FILE__ . ' ' . __LINE__);
 require_once 'NGender/tiki-ngender.php';
+error_log(__FILE__ . ' ' . __LINE__);
 require_once('lib/debug/Tracer.php');
-// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
+error_log(__FILE__ . ' ' . __LINE__);
+var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 
 $inputConfiguration = array(
 	array( 'staticKeyFilters' => array(
@@ -31,7 +34,7 @@ $inputConfiguration = array(
         ($prefs['feature_wikilingo'] == 'n' ? 'edit' : ''),
 	) ),
 );
-// var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
+var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)');
 
 $section = "wiki page";
 $section_class = "tiki_wiki_page manage";	// This will be body class instead of $section
@@ -204,7 +207,9 @@ guess_new_page_attributes_from_parent_pages($page, $info);
 
 if ($translation_mode === 'n' && translationsToThisPageAreInProgress($info['page_id'])) {
 	$smarty->assign('prompt_for_edit_or_translate', 'y');
+error_log(__FILE__ . ' ' . __LINE__);
 	include_once('modules/mod-func-translation.php');
+error_log(__FILE__ . ' ' . __LINE__);
 	execute_module_translation();
 } else {
 	$smarty->assign('prompt_for_edit_or_translate', 'n');
@@ -230,6 +235,7 @@ if (isset($_REQUEST["current_page_id"]) && empty($info)) {
 		(($tiki_p_edit_structures != 'y' &&
 			!$tikilib->user_has_perm_on_object($user, $structure_info["pageName"], 'wiki page', 'tiki_p_edit_structures')))) {
 		$smarty->assign('errortype', 401);
+		var_log('structure_info');
 		$smarty->assign('msg', tra("You do not have permission to edit this page."));
 		$smarty->display("error.tpl");
 		die;
@@ -254,13 +260,8 @@ $tikilib->get_perm_object($page, 'wiki page', $info, true);
 // var_log($tikilib->get_user_groups($user),  'Users groups');
 
 if ( !$tikilib->page_exists($page) && $userlib->user_is_in_group($user, 'Stewards') ) {
-	// anything to do here?
-} elseif ($tiki_p_edit !== 'y' && (!empty($info) || empty($structure_info))) {
-	// var_log($tiki_p_edit, 'tiki_p_edit');
-	// var_log($info, 'info');
-	// var_log($structure_info, 'structure_info');
-	// var_log($user, 'user');
-	// var_log($object, 'object');
+	// Stewards get to create new pages!
+} elseif ( ($tiki_p_edit !== 'y' && (!empty($info) || empty($structure_info))) ) {
 	if (empty($user)) {
 		$cachelib = TikiLib::lib('cache');
 		$cacheName = $tikilib->get_ip_address().$tikilib->now;
@@ -268,6 +269,7 @@ if ( !$tikilib->page_exists($page) && $userlib->user_is_in_group($user, 'Steward
 		$smarty->assign('urllogin', "tiki-editpage.php?cache=$cacheName");
 	}
 	$smarty->assign('errortype', 401);
+	var_log('structures');
 	$smarty->assign('msg', tra("You do not have permission to edit this page."));
 	$smarty->display("error.tpl");
 	die;
@@ -385,8 +387,11 @@ if ($prefs['feature_warn_on_edit'] === 'y') {
 		}
 	}
 	if ($editpageconflict === 'y' && !isset($_REQUEST["conflictoverride"]) ) {
+error_log(__FILE__ . ' ' . __LINE__);
 		include_once('lib/smarty_tiki/modifier.userlink.php');
+error_log(__FILE__ . ' ' . __LINE__);
         include_once('lib/smarty_tiki/modifier.username.php');
+error_log(__FILE__ . ' ' . __LINE__);
 		$msg = tr("This page is being edited by %0. Please check with the user before editing the page,	otherwise the changes will be stored as two separate versions in the history and you will have to manually merge them later.", smarty_modifier_username($semUser));
 		$msg .= '<br /><br /><a href="tiki-editpage.php?page=';
 		$msg .= urlencode($page);
@@ -727,7 +732,9 @@ if (isset($_REQUEST["edit"])) {
 					list($real_start, $real_len) = $tikilib->get_wiki_section($info['data'], $_REQUEST['hdr']);
 				}
 			} else {
+error_log(__FILE__ . ' ' . __LINE__);
 				include_once('lib/wiki-plugins/wikiplugin_split.php');
+error_log(__FILE__ . ' ' . __LINE__);
 				list($real_start, $real_len) = wikiplugin_split_cell($info['data'], $_REQUEST['pos'], $_REQUEST['cell']);
 			}
 			$edit_data = substr($info['data'], $real_start, $real_len);
@@ -1132,7 +1139,9 @@ if (isset($_REQUEST["save"])
 		&& !empty($_REQUEST['copyrightTitle'])
 	) {
 
+error_log(__FILE__ . ' ' . __LINE__);
 		include_once("lib/copyrights/copyrightslib.php");
+error_log(__FILE__ . ' ' . __LINE__);
 		$copyrightslib = new CopyrightsLib;
 		$copyrightYear = $_REQUEST['copyrightYear'];
 		$copyrightTitle = $_REQUEST['copyrightTitle'];
@@ -1213,7 +1222,9 @@ if (isset($_REQUEST["save"])
 					list($real_start, $real_len) = $tikilib->get_wiki_section($info['data'], $_REQUEST['hdr']);
 				}
 			} else {
+error_log(__FILE__ . ' ' . __LINE__);
 				include_once('lib/wiki-plugins/wikiplugin_split.php');
+error_log(__FILE__ . ' ' . __LINE__);
 				list($real_start, $real_len) = wikiplugin_split_cell($info['data'], $_REQUEST['pos'], $_REQUEST['cell']);
 			}
 			if ($edit[strlen($edit) - 1] !== "\n")

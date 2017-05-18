@@ -430,6 +430,7 @@ class TikiAccessLib extends TikiLib
 			}
 			$smarty->display("error.tpl");
 		}
+		var_log('die');
 		die;
 	}
 

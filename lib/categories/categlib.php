@@ -716,10 +716,10 @@ class CategLib extends ObjectLib
 	// get the parent categories of an object
 	function get_object_categories($type, $itemId, $parentId=-1, $jailed = true)
 	{
-	  // stack_log(); // NGender: We're getting way too many calls!
 		$ret = array();
 		if (!$itemId)
 			return $ret;
+	  stack_log(); // NGender: We're getting way too many calls!
 		if ($parentId == -1) {
 			$query = "select `categId` from `tiki_category_objects` tco, `tiki_categorized_objects` tto, `tiki_objects` o
 				where tco.`catObjectId`=tto.`catObjectId` and o.`objectId`=tto.`catObjectId` and o.`type`=? and `itemId`=?";
@@ -1157,6 +1157,15 @@ class CategLib extends ObjectLib
 			}
 
 			// Check if user has permission to view the page
+			// NGender:
+			// Shouldn't "page" be "category"??
+			// When and how does one get permission to view a category?
+			// i.e. when did we get permission to view our default categories?
+			// And how can we arrange for everyone to have permission to view
+			// categories when appropriate?
+			// Stewards won't necessarily be allowed to browse categories
+			// they've associated with their pages.  Ideally they'd be able to see
+			// a filtered view of the category, but for now we can live with this.
 			$perms = Perms::get(array( 'type' => 'category', 'object' => $categId ));
 			$canView = $perms->view_category;
 
@@ -1671,6 +1680,7 @@ class CategLib extends ObjectLib
 		$userlib = TikiLib::lib('user');
 
 		if (empty($categories)) {
+			$categories = array();
 			$forcedcat = $userlib->get_user_group_default_category($user);
 			if ( !empty($forcedcat) ) {
 				$categories[] = $forcedcat;

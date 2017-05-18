@@ -4153,7 +4153,7 @@ class TikiLib extends TikiDb_Bridge
 		$page_id = $pages->insert($insertData);
 		// Categorical Stewards // NGender
 		// Shall we also require user to be member of group Steward?
-		//var_log(isset($prefs['feature_ngender_stewards']), 'isset(prefs[feature_ngender_stewards])');
+		var_log(isset($prefs['feature_ngender_stewards']), 'isset(prefs[feature_ngender_stewards])');
 		if ( $prefs['feature_ngender_stewards'] == 'y' ) {
 	    $categlib = TikiLib::lib('categ');
 			$userlib = TikiLib::lib('user');
