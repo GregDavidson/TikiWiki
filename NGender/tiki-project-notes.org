@@ -10,19 +10,10 @@ Stewards functionality for Wiki pages seems to work.
 Need to test
 -- CALL establish_group_category_models();
 
-The first time we got:
--- MariaDB [tiki]> ERROR 1231 (42000):
--- Variable 'MESSAGE_TEXT' can't be set to the value of 'NULL'
+*** Wiki Page Category Paths not necessarily links
+Non-Default categories of ZObserver are showing up but are
+not links.  
 
-I then put COALESCE around all of the possbily NULL values being passed to
-- signal_no_int() :: defaulting to -1
-- signal_no_text() :: defaulting to 'NULL'
-
-The second time we got:
--- MariaDB [tiki]> MariaDB [tiki]> Query OK, 0 rows affected (0.00 sec)
-
-We should have gotten whatever exception that wasn't
-properly thrown before, but we got none!
 
 *** Kludges:
 
