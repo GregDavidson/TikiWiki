@@ -22,9 +22,28 @@ When I was showing things to Kim last night (2017-6-6), a
 couple of SkillsBank pages were mysteriously replaced by new
 empty contents.  Rolling back fixed the problem.
 
+OK, this just happened!  I went to edit a page to add
+category SkillsBank
+- https://ngender.org/tiki-editpage.php?page=Projects%3A+Business+Consulting
+and when I went to edit it, it was empty!  I had to roll it
+back.  Interestingly: I went ahead and added SkillsBank to
+the bad version and when I did the rollback, it was still
+there, so apparently category changes are not subject to
+rollback.
+
+It's looking like I'm failing to fetch the old content to
+initialize the data!  But only sometimes.  I'm not seeing a
+pattern.
+
 Note: Do not try to delete current page version.  Instead,
 roll back to the most recent version, check that it worked,
 and then if desired delete the (now) previous version.
+
+I also was just looking at 
+https://ngender.org/tiki-index.php?page=The+Skills+Bank
+and it wasn't showing any categories, even after refreshing.
+After going in to edit and seeing that there were four
+categories.  After I confirmed the edit, they show!
 
 I suspect that many of the intended category permissions are not yet correct.
 
@@ -42,6 +61,9 @@ Stewards functionality for Wiki pages seems to work.
 How to test that
 -- CALL establish_group_category_models();
 actually did its job?
+
+I need some SQL code to test that all pages are associated
+with at least one of the categories allowing editing!
 
 *** Wiki Page Category Paths not necessarily links
 Non-Default categories of ZObserver are showing up but are
