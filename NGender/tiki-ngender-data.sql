@@ -1,5 +1,17 @@
--- after everything is set up:
--- CALL establish_group_category_models();
+-- SQL Code for managing the NGender.org Tiki
+-- Author: J. Greg Davidson, 2017
+-- All rights reserved
+
+-- Support for wrangling Tiki Category permissions
+-- Depends on
+-- - tiki-ngender.sql
+-- - tiki-ngender-schema.sql
+
+-- This should mostly be calls on the procedures and functions
+-- defined in our generic SQL code.
+
+-- After filling or modifying table group_category_models
+-- - CALL establish_group_category_models();
 
 -- We need the model Groups and Categories
 -- Their permissions will have to be manually set by an administrator
@@ -32,6 +44,8 @@ CALL project_group_category_models('SkillsBank', 'SkillsBankPartners', 'PartnerR
 CALL project_group_category_models('SkillsBank', 'SkillsBankPartners', 'PartnerEditable', 'Project_Editors', 'Editable');
 -- CALL project_group_category_models('SkillsBank', 'SkillsBankAdmins', 'Admin', 'Project_Admins', 'Admin');
 
+-- LearnerReadable should really be LearnerPostable!!! FIX!!!
+
 -- we just unnested these categories to eliminate inheritance
 CALL project_group_category_models('LOYL', 'LOYL_Observers', 'Observer_Readable', 'Project_Readers', 'Readable');
 CALL project_group_category_models('LOYL', 'LOYL_Observers', 'Observer_Postable', 'Project_Posters', 'Postable');
@@ -45,14 +59,18 @@ CALL project_group_category_models('LOYL', 'LOYL_Partners', 'Partner_Editable', 
 
 -- Figure out what the inheritance from Public is doing and either get the nesting right or unnest these:
 
--- CALL project_group_category_models('Public::SomeClues', 'SomeCluesObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
--- CALL project_group_category_models('Public::SomeClues', 'SomeCluesDispensors', 'PartnerWritable', 'Project_Editors', 'Editable');
+CALL project_group_category_models('Public::SomeClues', 'SomeCluesObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
+CALL project_group_category_models('Public::SomeClues', 'SomeCluesDispensors', 'PartnerEditable', 'Project_Editors', 'Editable');
 -- CALL project_group_category_models('Public::SomeClues', 'SomeCluesAdmins', 'Admin', 'Project_Admins', 'Admin');
-
--- CALL project_group_category_models('Public::Abundance', 'AbundanceObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
--- CALL project_group_category_models('Public::Abundance', 'Abundancers', 'Editable', 'Project_Editors', 'Editable');
+CALL project_group_category_models('Public::Abundance', 'AbundanceObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
+CALL project_group_category_models('Public::Abundance', 'Abundancers', 'Editable', 'Project_Editors', 'Editable');
 -- CALL project_group_category_models('Abundance', 'AbundanceAdmins', 'Admin', 'Project_Admins', 'Admin');
 
 -- CALL project_group_category_models('Public::UncommonKnowledge', 'UncommonKnowledgeObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
 -- CALL project_group_category_models('Public::UncommonKnowledge', 'Uncommoners', 'Editable', 'Project_Editors', 'Editable');
 -- CALL project_group_category_models('UncommonKnowledge', 'UncommonKnowledgeAdmins', 'Admin', 'Project_Admins', 'Admin');
+
+SELECT * FROM group_category_models_view;
+
+-- CALL establish_group_category_models();
+
