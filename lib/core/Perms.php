@@ -101,14 +101,14 @@
  */
 class Perms
 {
-	private static $instance;
+	private static $instance;			// set by Self::set
 
-	private $prefix = '';
-	private $groups = array();
-	private $factories = array();
-	private $checkSequence = null;
+	private $prefix = '';					// initializes new Accessor, for backwards compatibility
+	private $groups = array();		// [group,...], initializes new Accessor
+	private $factories = array();	// [ Perms_ResolverFactory,... ], used to get Resolver
+	private $checkSequence = null; // [ Perms_Check,... ], initializes new Accessor 
 
-	private $hashes = array();
+	private $hashes = array();		// [ hash=>PermsResolver,... ]
 
 	/** 
 	 * Provides a new accessor configured with the global settings and
