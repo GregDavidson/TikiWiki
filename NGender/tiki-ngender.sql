@@ -272,7 +272,6 @@ FUNCTION `user_named`(username_ TEXT)
 RETURNS INT READS SQL DATA DETERMINISTIC
 COMMENT 'return id of user of given name or raise exception if none'
 BEGIN
-	DECLARE msg_ TEXT;
 	DECLARE found_ INT DEFAULT 0;
 	SELECT userId INTO found_ FROM users_users WHERE login = username_;
 	RETURN COALESCE(
@@ -313,6 +312,24 @@ CALL assert_fail('user_named(\'Huh?\')');
 -- ** Group Names <-> Group IDs
 
 -- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `group_id`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `group_id`(group_ INT)
+RETURNS int READS SQL DATA DETERMINISTIC
+COMMENT 'return argument unchanged or raise exception if no such group'
+BEGIN
+	DECLARE found_ int DEFAULT 0;
+	SELECT id INTO found_ FROM users_groups WHERE id = group_;
+	RETURN COALESCE(
+		NULLIF( found_, 0 ),
+		signal_no_int( CONCAT('Group ', COALESCE(group_, -1), ' not found!') )
+	);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `try_group_named`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
@@ -351,7 +368,6 @@ FUNCTION `group_name`(group_ INT)
 RETURNS TEXT READS SQL DATA DETERMINISTIC
 COMMENT 'return name of group of given id or raise exception if none'
 BEGIN
-	DECLARE msg_ TEXT;
 	DECLARE found_ TEXT DEFAULT '';
 	SELECT groupName INTO found_ FROM users_groups WHERE id = group_;
 	RETURN COALESCE(
@@ -373,6 +389,24 @@ CALL assert_fail('group_named(\'Huh?\')');
 -- ** Category Names <-> Category IDs
 
 -- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `category_id`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `category_id`(category_ INT)
+RETURNS int READS SQL DATA DETERMINISTIC
+COMMENT 'return argument unchanged or raise exception if no such category'
+BEGIN
+	DECLARE found_ int DEFAULT 0;
+	SELECT categId INTO found_ FROM tiki_categories WHERE categId = category_;
+	RETURN COALESCE(
+		NULLIF( found_, 0 ),
+		signal_no_int( CONCAT('Category ', COALESCE(category_, -1), ' not found!') )
+	);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `try_category_named_parent`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
@@ -380,7 +414,6 @@ FUNCTION `try_category_named_parent`(category_name TEXT, parent INT)
 RETURNS INT READS SQL DATA DETERMINISTIC
 COMMENT 'return id of category of given name and parent id or NULL if none'
 BEGIN
-	DECLARE msg_ TEXT DEFAULT 'category_named_parent: ';
 	DECLARE found_ INT DEFAULT 0;
 	SELECT categId INTO found_ FROM tiki_categories
 	  WHERE name = category_name AND parentId = parent;
@@ -422,7 +455,6 @@ FUNCTION `category_name`(category_ INT)
 RETURNS TEXT READS SQL DATA DETERMINISTIC
 COMMENT 'return category name (not unique!) given id - or raise exception if none; see also category_path()'
 BEGIN
-	DECLARE msg_ TEXT;
 	DECLARE found_ TEXT DEFAULT '';
 	SELECT name INTO found_ FROM tiki_categories WHERE categId = category_;
 	RETURN COALESCE(
@@ -875,7 +907,6 @@ PROCEDURE `make_stewards_be_stewards`()
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'Ensure users in group Stewards initiated into Categorical Stewards'
 BEGIN
- DECLARE msg_ TEXT DEFAULT 'make_stewards_be_stewards: ';
  DECLARE stewards_ int DEFAULT group_named('Stewards');
  DECLARE found_ int DEFAULT 0;
  DECLARE done_ int DEFAULT 0;
@@ -902,7 +933,6 @@ PROCEDURE `add_everyone_to_group_stewards`()
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'handy if nearly all users should be Stewards; be sure to remove group Stewards from any users who should not be afterwards'
 BEGIN
- DECLARE msg_ TEXT DEFAULT 'add_everyone_to_group_stewards: ';
  DECLARE stewards_ int DEFAULT group_named('Stewards');
  DECLARE found_ int DEFAULT 0;
  DECLARE done_ int DEFAULT 0;
