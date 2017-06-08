@@ -17,6 +17,10 @@ $dieInsteadOfForwardingWithHeader = false;
 
 global $prefs;
 
+// Example red link url (click to create new page):
+// https://ngender.org/tiki-editpage.php?page=Touch+Blog-O-Sphere
+// Example Edit button on existing page:
+// https://ngender.org/tiki-editpage.php?page=User%3AGreg
 error_log(__FILE__ . ' ' . __LINE__);
 require_once 'NGender/tiki-ngender.php';
 error_log(__FILE__ . ' ' . __LINE__);
@@ -260,7 +264,7 @@ $tikilib->get_perm_object($page, 'wiki page', $info, true);
 // var_log($tikilib->get_user_groups($user),  'Users groups');
 
 if ( !$tikilib->page_exists($page) && $userlib->user_is_in_group($user, 'Stewards') ) {
-	// Stewards get to create new pages!
+	// NGender: Stewards get to create new pages!
 } elseif ( ($tiki_p_edit !== 'y' && (!empty($info) || empty($structure_info))) ) {
 	if (empty($user)) {
 		$cachelib = TikiLib::lib('cache');
