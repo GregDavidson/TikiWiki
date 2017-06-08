@@ -1,3 +1,11 @@
+-- SQL Code for NGender Tiki Wiki Contributions
+-- License: Same as regular Tiki Wiki (tiki.org) License
+-- Author: J. Greg Davidson, 2017
+
+-- Support for wrangling Tiki Category permissions
+-- Depends on tiki-ngender.sql but NOT on feature_ngender_stewards
+-- Not dependent on specific NGender Categories, though!
+
 DROP TABLE IF EXISTS `group_category_models`;
 CREATE TABLE `group_category_models` (
   `group_` int(11) NOT NULL REFERENCES users_groups(id),
@@ -86,4 +94,59 @@ DELIMITER ;
 -- We could do with less permissions with
 -- - the right inheritance model
 -- - more categories assigned to each object
--- Do we want to grant the project admins rights over all project categories or only some?
+-- Do we want to grant the project admins rights over all
+-- project categories or only some?
+
+-- ** Various procedures designed to automate common tasks
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `add_category_if_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `add_category_if_category`(add_cat_ int, has_cat_ int)
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'associate category add_cat_ with all objects associated with category has_cat_'
+BEGIN
+ DECLARE has_cat int DEFAULT category_id(has_cat_);
+ DECLARE add_cat int DEFAULT category_id(add_cat_);
+ DECLARE found_ int DEFAULT 0;
+ DECLARE done_ int DEFAULT 0;
+ DEClARE cursor_ CURSOR FOR
+ SELECT catObjectId FROM tiki_category_objects WHERE categId = has_cat;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+ OPEN cursor_;
+ FETCH cursor_ INTO found_;
+ WHILE NOT done_ DO
+ 	 CALL add_object_category(found_, add_cat);
+	 FETCH cursor_ INTO found_;
+ END WHILE;
+ CLOSE cursor_;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `drop_category_if_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `drop_category_if_category`(drop_cat_ int, has_cat_ int)
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'drop category drop_cat_ with all objects associated with category has_cat_'
+BEGIN
+ DECLARE has_cat int DEFAULT category_id(has_cat_);
+ DECLARE drop_cat int DEFAULT category_id(drop_cat_);
+ DECLARE found_ int DEFAULT 0;
+ DECLARE done_ int DEFAULT 0;
+ DEClARE cursor_ CURSOR FOR
+ SELECT catObjectId FROM tiki_category_objects WHERE categId = has_cat;
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+ OPEN cursor_;
+ FETCH cursor_ INTO found_;
+ WHILE NOT done_ DO
+ 	 CALL drop_object_category(found_, drop_cat);
+	 FETCH cursor_ INTO found_;
+ END WHILE;
+ CLOSE cursor_;
+END//
+DELIMITER ;
+-- #+END_SRC
