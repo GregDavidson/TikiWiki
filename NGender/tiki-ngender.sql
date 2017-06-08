@@ -386,7 +386,27 @@ CALL assert_fail('group_named(\'\')');
 CALL assert_fail('group_named(\'Huh?\')');
 -- #+END_SRC
 
--- ** Category Names <-> Category IDs
+-- ** Object Ids <-> Object IDs -- test for existence
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `object_id`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `object_id`(object_ INT)
+RETURNS int READS SQL DATA DETERMINISTIC
+COMMENT 'return argument unchanged or raise exception if no such object'
+BEGIN
+	DECLARE found_ int DEFAULT 0;
+	SELECT objectId INTO found_ FROM tiki_objects WHERE objectId = object_;
+	RETURN COALESCE(
+		NULLIF( found_, 0 ),
+		signal_no_int( CONCAT('Object ', COALESCE(object_, -1), ' not found!') )
+	);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- ** Category IDs/Names/Paths <-> Category IDs
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `category_id`;
@@ -605,6 +625,48 @@ CALL assert_true('@y =  @w');
 SET @x = category_of_path('User::Test');
 SET @y = 'root of test account default categories';
 CALL assert_true('@x =  ensure_categorypath_comment(\'User::Test\', @y)');
+
+-- ** add and drop category <-> object associations
+
+-- Note:
+-- - these need testing!!
+-- - there are 6 catObjectid rows in tiki_categorized_objects
+--   which do NOT correspond to any rows in tiki_category_objects
+--   with that catObjectId field value!!
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `add_object_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `add_object_category`(obj_ int, cat_ int)
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'associate object of given objectId with category of given categId'
+BEGIN
+	INSERT IGNORE INTO tiki_category_objects(catObjectId, categId)
+	VALUES ( object_id(obj_), category_id(cat_) );
+	INSERT IGNORE INTO tiki_categorized_objects(catObjectId) VALUES (obj_);
+End//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `drop_object_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `drop_object_category`(obj_ int, cat_ int)
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'disassociate object of given objectId from category of given categId'
+BEGIN
+	DECLARE found_ INT DEFAULT 0;
+	DELETE IGNORE FROM tiki_category_objects
+	WHERE catObjectId = object_id(obj_) AND categId = category_id(cat_);
+	SELECT 1 INTO found_ FROM tiki_category_objects WHERE catObjectId = obj_;
+	IF found_ = 0 THEN
+		DELETE IGNORE FROM tiki_categorized_objects WHERE catObjectId = obj_;
+	END IF;
+End//
+DELIMITER ;
+-- #+END_SRC
 
 -- * IDs|Names --> Properties
 
