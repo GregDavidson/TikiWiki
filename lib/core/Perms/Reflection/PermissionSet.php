@@ -7,7 +7,7 @@
 
 class Perms_Reflection_PermissionSet
 {
-	private $set = array();
+	private $set = array();				// { group: [permission...] }
 
 	function add( $group, $permission )
 	{
