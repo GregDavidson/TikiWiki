@@ -626,13 +626,30 @@ SET @x = category_of_path('User::Test');
 SET @y = 'root of test account default categories';
 CALL assert_true('@x =  ensure_categorypath_comment(\'User::Test\', @y)');
 
--- ** add and drop category <-> object associations
+-- ** add test/add/drop category <-> object associations
 
 -- Note:
 -- - these need testing!!
 -- - there are 6 catObjectid rows in tiki_categorized_objects
 --   which do NOT correspond to any rows in tiki_category_objects
 --   with that catObjectId field value!!
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `has_object_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `has_object_category`(obj_ int, cat_ int)
+	RETURNS boolean
+  READS SQL DATA
+	COMMENT 'Does given object have given category?'
+BEGIN
+	DECLARE found_ INT DEFAULT 0;
+	SELECT 1 INTO found_ FROM tiki_category_objects
+	WHERE catObjectId = object_id(obj_) AND categId = category_id(cat_) LIMIT 1;
+	RETURN found_ = 1;
+End//
+DELIMITER ;
+-- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `add_object_category`;
@@ -660,7 +677,7 @@ BEGIN
 	DECLARE found_ INT DEFAULT 0;
 	DELETE IGNORE FROM tiki_category_objects
 	WHERE catObjectId = object_id(obj_) AND categId = category_id(cat_);
-	SELECT 1 INTO found_ FROM tiki_category_objects WHERE catObjectId = obj_;
+	SELECT 1 INTO found_ FROM tiki_category_objects WHERE catObjectId = obj_ LIMIT 1;
 	IF found_ = 0 THEN
 		DELETE IGNORE FROM tiki_categorized_objects WHERE catObjectId = obj_;
 	END IF;
