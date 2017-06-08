@@ -2,13 +2,46 @@
 
 ** Status
 
+I don't yet have a full understanding of what happens with
+permissions when a page is created to produce
+tiki_p_edit='y'.
+
+Note: Unlike other objects, with wiki pages, tiki_p_edit is
+used for permission to create pages *and* permission to edit
+pages!
+
+I don't yet have a full understanding of how tiki_p_edit='y'
+is produced by the permission system for an existing object.
+	 
+I don't yet have a full understanding of how the permissions
+to show and to allow updating of categories on wiki pages
+(or anything else) are produced by the permission system for
+an existing object or for an object about to be created.
+
+When I was showing things to Kim last night (2017-6-6), a
+couple of SkillsBank pages were mysteriously replaced by new
+empty contents.  Rolling back fixed the problem.
+
+Note: Do not try to delete current page version.  Instead,
+roll back to the most recent version, check that it worked,
+and then if desired delete the (now) previous version.
+
+I suspect that many of the intended category permissions are not yet correct.
+
+I know that many pages do not yet have the right categories.
+
+Some users still have too many permissions, e.g. Editor, in
+order to allow them to function while the permissions are
+not yet quite right.
+
 Stewards functionality for Wiki pages seems to work.
 - How can we test it better?
 - How can we make it less kludgy?
 - Can removing the kludginess help make scope > Wiki pages?
 
-Need to test
+How to test that
 -- CALL establish_group_category_models();
+actually did its job?
 
 *** Wiki Page Category Paths not necessarily links
 Non-Default categories of ZObserver are showing up but are
@@ -27,34 +60,55 @@ Purpose: Leverage Default Groups with their Default
 Categories to give users control over objects they create
 and/or objects associated with their default category.
 
-Currently the feature is invoked when
-(1) the user has a default category and
-(2) feature_categorical_stewardship == 'y'
+The full set of ngender_stewards features are invoked when
+(1) feature_ngender_stewards == 'y'
+(2) the user is a member of group Stewards
+(3) the user has a default group and category
 
-Should we also require the user to be a member of Group Steward?
+Stewards are allowed to create new objects - currently only wiki pages!!
+New objects will be associated with the user's default category.
 
-Possible conditions under which we should create default Groups and Categories
-- the user is a member of Group Steward
-- feature_categorical_stewardship == 'y'
-- some other feature
+The SQL procedure make_stewards_be_stewards() will ensure
+that
+1. All Stewards have a default group named User_USERNAME.
+2. All Steward's default gruops have a default category named User::USERNAME.
+3. The permissions between a Steward's default group and
+their default category are
+- copied from group Stewards <-> category User::Test::Steward
+- which should allow all or nearly all permissions
 
 Additional questions:
-- Should we create Group Steward if it doesn't exist?
-- Should we have a settable format for Default Group Names?
-- Should we have a settable format and/or parent for Default Categories?
-- Should different users have a different parent for their Default Categories?
+- Should we create Group Steward if it doesn't exist? YES
+- Should we have a settable format for Default Group Names? NO for now
+- Should we have a settable format and/or parent for Default Categories? User:: or User::Test::
+- Should different users have a different parent for their Default Categories? NO for now
 - Should it be OK for a Steward to delete their Default
-  Category from an object which they created?
+  Category from an object which they created? YES
 
 For maximum simplicity, when feature_categorical_stewardship == 'y'
 - Ensure Group Steward exists
 - Ensure Category User exists
-- When a user is created with Group Steward
--- Create their Default Group as user_TheirUserName
--- Create their Default Category as user::TheirUserName
+- When a regular user is created with Group Steward
+-- Create their Default Group as User_TheirUserName
+-- Create their Default Category as User::TheirUserName
 -- Ensure their Default Category has suitable permissions
 --- Avoid permission of being able to add other objects to it!!
 --- Never allow that permission for a Default Category?
+- Test account names begin with Z[:uppercase_allpha:]
+-- Test account default categories are User::Test::TheirUserName
+- Permissions can be copied from a model
+-- Model permissions are those between a model group and a model category
+-- Model categories are User::Test::<NAME>
+
+These conventions could be made more obvious??
+- Category parents could be
+-- Steward::
+-- Model::
+- Groups could be more obvious
+--  prefix could be Steward_ or Model_
+-- Steward_* groups could inherit from Stewards
+-- Model_* groups could inherit from Models
+
 
 *** [DONE] First Project: Setup Users with Default Groups with Default Categories
 
@@ -593,8 +647,6 @@ I notice in TABLE users_users that
 
 Is the 8 a count in bytes or bits?
 
-Did I ever find a way to tell what all the permissions are?
-
 How about just the ones that can be set using the GUI for a
 group/category combination?
 
@@ -634,6 +686,143 @@ Use ZSteward as a model for all other Steward accounts
 - clone permissions from users_objectpermissions for new Stewards!
 
 Use ZSteward, ZNoDefaultGroup, ZNoDefaultCategory, ZNotSteward in tests.
+
+** Tiki Permissions
+
+See userslib.php get_raw_permissions()
+
+*** Permissions to Create Things:
+
+$ grep "'tiki_p_" lib/userslib.php  | grep create
+				'name' => 'tiki_p_acct_create_book',
+				'name' => 'tiki_p_bigbluebutton_create',
+				'name' => 'tiki_p_create_blogs',
+			//	'name' => 'tiki_p_create_category',
+				'name' => 'tiki_p_create_file_galleries',
+				'name' => 'tiki_p_create_galleries',
+				'name' => 'tiki_p_perspective_create',
+				'name' => 'tiki_p_create_tracker_items',
+				'name' => 'tiki_p_create_bookmarks',
+				'name' => 'tiki_p_create_css',
+
+				'name' => 'tiki_p_admin_calendar',
+				'description' => tr('Can create/admin calendars'),
+
+
+				
+
+*** Permissions to Edit Things:
+
+				'name' => 'tiki_p_edit_article',
+				'name' => 'tiki_p_edit_article_user',
+				'name' => 'tiki_p_edit_submission',
+				'name' => 'tiki_p_edit_comments',
+				'name' => 'tiki_p_edit_content_templates',
+				'name' => 'tiki_p_edit_gallery_file',
+				'name' => 'tiki_p_forum_edit_own_posts',
+				'name' => 'tiki_p_edit_html_pages',
+				'name' => 'tiki_p_edit_videos',
+				'name' => 'tiki_p_perspective_edit',
+				'name' => 'tiki_p_edit_sheet',
+				'name' => 'tiki_p_edit_tikitests',
+				'name' => 'tiki_p_edit',
+				'name' => 'tiki_p_edit_inline',
+				'name' => 'tiki_p_edit_copyrights',
+				'name' => 'tiki_p_edit_dynvar',
+				'name' => 'tiki_p_edit_references',
+				'name' => 'tiki_p_edit_structures',
+				'name' => 'tiki_p_edit_cookies',
+				'name' => 'tiki_p_edit_languages',
+				'name' => 'tiki_p_edit_menu',
+				'name' => 'tiki_p_edit_menu_option',
+				'name' => 'tiki_p_edit_templates',
+				'name' => 'tiki_p_edit_switch_mode',
+
+Note: tiki_p_edit seems to also permit creating Wiki pages!
+
+*** Category permissions
+
+$ grep "'tiki_p_" lib/userslib.php  | grep categ 
+				'name' => 'tiki_p_admin_categories',
+				'name' => 'tiki_p_view_category',
+				'name' => 'tiki_p_assign_perm_category',
+			//	'name' => 'tiki_p_create_category',
+				'name' => 'tiki_p_modify_object_categories',
+
+			array(
+				'name' => 'tiki_p_admin_categories',
+				'description' => tra('Can admin categories'),
+				'level' => 'admin',
+				'type' => 'category',
+				'admin' => true,
+				'prefs' => array('feature_categories'),
+				'scope' => 'object',
+			),
+			array(
+				'name' => 'tiki_p_view_category',
+				'description' => tra('Can see the category in a listing'),
+				'level' => 'basic',
+				'type' => 'category',
+				'admin' => false,
+				'prefs' => array('feature_categories'),
+				'scope' => 'object',
+			),
+			array(
+				'name' => 'tiki_p_add_object',
+				'description' => tra('Can add objects to the category (tiki_p_modify_object_categories permission required)'),
+				'level' => 'editors',
+				'type' => 'category',
+				'admin' => false,
+				'prefs' => array('feature_categories'),
+				'scope' => 'object',
+			),
+			array(
+				'name' => 'tiki_p_remove_object',
+				'description' => tra('Can remove objects from the category (tiki_p_modify_object_categories permission required)'),
+				'level' => 'editors',
+				'type' => 'category',
+				'admin' => false,
+				'prefs' => array('feature_categories'),
+				'scope' => 'object',
+			),
+			array(
+				'name' => 'tiki_p_assign_perm_category',
+				'description' => tra('Can assign perms to category'),
+				'level' => 'admin',
+				'type' => 'category',
+				'admin' => false,
+				'prefs' => array('feature_categories'),
+				'scope' => 'object',
+			),
+			//array(
+			//	'name' => 'tiki_p_create_category',
+			//	'description' => tra('Can create new categories'),
+			//	'level' => 'admin',
+			//	'type' => 'category',
+			//	'admin' => false,
+			//	'prefs' => array('feature_categories'),
+			//	'scope' => 'global',
+			//),
+			array(
+				'name' => 'tiki_p_admin_directory_cats',
+				'description' => tra('Can admin directory categories'),
+				'level' => 'editors',
+				'type' => 'directory',
+				'admin' => false,
+				'prefs' => array('feature_directory'),
+				'scope' => 'global',
+			),
+			array(
+				'name' => 'tiki_p_modify_object_categories',
+				'description' => tra('Can change the categories of an object'),
+				'level' => 'editors',
+				'type' => 'tiki',
+				'admin' => false,
+				'prefs' => array('feature_categories'),
+				'scope' => 'object',
+				'apply_to' => array('wiki', 'trackers'),
+			),
+
 
 ** DETERMINISTIC characteristic of NULL returning functions
 
@@ -914,6 +1103,8 @@ SELECT pageName, from_unixtime(created) from tiki_pages
 
 *** List of Category<->Group Permissions
 
+See lib/userslib.php get_raw_permissions() for ?complete? list
+		
 - articles
 -- Can admin the articles (tiki_p_admin_cms)
 -- Can approve submissions (tiki_p_approve_submission)
