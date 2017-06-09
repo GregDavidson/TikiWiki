@@ -32,6 +32,10 @@ NGender/
 # Ignore Misc
 Limbo/
 phpinfo.php
-foobar.php
+foobar.*
+foo.*
+bar.*
+*.foo
+*.tmp
 logerrors.command
 .tramp*
