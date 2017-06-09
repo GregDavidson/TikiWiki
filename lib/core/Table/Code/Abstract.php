@@ -35,7 +35,7 @@ class Table_Code_Abstract
 	protected static $group;
 	protected static $pager;
 	protected static $ajax;
-	public static $code = '';
+	public static $code = array(); // was = ''; // !!
 	protected static $level1;
 	protected static $level2;
 	protected $subclasses;
