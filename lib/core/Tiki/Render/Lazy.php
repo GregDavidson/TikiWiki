@@ -16,18 +16,15 @@ class Tiki_Render_Lazy
 	}
 
 	function __toString()
-    {
-// 	error_log('entered ' . __METHOD__); // NGender
-// 	echo "<pre>"; // NGender
-// 	echo __METHOD__ . ' callback:\n'; // NGender
-// 	var_dump($this->callback); // NGender
-// 	echo "</pre>"; // NGender
-
-	if ($this->callback) {
-		try {
-		    $this->data = call_user_func($this->callback);
-		} catch (Exception $e) {
-		    $this->data = $e->getMessage();
+	{
+		//var_log($this->callback, 'this->callback', __LINE__, __FILE__, '__to_string', 'Tiki_Render_Lazy');
+		if ($this->callback) {
+			try {
+				$this->data = call_user_func($this->callback);
+			} catch (Exception $e) {
+				$this->data = $e->getMessage();
+			}
+			$this->callback = null;
 		}
 		$this->callback = null;
 	    }
