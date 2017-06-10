@@ -76,6 +76,27 @@ not links.
 
 		 Really should be fixed in Perms.php Perms::get()
 
+** Questions
+
+Which pages (and other things) have neither
+- an NGender Steward Category
+- a *Editable Category
+
+How can I conveniently see the permissions ON a category?
+
+What determines who can see and change which categories on an object?
+
+Which ids are used for the various types of objects to
+construct the objectId in users_objectpermissions?
+
+| objectType | table | fieldname |
+|------------+-------+-----------|
+| category   |       |           |
+| calendar   |       |           |
+| wiki page  |       |           |
+
+What is the full list of possible objectType names?
+
 ** Categorical Stewardship Project
 
 Purpose: Leverage Default Groups with their Default
@@ -711,7 +732,33 @@ Use ZSteward, ZNoDefaultGroup, ZNoDefaultCategory, ZNotSteward in tests.
 
 ** Tiki Permissions
 
-See userslib.php get_raw_permissions()
+See lib/setup/perms.php for 
+
+#+BEGIN_SRC php
+$allperms = $userlib->get_enabled_permissions();
+
+Perms_Context::setPermissionList($allperms);
+
+$builder = new Perms_Builder;
+$perms = $builder
+	->withCategories($prefs['feature_categories'] == 'y')
+	->withDefinitions($allperms)
+	->build();
+
+Perms::set($perms);
+
+$_permissionContext = new Perms_Context($user, false);
+
+if ($groupList) {
+	$_permissionContext->overrideGroups($groupList);
+}
+
+
+$_permissionContext->activate(true);
+#+END_SRC
+
+- lib/userslib.php UsersLib::get_raw_permissions() ::
+		 returns raw permissions as a gigantic php array of hashes
 
 *** Permissions to Create Things:
 
@@ -729,9 +776,6 @@ $ grep "'tiki_p_" lib/userslib.php  | grep create
 
 				'name' => 'tiki_p_admin_calendar',
 				'description' => tr('Can create/admin calendars'),
-
-
-				
 
 *** Permissions to Edit Things:
 
@@ -845,6 +889,16 @@ $ grep "'tiki_p_" lib/userslib.php  | grep categ
 				'apply_to' => array('wiki', 'trackers'),
 			),
 
+Seems like we should want to have tiki_p_modify_object_categories between
+Steward's Default Group <-> Steward's Default Category
+AND
+Group Project_Editors <-> Category User::Test::Editable
+
+We could also give Stewards the permission
+- tiki_p_view_category
+on either
+- ALL categories or
+- all except for those on a blacklist
 
 ** DETERMINISTIC characteristic of NULL returning functions
 

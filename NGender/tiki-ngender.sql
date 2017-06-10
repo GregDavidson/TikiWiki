@@ -806,7 +806,41 @@ CALL assert_true('user_default_category( user_named(\'Greg\') ) =
  category_named_parent(\'Greg\', category_named_parent(\'User\', 0))');
 -- #+END_SRC
 
--- * Procedures to Create and Relate Default Groups and Categories
+-- * Relating Groups and Categories and the Permissions between them
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `perms_grp_cat`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `perms_grp_cat`(grp_ INT, cat_ INT)
+  READS SQL DATA
+	COMMENT 'show permissions between given group and category'
+BEGIN
+	DECLARE groupname_ TEXT DEFAULT group_name(grp_);
+	DECLARE category_ TEXT DEFAULT MD5(CONCAT('category', cat_));
+	SELECT permName FROM users_objectpermissions
+	WHERE objectType = 'category' AND groupName = groupname_
+	AND objectId = category_;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `set_perm_grp_cat`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `set_perm_grp_cat`(perm_ TEXT, grp_ INT, cat_ INT)
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'sets permission for group with category'
+BEGIN
+	DECLARE groupname_ TEXT DEFAULT group_name(grp_);
+	DECLARE category_ TEXT DEFAULT MD5(CONCAT('category', cat_));
+	INSERT IGNORE
+	INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
+	VALUES (groupname_, perm_, 'category', category_);
+END//
+DELIMITER ;
+-- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `copy_perms_grp_cat_grp_cat`;
@@ -1051,7 +1085,7 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `set_cat_stew_vars`()
   READS SQL DATA
-	COMMENT 'Sets cat_stew_* Session Variables for feature_ngender_stewardship'
+	COMMENT 'Sets cat_stew_* Session Variables for feature_ngender_stewardship; not currently used!!'
 BEGIN
  DECLARE user_ INT DEFAULT category_named_parent('User', 0);
  DECLARE test_ INT DEFAULT category_named_parent('Test',user_);
@@ -1103,7 +1137,3 @@ BEGIN
 END//
 DELIMITER ;
 -- #+END_SRC
-
--- CALL add_everyone_to_group_stewards();
--- - remove Stewards from inappropriate Users
--- CALL make_stewards_be_stewards();

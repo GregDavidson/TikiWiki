@@ -6,6 +6,43 @@
 -- Depends on tiki-ngender.sql but NOT on feature_ngender_stewards
 -- Not dependent on specific NGender Categories, though!
 
+-- #+BEGIN_SRC sql
+DROP TABLE IF EXISTS `non_steward_categories`;
+CREATE TABLE `non_steward_categories` (
+  `category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
+) ENGINE=InnoDB
+COMMENT 'do not give Stewards tiki_p_view_category permission on these categories';
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `let_stewards_view_categories`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `let_stewards_view_categories`()
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'establish group/category permissions according to the models in table group_category_models'
+BEGIN
+	 DECLARE groupname_ int DEFAULT 'Stewards';
+	 DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
+ 	 DECLARE category_ int;
+ 	 DECLARE done_ int DEFAULT 0;
+ 	 DEClARE cursor_ CURSOR FOR 
+	  SELECT categId FROM tiki_categories
+		 WHERE categId NOT IN (SELECT category_ FROM non_steward_categories);
+ 	 DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+	 OPEN cursor_;
+	 foo: LOOP
+		 FETCH cursor_ INTO category_;
+		 IF done_ THEN LEAVE foo; END IF;
+		 INSERT IGNORE
+		 INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
+		 VALUES (groupname_, permname_, 'category', MD5(CONCAT('category', category_)));
+	 END LOOP;
+	 CLOSE cursor_;
+END//
+DELIMITER ;
+-- #+END_SRC
+
 DROP TABLE IF EXISTS `group_category_models`;
 CREATE TABLE `group_category_models` (
   `group_` int(11) NOT NULL REFERENCES users_groups(id),

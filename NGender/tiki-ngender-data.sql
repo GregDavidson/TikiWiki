@@ -70,7 +70,28 @@ CALL project_group_category_models('Public::Abundance', 'Abundancers', 'Editable
 -- CALL project_group_category_models('Public::UncommonKnowledge', 'Uncommoners', 'Editable', 'Project_Editors', 'Editable');
 -- CALL project_group_category_models('UncommonKnowledge', 'UncommonKnowledgeAdmins', 'Admin', 'Project_Admins', 'Admin');
 
-SELECT * FROM group_category_models_view;
+-- -- SELECT * FROM group_category_models_view;
 
--- CALL establish_group_category_models();
+-- Put everyone intended to be stewards into group Stewards
+-- If it's all or nearly all users, then:
+-- -- CALL add_everyone_to_group_stewards();
+-- remove inappropriate users from group Stewards
 
+-- -- CALL make_stewards_be_stewards();
+-- Rerun after adding new Stewards users
+-- If you remove a user from group Stewards you might want to also
+-- - Remove their Default Group
+-- - Remove their Default Category
+
+-- -- CALL let_stewards_view_categories();
+-- Rerun after adding new categories!!
+
+-- Ensure the desired permissions between the model Group/Category pairs
+-- - This must be done manually!
+-- Pair up your the Gruop/Category pairs for your projects with their models
+-- using project_group_category_models as above.
+
+-- -- CALL establish_group_category_models();
+
+-- You can also do this manually through the Category features:
+-- -- CALL feature_ngender_stewards(true);
