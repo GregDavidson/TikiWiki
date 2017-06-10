@@ -2,6 +2,14 @@
 
 ** Status
 
+An attempt to upload an image to a blog post
+gave the error "Server does not support image manipulation".
+	 
+I have 10 or 11 forums but
+(1) the GUI shows only 1 forum named admin
+(2) table tiki_forms lists 10 forums, none named admin
+(3) the posts to forum 9: C By Example Forum are all missing!
+	 
 I don't yet have a full understanding of what happens with
 permissions when a page is created to produce
 tiki_p_edit='y'.
@@ -89,13 +97,106 @@ What determines who can see and change which categories on an object?
 Which ids are used for the various types of objects to
 construct the objectId in users_objectpermissions?
 
-| objectType | table | fieldname |
-|------------+-------+-----------|
-| category   |       |           |
-| calendar   |       |           |
-| wiki page  |       |           |
+| objectType | objectId.type | objectId.id | table | fieldname |
+|------------+---------------+-------------+-------+-----------|
+| category   |               |             |       |           |
+| calendar   |               |             |       |           |
+| wiki page  |               |             |       |           |
+
+ObjectId is actually md5(concat(objectId.type, objectId.id))
+Questions:
+- Are objectType and objectId.type the same thing?
+- What fieldname of what table corresponds to objectId.id
+- for each possible value of objectId.type?
+	-- Document in table above, please!
 
 What is the full list of possible objectType names?
+
+We have similar questions about table tiki_objects but w/o md5 confusion:
+
+Correspondences between tiki_objects and the "master" table for each type:
+
+| type         | objectId     | ItemId       | name         | table           |
+|--------------+--------------+--------------+--------------+-----------------|
+| blog         |              | blobId       | title        | tiki_blogs      |
+| blog post    |              | postId       | title        | tiki_blog_posts |
+| calendar     |              | id           |              |                 |
+| forum        |              | forumId      | name?        | tiki_forums     |
+| forum post   |              | id           |              | ??              |
+| wiki page    |              | pageName     | pageName     | wiki_pages      |
+objectId is a serial int so unique to this table.  ItemId
+and name are both text.
+Questions:
+- How does ItemId differ from name?
+	-- when type = 'wiki page' they are identical
+	-- otherwise ItemId is an integer index
+- What other type values are possible?
+- Which table values correspond to the type values?
+- Which fieldname corresponds to ItemId? To name?
+- Please fill in in above table!
+
+select distinct type from tiki_objects where itemId REGEXP '^[[:digit:]]+$';
+select distinct type from tiki_objects where itemId <> `name`;
+| type       |
+|------------|
+| blog       |
+| blog post  |
+| calendar   |
+| forum      |
+| forum post |
+
+select distinct type from tiki_objects where NOT ( itemId REGEXP '^[[:digit:]]+$');
+select distinct type from tiki_objects where itemId = `name`;
+| type      |
+|-----------|
+| wiki page |
+
+select itemId from tiki_objects where `type` = 'wiki page' limit 2;
+| itemId            |
+|-------------------|
+| SandBox           |
+| Abundance Culture |
+
+select objectId from tiki_objects
+where `type` = 'wiki pages'
+and objectId not in (select pageName from tiki_pages);
+--> empty set!
+
+Note the off-by-1 errors: -- add some details of the odd-man-out!!
+
+select count(*) from tiki_objects where `type` = 'blog post'; -- 11
+select count(*) from tiki_blog_posts; -- 12
+
+select count(*) from tiki_objects where `type` = 'blog'; -- 13
+select count(*) from tiki_blogs; -- 14
+
+select count(*) from tiki_objects where `type` = 'forum'; -- 9
+select count(*) from tiki_forums; -- 10
+
+select count(*) from tiki_objects where `type` = 'calendar'; -- 1
+select count(*) from tiki_calendars; -- 2
+
+There doesn't seem to be a tiki table for Forum Posts!
+There doesn't seem to be a tiki table for Forum Topics!
+
+$ grep 'CREATE TABLE.*forum' db/tiki.sql 
+CREATE TABLE `tiki_forum_attachments` (
+CREATE TABLE `tiki_forum_reads` (
+CREATE TABLE `tiki_forums` (
+CREATE TABLE `tiki_forums_queue` (
+CREATE TABLE `tiki_forums_reported` (
+
+select table_name from information_schema.tables
+where table_schema = 'tiki' and table_name like '%forum%';
+| table_name             |
+|------------------------|
+| tiki_forum_attachments |
+| tiki_forum_reads       |
+| tiki_forums            |
+| tiki_forums_queue      |
+| tiki_forums_reported   |
+
+What is TABLE `tiki_user_postings`?
 
 ** Categorical Stewardship Project
 
