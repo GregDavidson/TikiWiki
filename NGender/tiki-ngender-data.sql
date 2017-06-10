@@ -7,11 +7,7 @@
 -- - tiki-ngender.sql
 -- - tiki-ngender-schema.sql
 
--- This should mostly be calls on the procedures and functions
--- defined in our generic SQL code.
-
--- After filling or modifying table group_category_models
--- - CALL establish_group_category_models();
+-- See the commented out code at the bottom to effect the Tiki tables!
 
 -- We need the model Groups and Categories
 -- Their permissions will have to be manually set by an administrator
