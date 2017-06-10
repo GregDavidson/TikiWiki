@@ -27,8 +27,7 @@ class Tiki_Render_Lazy
 			$this->callback = null;
 		}
 		$this->callback = null;
-	    }
-	    return (string) $this->data;
+		return (string) $this->data;
 	}
 }
 
