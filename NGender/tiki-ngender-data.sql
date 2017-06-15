@@ -29,42 +29,55 @@ CALL assert_true( 'ensure_groupname_comment( \'Project_Admins\', \'permissions m
 -- - more categories assigned to each object
 -- Do we want to grant the project admins rights over all project categories or only some?
 
-CALL project_group_category_models('', 'Registered', 'RegisteredReadable', 'Project_Readers', 'Readable');
+-- project_group_category_models(project_path, group_name, category_name, model_group_name, model_category_name)
+-- will prefix group_name with tail of project_path unless group_name ends with ! (which will be removed)
+-- will suffix category_name with model_category_name unless category_name ends with ! (which will be removed)
+-- will prefix category_name with project_name unless category_name contains a :: substring
+
+CALL project_group_category_models('', 'Registered', 'Registered', 'Project_Readers', 'Readable');
+
+-- How do we want Project_Admins to work?
+-- We shouldn't have a PROJECT::Admin category within a given PROJECT
+-- PROJECT_Admins should generally have Project_Admins/Admin permissions on all PROJECT categories
+-- If all PROJECT categories are children of PROJECT_PARENT_CATEGORY, how can this best be done?
+-- Possible solution:
+-- -  Have all PROJECT categories inherit from PROJECT_PARENT_CATEGORY
+-- - Have PROJECT_Admins be the ONLY group with any permissions on PROJECT_PARENT_CATEGORY!
+-- - Super-secure project categories can simply block inheritance!
 
 -- we just unnested these categories to eliminate inheritance
-CALL project_group_category_models('SkillsBank', 'SkillsBankObservers', 'ObserverReadable', 'Project_Readers', 'Readable');
-CALL project_group_category_models('SkillsBank', 'SkillsBankObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
-CALL project_group_category_models('SkillsBank', 'SkillsBankAssociates', 'AssociateReadable', 'Project_Readers', 'Readable');
-CALL project_group_category_models('SkillsBank', 'SkillsBankAssociates', 'AssociateEditable', 'Project_Editors', 'Editable');
-CALL project_group_category_models('SkillsBank', 'SkillsBankPartners', 'PartnerReadable', 'Project_Readers', 'Readable');
-CALL project_group_category_models('SkillsBank', 'SkillsBankPartners', 'PartnerEditable', 'Project_Editors', 'Editable');
--- CALL project_group_category_models('SkillsBank', 'SkillsBankAdmins', 'Admin', 'Project_Admins', 'Admin');
+CALL project_group_category_models('SkillsBank', 'Observers', 'Observer', 'Project_Readers', 'Readable');
+CALL project_group_category_models('SkillsBank', 'Observers', 'Observer', 'Project_Posters', 'Postable');
+CALL project_group_category_models('SkillsBank', 'Associates', 'Associate', 'Project_Readers', 'Readable');
+CALL project_group_category_models('SkillsBank', 'Associates', 'Associate', 'Project_Editors', 'Editable');
+CALL project_group_category_models('SkillsBank', 'Partners', 'Partner', 'Project_Readers', 'Readable');
+CALL project_group_category_models('SkillsBank', 'Partners', 'Partner', 'Project_Editors', 'Editable');
+CALL project_group_category_models('', 'SkillsBankAdmins', 'SkillsBank!', 'Project_Admins', 'Admin');
 
--- LearnerReadable should really be LearnerPostable!!! FIX!!!
+-- Rename LearnerReadable to LearnerPostable??
 
 -- we just unnested these categories to eliminate inheritance
-CALL project_group_category_models('LOYL', 'LOYL_Observers', 'Observer_Readable', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', 'LOYL_Observers', 'Observer_Postable', 'Project_Posters', 'Postable');
-CALL project_group_category_models('LOYL', 'LOYL_Learners', 'Learner_Readable', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', 'LOYL_Learners', 'Learner_Editable', 'Project_Editors', 'Editable');
-CALL project_group_category_models('LOYL', 'LOYL_Peers', 'Peer_Readable', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', 'LOYL_Peers', 'Peer_Editable', 'Project_Editors', 'Editable');
-CALL project_group_category_models('LOYL', 'LOYL_Partners', 'Partner_Readable', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', 'LOYL_Partners', 'Partner_Editable', 'Project_Editors', 'Editable');
--- CALL project_group_category_models('LOYL', 'LOYL_Admins', 'Admin', 'Project_Admins', 'Admin');
+CALL project_group_category_models('LOYL', '_Observers', 'Observer_', 'Project_Readers', 'Readable');
+CALL project_group_category_models('LOYL', '_Observers', 'Observer_', 'Project_Posters', 'Postable');
+CALL project_group_category_models('LOYL', '_Learners', 'Learner_', 'Project_Readers', 'Readable');
+CALL project_group_category_models('LOYL', '_Learners', 'Learner_', 'Project_Editors', 'Editable');
+CALL project_group_category_models('LOYL', '_Peers', 'Peer_', 'Project_Readers', 'Readable');
+CALL project_group_category_models('LOYL', '_Peers', 'Peer_', 'Project_Editors', 'Editable');
+CALL project_group_category_models('LOYL', '_Partners', 'Partner_', 'Project_Readers', 'Readable');
+CALL project_group_category_models('LOYL', '_Partners', 'Partner_', 'Project_Editors', 'Editable');
+CALL project_group_category_models('', 'LOYL_Admins', 'LOYL!', 'Project_Admins', 'Admin');
 
--- Figure out what the inheritance from Public is doing and either get the nesting right or unnest these:
+CALL project_group_category_models('SomeClues', 'Observers', 'Observer', 'Project_Posters', 'Postable');
+CALL project_group_category_models('SomeClues', 'Dispensors', 'Partner', 'Project_Editors', 'Editable');
+CALL project_group_category_models('', 'SomeCluesAdmins', 'SomeClues!', 'Project_Admins', 'Admin');
 
-CALL project_group_category_models('Public::SomeClues', 'SomeCluesObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
-CALL project_group_category_models('Public::SomeClues', 'SomeCluesDispensors', 'PartnerEditable', 'Project_Editors', 'Editable');
--- CALL project_group_category_models('Public::SomeClues', 'SomeCluesAdmins', 'Admin', 'Project_Admins', 'Admin');
-CALL project_group_category_models('Public::Abundance', 'AbundanceObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
-CALL project_group_category_models('Public::Abundance', 'Abundancers', 'Editable', 'Project_Editors', 'Editable');
--- CALL project_group_category_models('Abundance', 'AbundanceAdmins', 'Admin', 'Project_Admins', 'Admin');
+CALL project_group_category_models('Abundance', 'Observers', 'Observer', 'Project_Posters', 'Postable');
+CALL project_group_category_models('Abundance', 'Abundancers!', '', 'Project_Editors', 'Editable');
+CALL project_group_category_models('', 'AbundanceAdmins', 'Abundance!', 'Project_Admins', 'Admin');
 
--- CALL project_group_category_models('Public::UncommonKnowledge', 'UncommonKnowledgeObservers', 'ObserverPostable', 'Project_Posters', 'Postable');
--- CALL project_group_category_models('Public::UncommonKnowledge', 'Uncommoners', 'Editable', 'Project_Editors', 'Editable');
--- CALL project_group_category_models('UncommonKnowledge', 'UncommonKnowledgeAdmins', 'Admin', 'Project_Admins', 'Admin');
+CALL project_group_category_models('UncommonKnowledge', 'Observers', 'Observer', 'Project_Posters', 'Postable');
+CALL project_group_category_models('UncommonKnowledge', 'Uncommoners!', '', 'Project_Editors', 'Editable');
+CALL project_group_category_models('', 'UncommonKnowledgeAdmins', 'UncommonKnowledge!', 'Project_Admins', 'Admin');
 
 -- -- SELECT * FROM group_category_models_view;
 
@@ -91,3 +104,13 @@ CALL project_group_category_models('Public::Abundance', 'Abundancers', 'Editable
 
 -- You can also do this manually through the Category features:
 -- -- CALL feature_ngender_stewards(true);
+
+-- After manual work, these may help:
+-- CALL copy_perms_grp_cat_grp_cat(group_named('Project_Readers'), category_of_path('User::Test::Readable'),group_named('Project_Posters'), category_of_path('User::Test::Postable'));
+-- CALL copy_perms_grp_cat_grp_cat(group_named('Project_Posters'), category_of_path('User::Test::Postable'), group_named('Project_Editors'), category_of_path('User::Test::Editable'));
+
+-- CALL perms_grp_cat(group_named('Project_Readers'), category_of_path('User::Test::Readable')); -- 14 rows
+-- CALL perms_grp_cat(group_named('Project_Posters'), category_of_path('User::Test::Postable')); -- 14 rows
+-- CALL perms_grp_cat(group_named('Project_Editors'), category_of_path('User::Test::Editable'));; -- 14 rows
+-- CALL perms_grp_cat(group_named('Project_Admins'), category_of_path('User::Test::Admin')); -- 70 rows
+

@@ -14,7 +14,12 @@ CREATE TABLE `non_steward_categories` (
 COMMENT 'do not give Stewards tiki_p_view_category permission on these categories';
 -- #+END_SRC
 
+INSERT INTO non_steward_categories(category_)
+SELECT categId FROM tiki_categories
+WHERE parentId = category_of_path('User::Test');
+
 -- #+BEGIN_SRC sql
+SET @CATS_SEEN = 0;
 DROP PROCEDURE IF EXISTS `let_stewards_view_categories`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
@@ -22,7 +27,7 @@ PROCEDURE `let_stewards_view_categories`()
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'establish group/category permissions according to the models in table group_category_models'
 BEGIN
-	 DECLARE groupname_ int DEFAULT 'Stewards';
+	 DECLARE groupname_ int DEFAULT group_named('Stewards');
 	 DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
  	 DECLARE category_ int;
  	 DECLARE done_ int DEFAULT 0;
@@ -32,6 +37,7 @@ BEGIN
  	 DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
 	 OPEN cursor_;
 	 foo: LOOP
+		SET @CATS_SEEN = @CATS_SEEN + 1;
 		 FETCH cursor_ INTO category_;
 		 IF done_ THEN LEAVE foo; END IF;
 		 INSERT IGNORE
@@ -103,6 +109,60 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
+-- Infer no prefix if name ends with exclamation point - but remove exclamation point!
+DROP FUNCTION IF EXISTS `inferred_group_name`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `inferred_group_name`(project_path TEXT, group_name_ TEXT)
+RETURNS TEXT	DETERMINISTIC
+	COMMENT 'returns group name possibly prefixed by project name'
+BEGIN
+	DECLARE group_name TEXT DEFAULT TRIM(trailing '!' FROM group_name_);
+	DECLARE project_name TEXT DEFAULT  project_path;
+	DECLARE sep_pos INT DEFAULT instr(project_path, '::');
+	IF sep_pos <> 0 THEN
+		 SET project_name = SUBSTR(project_path, sep_pos + 2);
+	END IF;
+	IF (group_name <> group_name_) THEN return group_name; END IF;
+	RETURN CONCAT(project_name, group_name);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+CALL assert_true( 'inferred_group_name(\'Public::LOYL\', \'_Observers\') = \'LOYL_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'LOYL\', \'_Observers\') = \'LOYL_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'LOYL\', \'Observers!\') = \'Observers\'' );
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+-- Infer no suffix if name ends with exclamation point - but remove exclamation point!
+-- Infer no path prefix if name contains one or more :: 
+DROP FUNCTION IF EXISTS `inferred_cat_path`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `inferred_cat_path`(project_path TEXT, cat_name TEXT, model_name TEXT)
+RETURNS TEXT	DETERMINISTIC
+	COMMENT 'returns path of category under project category, possibly suffixed by model name'
+BEGIN
+	DECLARE path_ TEXT DEFAULT TRIM(trailing '!' FROM cat_name);
+	IF cat_name = path_ THEN SET path_ = CONCAT(path_, model_name); END IF;
+	IF COALESCE(project_path, '') = '' THEN RETURN path_; END IF;
+	IF path_ LIKE '%::%' THEN RETURN path_; END IF;
+	RETURN CONCAT(project_path, '::', path_);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Observer\', \'Readable\') = \'LOYL::ObserverReadable\'' );
+CALL assert_true( 'inferred_cat_path(\'LOYL\', \'ObserverCanSee!\', \'Readable\') = \'LOYL::ObserverCanSee\'' );
+CALL assert_true( 'inferred_cat_path(\'\', \'Observer_\', \'Readable\') = \'Observer_Readable\'' );
+CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Public::Observer_\', \'Readable\') = \'Public::Observer_Readable\'' );
+CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Public::ObserverCanSee!\', \'Readable\') = \'Public::ObserverCanSee\'' );
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `project_group_category_models`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
@@ -113,26 +173,18 @@ PROCEDURE `project_group_category_models`(
 BEGIN
 	DECLARE model_cat_parent TEXT DEFAULT 'User::Test';
 	DECLARE model_cat_path TEXT DEFAULT concat( model_cat_parent, '::', model_cat_name );
-	DECLARE maybe_project TEXT DEFAULT NULLIF( project, '' );
-	DECLARE project_cat_name TEXT DEFAULT COALESCE(
-		CONCAT(maybe_project, '::', NULLIF(cat_name, '')),
-		CONCAT(project, cat_name)
-	);
+	DECLARE maybe_project TEXT DEFAULT COALESCE( project, '' );
+	DECLARE project_group_name TEXT DEFAULT inferred_group_name(maybe_project, grp_name);
+	DECLARE cat_path TEXT DEFAULT inferred_cat_path(maybe_project, cat_name, model_cat_name);
 	DECLARE comment_ TEXT DEFAULT COALESCE(concat('for ', maybe_project), '');
 	DECLARE model_grp INT DEFAULT group_named(model_grp_name);
 	DECLARE model_cat INT DEFAULT category_of_path(model_cat_path);
-	DECLARE grp_ INT DEFAULT ensure_groupname_comment(grp_name, comment_);
-	DECLARE cat_ INT DEFAULT ensure_categorypath_comment(project_cat_name, comment_);
+	DECLARE grp_ INT DEFAULT ensure_groupname_comment(project_group_name, comment_);
+	DECLARE cat_ INT DEFAULT ensure_categorypath_comment(cat_path, comment_);
 	CALL add_group_category_models(grp_, cat_, model_grp, model_cat);
 END//
 DELIMITER ;
 -- #+END_SRC
-
--- We could do with less permissions with
--- - the right inheritance model
--- - more categories assigned to each object
--- Do we want to grant the project admins rights over all
--- project categories or only some?
 
 -- ** Various procedures designed to automate common tasks
 
