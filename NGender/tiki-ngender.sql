@@ -834,7 +834,7 @@ PROCEDURE `set_perm_grp_cat`(perm_ TEXT, grp_ INT, cat_ INT)
 	COMMENT 'sets permission for group with category'
 BEGIN
 	DECLARE groupname_ TEXT DEFAULT group_name(grp_);
-	DECLARE category_ TEXT DEFAULT MD5(CONCAT('category', cat_));
+	DECLARE category_ TEXT DEFAULT MD5(CONCAT('category', category_id(cat_)));
 	INSERT IGNORE
 	INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
 	VALUES (groupname_, perm_, 'category', category_);
