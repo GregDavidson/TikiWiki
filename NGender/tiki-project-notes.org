@@ -2,29 +2,81 @@
 
 ** Status
 
+*** Issues
+
+**** let_stewards_view_categories is broken
+
+It's running 0 times instead of 78 times.
+
+tiki_p_view_categories is NOT getting in there!
+
+**** copy_perms_grp_cat_grp_cat looks broken!
+
+After getting unexpected data from:
+
+#+BEGIN_SRC sql
+SELECT count(permName), ug.groupName as `groupName`
+FROM users_objectpermissions uop, group_category_models gcm, users_groups ug
+WHERE uop.groupName = ug.groupName AND gcm.group_model = ug.id
+group by `groupName` order by `groupName`;
+#+END_SRC
+
+and getting
+
+| count(permName) | groupName       |
+|-----------------+-----------------|
+|             350 | Project_Admins  |
+|             352 | Project_Editors |
+|             110 | Project_Posters |
+|             112 | Project_Readers |
+
+I did
+
+#+BEGIN_SRC sql
+CALL copy_perms_grp_cat_grp_cat(
+	group_named('Project_Readers'), category_of_path('User::Test::Readable'),
+	group_named('Project_Posters'), category_of_path('User::Test::Postable')
+);
+CALL copy_perms_grp_cat_grp_cat(
+	group_named('Project_Posters'), category_of_path('User::Test::Postable'),
+	group_named('Project_Editors'), category_of_path('User::Test::Editable')
+);
+#+END_SRC
+
+only to get
+
+| count(permName) | groupName       |
+|-----------------+-----------------|
+|             350 | Project_Admins  |
+|             112 | Project_Editors |
+|              70 | Project_Posters |
+|             112 | Project_Readers |
+
+where permission counts have gone down!
+
+More evidence that something is rotten in Denmark:
+
+#+BEGIN_SRC sql
+CALL perms_grp_cat(group_named('Project_Readers'), category_of_path('User::Test::Readable')); -- 14 rows
+CALL perms_grp_cat(group_named('Project_Posters'), category_of_path('User::Test::Postable')); -- 14 rows
+CALL perms_grp_cat(group_named('Project_Editors'), category_of_path('User::Test::Editable'));; -- 14 rows
+CALL perms_grp_cat(group_named('Project_Admins'), category_of_path('User::Test::Admin')); -- 70 rows
+#+END_SRC
+
+
+**** Image Uploads not working
+
 An attempt to upload an image to a blog post
 gave the error "Server does not support image manipulation".
-	 
+
+**** Forums broken with data lost!
+
 I have 10 or 11 forums but
 (1) the GUI shows only 1 forum named admin
 (2) table tiki_forms lists 10 forums, none named admin
 (3) the posts to forum 9: C By Example Forum are all missing!
-	 
-I don't yet have a full understanding of what happens with
-permissions when a page is created to produce
-tiki_p_edit='y'.
 
-Note: Unlike other objects, with wiki pages, tiki_p_edit is
-used for permission to create pages *and* permission to edit
-pages!
-
-I don't yet have a full understanding of how tiki_p_edit='y'
-is produced by the permission system for an existing object.
-	 
-I don't yet have a full understanding of how the permissions
-to show and to allow updating of categories on wiki pages
-(or anything else) are produced by the permission system for
-an existing object or for an object about to be created.
+**** empty page versions are being inserted
 
 When I was showing things to Kim last night (2017-6-6), a
 couple of SkillsBank pages were mysteriously replaced by new
@@ -47,6 +99,8 @@ Note: Do not try to delete current page version.  Instead,
 roll back to the most recent version, check that it worked,
 and then if desired delete the (now) previous version.
 
+**** Categories not always being displayed
+
 I also was just looking at 
 https://ngender.org/tiki-index.php?page=The+Skills+Bank
 and it wasn't showing any categories, even after refreshing.
@@ -57,10 +111,13 @@ I suspect that many of the intended category permissions are not yet correct.
 
 I know that many pages do not yet have the right categories.
 
+**** Excessive permissions for some users
+
 Some users still have too many permissions, e.g. Editor, in
 order to allow them to function while the permissions are
 not yet quite right.
 
+**** Testing and Test-Strategies needed
 Stewards functionality for Wiki pages seems to work.
 - How can we test it better?
 - How can we make it less kludgy?
@@ -73,18 +130,18 @@ actually did its job?
 I need some SQL code to test that all pages are associated
 with at least one of the categories allowing editing!
 
-*** Wiki Page Category Paths not necessarily links
-Non-Default categories of ZObserver are showing up but are
-not links.  
+*** Questions
 
+How is tiki_p_edit set when a page is initially created,
+i.e. when there's data from submitting a form and the page
+does not exist yet?
 
-*** Kludges:
+How exactly is tiki_p_edit set when a page already exists?
 
-**** categlib patch for Stewards
+What permissions and code determines whether a category will be shown for a new or existing page?
 
-		 Really should be fixed in Perms.php Perms::get()
-
-** Questions
+What permissions and code determines whether a category will
+be editable (added/removed to/from) with a new or existing page?
 
 Which pages (and other things) have neither
 - an NGender Steward Category
@@ -92,18 +149,20 @@ Which pages (and other things) have neither
 
 How can I conveniently see the permissions ON a category?
 
-What determines who can see and change which categories on an object?
+**** How do object types work with users_objectpermissions?
 
 Which ids are used for the various types of objects to
 construct the objectId in users_objectpermissions?
 
-| objectType | objectId.type | objectId.id | table | fieldname |
-|------------+---------------+-------------+-------+-----------|
-| category   |               |             |       |           |
-| calendar   |               |             |       |           |
-| wiki page  |               |             |       |           |
+ObjectId = md5sum(concat( TYPE, ID )) but for this analysis,
+let's pretend that it's a (TYPE, ID) pair.
 
-ObjectId is actually md5(concat(objectId.type, objectId.id))
+| objectType | objectId.type | objectId.id | corresponding table | field in corresponding table |
+|------------+---------------+-------------+---------------------+------------------------------|
+| category   |               |             |                     |                              |
+| calendar   |               |             |                     |                              |
+| wiki page  |               |             |                     |                              |
+
 Questions:
 - Are objectType and objectId.type the same thing?
 - What fieldname of what table corresponds to objectId.id
@@ -112,18 +171,20 @@ Questions:
 
 What is the full list of possible objectType names?
 
+**** How do fields of table tiki_objects correspond to type-specific tables?
+
 We have similar questions about table tiki_objects but w/o md5 confusion:
 
 Correspondences between tiki_objects and the "master" table for each type:
 
-| type         | objectId     | ItemId       | name         | table           |
-|--------------+--------------+--------------+--------------+-----------------|
-| blog         |              | blobId       | title        | tiki_blogs      |
-| blog post    |              | postId       | title        | tiki_blog_posts |
-| calendar     |              | id           |              |                 |
-| forum        |              | forumId      | name?        | tiki_forums     |
-| forum post   |              | id           |              | ??              |
-| wiki page    |              | pageName     | pageName     | wiki_pages      |
+| type       | objectId | ItemId   | name     | corresponding table |
+|------------+----------+----------+----------+---------------------|
+| blog       |          | blobId   | title    | tiki_blogs          |
+| blog post  |          | postId   | title    | tiki_blog_posts     |
+| calendar   |          | id       |          |                     |
+| forum      |          | forumId  | name?    | tiki_forums         |
+| forum post |          | id       |          | ??                  |
+| wiki page  |          | pageName | pageName | wiki_pages          |
 objectId is a serial int so unique to this table.  ItemId
 and name are both text.
 Questions:
@@ -197,6 +258,22 @@ where table_schema = 'tiki' and table_name like '%forum%';
 | tiki_forums_reported   |
 
 What is TABLE `tiki_user_postings`?
+
+*** Infelicities
+**** Wiki Page Category Paths not necessarily links
+
+Some categories show up associated with a Web Page as text
+rather than a link.  This is because the user lacks
+permission to be shown a list of all of the Web Pages of
+that category.  The infelicity is that some of the other
+information about the category might be appropriate to be
+shown, e.g. the description of the category.
+
+**** Kludges:
+
+**** categlib patch for Stewards
+
+		 Really should be fixed in Perms.php Perms::get()
 
 ** Categorical Stewardship Project
 
@@ -576,57 +653,17 @@ $wiki_authors_style='', $minor=0, $created='')
 
 In there we set user and creator to the loggin user.
 
-** Features 
 
-https://dev.tiki.org/Create+a+new+preference?highlight=creating+new+preferences
+** Categorical Project Management
 
-in feature.php look at
-- feature_dummy
-- feature_ngender_ownership
-- hmm, this code does not seem to be used anywhere
-- is it obsoleted by table tiki_feature?
-
-What's the code at the top of
-- function prefs_feature list>
-
-Do features get put in the database automatically?
-- some are set in tiki.sql 
-
-What database tables hold features-related information?
-- tiki_preferences -- 87 like 'feature_%'
-- tiki_feature -- empty!
-- tiki_menu_options -- field section is getting set to features ?
-- tiki_featured_links -- empty!
-- tiki_sefurl_regex_out ?
-
-SELECT count(*)  FROM tiki_feature;
-+----------+
-| count(*) |
-+----------+
-|        0 |
-+----------+
-
-SELECT count(*)  FROM tiki_preferences where name like 'feature_%';
-+----------+
-| count(*) |
-+----------+
-|       87 |
-+----------+
-
-
-Do features show up in 
-
-** 
-
-Page: https://localhost/tiki-index.php
-Logged in as: ZRegister
-
-Fatal error: Method Tiki_Render_Lazy::__toString() must not
-throw an exception, caught ParseError: syntax error,
-unexpected ''default'' (T_CONSTANT_ENCAPSED_STRING),
-expecting ')' in /var/www/html/tiki/tiki-index.php on line 0
-
-** database settings
+Categorical Project Management allows for the administrator
+to easily set up categories for any project hosted on a
+given Tiki such that users can manage all normal permissions
+on all project resources through the category system.
+	 
+See
+- [[tiki-ngender-schema.sql]]
+- [[tiki-ngender-data.sql]]
 
 *** convert Tiki's Tables from MyISAM to innodb
 	 
@@ -786,6 +823,48 @@ DELIMITER ;
 
 *** Possible Problems
 
+** Features 
+
+https://dev.tiki.org/Create+a+new+preference?highlight=creating+new+preferences
+
+in feature.php look at
+- feature_dummy
+- feature_ngender_ownership
+- hmm, this code does not seem to be used anywhere
+- is it obsoleted by table tiki_feature?
+
+What's the code at the top of
+- function prefs_feature list>
+
+Do features get put in the database automatically?
+- some are set in tiki.sql 
+
+What database tables hold features-related information?
+- tiki_preferences -- 87 like 'feature_%'
+- tiki_feature -- empty!
+- tiki_menu_options -- field section is getting set to features ?
+- tiki_featured_links -- empty!
+- tiki_sefurl_regex_out ?
+
+SELECT count(*)  FROM tiki_feature;
++----------+
+| count(*) |
++----------+
+|        0 |
++----------+
+
+SELECT count(*)  FROM tiki_preferences where name like 'feature_%';
++----------+
+| count(*) |
++----------+
+|       87 |
++----------+
+
+
+Do features show up in 
+
+** database settings
+
 I notice in TABLE users_users that
 - userId int(8)
 
@@ -833,6 +912,10 @@ Use ZSteward, ZNoDefaultGroup, ZNoDefaultCategory, ZNotSteward in tests.
 
 ** Tiki Permissions
 
+Note: Unlike other objects, with wiki pages, tiki_p_edit is
+used for permission to create pages *and* permission to edit
+pages!
+	 
 See lib/setup/perms.php for 
 
 #+BEGIN_SRC php
@@ -1571,23 +1654,21 @@ and o.`type`=? and `itemId`=? and tc.`parentId` = ? and tc.`categId`=tco.`categI
 #+END_SRC
 This implies that the $parentid being passed is a category parentId - huh?
 
-*** What is the function of TABLE tiki_categorized_objects ?
+*** TABLE tiki_categorized_objects ?
 
 #+BEGIN_SRC sql
 CREATE TABLE `tiki_categorized_objects` ( `catObjectId` int(11) PRIMARY KEY default '0', );
 #+END_SRC
 
-Crazyness:
-- Only one field
-- Primary Key with default 0
-- count = 120
-
 #+BEGIN_SRC sql
-select count(*) from tiki_categorized_objects;
+select tiki_categorized_objects.catObjectId
+from tiki_categorized_objects where not exists(
+		 select 1 from tiki_category_objects where tiki_categorized_objects.catObjectId = tiki_category_objects.catObjectId
+);															-- empty set
 #+END_SRC
 
-#+BEGIN_SRC sql
-select distinct category_path(tc.categId) as `path`
-from tiki_categorized_objects tco, tiki_categories tc
-where tco.catObjectId = tc.categId order by `path`;
-#+END_SRC
+| objectType | count(*) |
+|------------+----------|
+| calendar   |        4 |
+| category   |     7035 |
+| wiki page  |        2 |
