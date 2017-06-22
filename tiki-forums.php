@@ -59,6 +59,8 @@ for ($i = 0; $i < $temp_max; $i++) {
 	$channels["data"][$i]["individual_tiki_p_admin_forum"] = $forumperms->admin_forum ? 'y' : 'n';
 }
 
+var_log($channels["data"], '$channels["data"]');
+
 $smarty->assign_by_ref('channels', $channels["data"]);
 $smarty->assign('cant', $channels["cant"]);
 include_once ('tiki-section_options.php');
