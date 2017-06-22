@@ -225,7 +225,7 @@ class Table_Code_MainOptions extends Table_Code_Manager
 			if (! is_array(parent::$code)) { // kludge!!
 				parent::$code = array();
 			}
-			if (! is_array(parent::$code[self::$level1])) { // kludge!!
+			if (! array_key_exists(self::$level1, parent::$code) || ! is_array(parent::$code[self::$level1])) { // kludge!!
 				parent::$code[self::$level1] = array();
 			}
 			// echo 'code = "';
