@@ -2,6 +2,24 @@
 
 ** Status
 
+*** New Idea
+
+In adding the let_stewards_view_categories
+permissions-giving, exclude categories which are not leaves
+unless there's an explicit exception (which will require a
+new table for such) as well as the non_steward_categories
+list.  Make sure the non_steward_categories list contains
+the meta-categories under User::Test --> which really should
+be renamed, darnit!  Maybe User::Meta?  Would it be
+worthwhile to have let_stewards_view_categories exclude all
+descendants of non_steward_categories?  Then the rules would
+be:
+
+All categories
+- set minus (proper or improper) descendants of non_steward_categories
+- set minus non leaf categories, i.e. categories with descendants
+- set union steward_ok_categories
+
 *** Issues
 
 **** let_stewards_view_categories is broken
@@ -1672,3 +1690,31 @@ from tiki_categorized_objects where not exists(
 | calendar   |        4 |
 | category   |     7035 |
 | wiki page  |        2 |
+** Tracing Notes
+	 tiki_setup.php has a big section around line 300 with defaults
+	 and non-defaults being set in the output template!
+
+	 L21 of tiki-forums.php says
+// This shows a list of forums everybody can use this listing
+$commentslib = TikiLib::lib('comments');
+but it's value is:
+
+result: (("libraries") ("isExternalContext" . 0)
+("*TikiDb*instance") ("time_control" . 0) ("extras" . 1)
+("buffer") ("flag") ("usergroups_cache") ("num_queries" . 0)
+("now" . 1499739031) ("cache_page_info") ("sessionId")
+("*TikiDb*errorHandler") ("*TikiDb*errorMessage")
+("*TikiDb*serverType") ("savedQuery")
+("*TikiDb*tablePrefix") ("*TikiDb*usersTablePrefix"))
+
+L49, $channels['data']
+
+result: (("0") ("1") ("2") ("3") ("4") ("5") ("6") ("7")
+("8") ("9"))
+
+This seems right
+
+Undocumented command:
+- "l" :: show value of current assignment ?
+
+** Misc
