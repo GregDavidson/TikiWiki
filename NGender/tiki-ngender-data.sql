@@ -11,18 +11,19 @@
 
 -- We need the model Groups and Categories
 -- Their permissions will have to be manually set by an administrator
-CALL assert_true( 'ensure_categorypath_comment( \'User\', \'root of user default categories\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test\', \'root of Model and Test User Default Model categories\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Readable\', \'model for Project_Readers\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Postable\', \'model for Project_Posters\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Editable\', \'model for Project_Editors\' )' );
-CALL assert_true( 'ensure_categorypath_comment( \'User::Test::Admin\', \'model for Project_Admins\' )' );
 
-CALL assert_true( 'ensure_groupname_comment( \'Stewards\', \'feature_ngender_stewards participation, default category permissions model\' )' );
-CALL assert_true( 'ensure_groupname_comment( \'Project_Readers\', \'permissions model with User::Test::Readable\' )' );
-CALL assert_true( 'ensure_groupname_comment( \'Project_Posters\', \'permissions model with User::Test::Postable\' )' );
-CALL assert_true( 'ensure_groupname_comment( \'Project_Editors\', \'permissions model with User::Test::Editable\' )' );
-CALL assert_true( 'ensure_groupname_comment( \'Project_Admins\', \'permissions model with User::Test::Admin\' )' );
+CALL assert_categorypath_comment( 'User', 'root of user default categories' );
+CALL assert_categorypath_comment( 'User::Test', 'root of Model and Test User Default Model categories' );
+CALL assert_categorypath_comment( 'User::Test::Readable', 'model for Project_Readers' );
+CALL assert_categorypath_comment( 'User::Test::Postable', 'model for Project_Posters' );
+CALL assert_categorypath_comment( 'User::Test::Editable', 'model for Project_Editors' );
+CALL assert_categorypath_comment( 'User::Test::Admin', 'model for Project_Admins' );
+
+CALL assert_groupname_comment( 'Stewards', 'feature_ngender_stewards participation, default category permissions model' );
+CALL assert_groupname_comment( 'Project_Readers', 'permissions model with User::Test::Readable' );
+CALL assert_groupname_comment( 'Project_Posters', 'permissions model with User::Test::Postable' );
+CALL assert_groupname_comment( 'Project_Editors', 'permissions model with User::Test::Editable' );
+CALL assert_groupname_comment( 'Project_Admins', 'permissions model with User::Test::Admin' );
 
 -- We could do with less permissions with
 -- - the right inheritance model
