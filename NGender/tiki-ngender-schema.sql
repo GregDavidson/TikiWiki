@@ -7,6 +7,14 @@
 -- Not dependent on specific NGender Categories, though!
 
 -- #+BEGIN_SRC sql
+DROP TABLE IF EXISTS `nonleaf_steward_categories`;
+CREATE TABLE `nonleaf_steward_categories` (
+  `category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
+) ENGINE=InnoDB
+COMMENT 'always give Stewards tiki_p_view_category permission on these categories';
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
 DROP TABLE IF EXISTS `non_steward_categories`;
 CREATE TABLE `non_steward_categories` (
   `category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
@@ -33,7 +41,10 @@ BEGIN
  	 DECLARE done_ int DEFAULT 0;
  	 DEClARE cursor_ CURSOR FOR 
 	  SELECT categId FROM tiki_categories
-		 WHERE categId NOT IN (SELECT category_ FROM non_steward_categories);
+		WHERE (
+			categId NOT IN (SELECT category_ FROM non_steward_categories)
+			AND categId NOT IN (SELECT parentId FROM tiki_categories)
+		) OR categId IN (SELECT category_ FROM nonleaf_steward_categories);
  	 DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
 	 OPEN cursor_;
 	 foo: LOOP
