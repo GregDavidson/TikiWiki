@@ -52,6 +52,13 @@ Perms::bulk(array( 'type' => 'forum' ), 'object', $channels['data'], 'forumId');
 $temp_max = count($channels["data"]);
 for ($i = 0; $i < $temp_max; $i++) {
 	$forumperms = Perms::get(array( 'type' => 'forum', 'object' => $channels['data'][$i]['forumId'] ));
+	var_log($channels['data'][$i]['forumId'],'$channels["data"][$i]["forumId"]', __FILE__, __LINE__);
+	var_log($channels['data'][$i]['name'],'$channels["data"][$i]["name"]', __FILE__, __LINE__);
+	var_log($forumperms->forum_read, '$forumperms->forum_read', __FILE__, __LINE__);
+	var_log($forumperms->forum_post, '$forumperms->forum_post', __FILE__, __LINE__);
+	var_log($forumperms->forum_post_topic, '$forumperms->forum_post_topic', __FILE__, __LINE__);
+	var_log($forumperms->forum_vote, '$forumperms->forum_vote', __FILE__, __LINE__);
+	var_log($forumperms->admin_forum, '$forumperms->admin_forum', __FILE__, __LINE__);
 	$channels["data"][$i]["individual_tiki_p_forum_read"] = $forumperms->forum_read ? 'y' : 'n';
 	$channels["data"][$i]["individual_tiki_p_forum_post"] = $forumperms->forum_post ? 'y' : 'n';
 	$channels["data"][$i]["individual_tiki_p_forum_post_topic"] = $forumperms->forum_post_topic ? 'y' : 'n';
@@ -59,7 +66,7 @@ for ($i = 0; $i < $temp_max; $i++) {
 	$channels["data"][$i]["individual_tiki_p_admin_forum"] = $forumperms->admin_forum ? 'y' : 'n';
 }
 
-var_log($channels["data"], '$channels["data"]');
+// var_log($channels["data"], '$channels["data"]');
 
 $smarty->assign_by_ref('channels', $channels["data"]);
 $smarty->assign('cant', $channels["cant"]);
