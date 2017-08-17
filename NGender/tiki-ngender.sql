@@ -56,24 +56,47 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `test_passed`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `test_passed`(expression_ TEXT, message_ TEXT)
+	COMMENT 'Record passed test, args ignored and api allows for future logging option; see test_failed'
+BEGIN
+	SET @TESTS_PASSED = @TESTS_PASSED + 1;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `test_failed`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `test_failed`(expression_ TEXT, message_ TEXT)
+	COMMENT 'Record failed test, signal error with appropriate message'
+BEGIN
+	DECLARE msg_ TEXT DEFAULT CONCAT('Assert ', expression_, ' failed');
+	SET @TESTS_FAILED = @TESTS_FAILED + 1;
+	IF message_ != '' THEN
+		 SET msg_ = CONCAT(msg_, ': ', message_);
+	END IF;
+	SET msg_ = CONCAT(msg_, '!');
+	SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_true_`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true_`(value_ INT, expression_ TEXT, message_ TEXT)
-  READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'Signal error if value_ is zero'
 BEGIN
 	DECLARE msg_ TEXT;
 	IF value_ != 0 THEN
-		SET @TESTS_PASSED = @TESTS_PASSED + 1;
+		CALL test_passed(expression_, message_);
 	ELSE
-		SET @TESTS_FAILED = @TESTS_FAILED + 1;
-		SET msg_ = CONCAT('Assert ', expression_, ' failed');
-		IF message_ != '' THEN
-			 SET msg_ = CONCAT(msg_, ': ', message_);
-		END IF;
-		SET msg_ = CONCAT(msg_, '!');
-		SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
+		CALL test_failed(expression_, message_);
 	END IF;
 END//
 DELIMITER ;
@@ -616,11 +639,29 @@ END//
 DELIMITER ;
 -- #+END_SRC
 
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `assert_categorypath_comment`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `assert_categorypath_comment`(path_ TEXT, comment_ TEXT)
+	READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'assert success of ensure_categorypath_comment'
+BEGIN
+	DECLARE test_	TEXT DEFAULT concat('ensure_categorypath_comment(', path_, ',', comment_, ')');
+	IF ensure_categorypath_comment(path_, comment_) THEN
+		CALL test_passed( test_, '' );
+	ELSE
+		CALL test_failed( test_, '' );
+	END IF;
+END//
+DELIMITER ;
+-- #+END_SRC
+
 SET @x = 'User';
 SET @y = category_named_parent(@x, 0);
 SET @z = 'root of user default categories';
 SET @w = ensure_categorypath_comment(@x, @z);
-CALL assert_true('@y =  @w');
+CALL assert_true('@y = @w');
 
 SET @x = category_of_path('User::Test');
 SET @y = 'root of test account default categories';
@@ -958,6 +999,24 @@ BEGIN
 			`userChoice`, `prorateInterval`, `groupDesc`
 		) VALUES (	group_name, '', 0, 0, 0, 0, '', '', 'day',	comment_	);
 		RETURN group_named(group_name);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP PROCEDURE IF EXISTS `assert_groupname_comment`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `assert_groupname_comment`(group_name TEXT, comment_ TEXT)
+  READS SQL DATA MODIFIES SQL DATA
+	COMMENT 'assert success of ensure_groupname_comment'
+BEGIN
+	DECLARE test_ TEXT DEFAULT concat('ensure_groupname_comment(', group_name, ',', comment_, ')');
+	IF ensure_groupname_comment(group_name, comment_) THEN
+		CALL test_passed( test_, '' );
+	ELSE
+		CALL test_failed( test_, '' );
+	END IF;
 END//
 DELIMITER ;
 -- #+END_SRC
