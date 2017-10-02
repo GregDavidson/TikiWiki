@@ -922,7 +922,7 @@ BEGIN
 	DECLARE parent_ INT;
 	-- Warn if target_ exists with unexpected name or parent??
 	IF target_ = 0 THEN
-		IF convert(user_name using latin1) REGEXP convert('^Z[[:upper:]]' using latin1)
+		IF convert(username_ using latin1) REGEXP convert('^Z[[:upper:]]' using latin1)
 		COLLATE 'latin1_general_cs' THEN
 			SET parent_ = test_;
 		ELSE
@@ -953,7 +953,7 @@ BEGIN
 	DECLARE msg_ TEXT DEFAULT 'user_add_groupname: ';
 	DECLARE chuck_ INT;
   -- Assert: is_user(user_):
-	IF COALESCE(user_name(user_), '') = '' THEN
+	IF length(COALESCE(user_name(user_), '')) = 0 THEN
 		SET chuck_ = signal_no_int( CONCAT(msg_, 'User ', COALESCE(user_, -1), ' not found!') );
 	END IF;
   -- Assert: is_groupname(groupname_):
