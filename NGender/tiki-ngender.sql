@@ -813,7 +813,7 @@ FUNCTION `user_default_group`(user_id INT)
 RETURNS INT READS SQL DATA DETERMINISTIC
 	COMMENT 'returns the id of the default group of the given user or the empty string if none'
 BEGIN
-	RETURN group_named(user_default_groupname(user_id));
+	RETURN try_group_named(user_default_groupname(user_id));
 END//
 DELIMITER ;
 -- #+END_SRC
