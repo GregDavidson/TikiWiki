@@ -2,7 +2,7 @@
 # Ignore binaries
 /bin/
 # Ignore local.php
-# /db/local.php
+/db/local.php
 # Ignore file upload directories
 /files/forums/
 /files/templates/
