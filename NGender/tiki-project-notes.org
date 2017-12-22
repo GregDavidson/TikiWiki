@@ -2,6 +2,42 @@
 
 ** Status
 
+*** Bug in project_group_category_models
+
+When I first tried to execute the 7 commands starting with:
+CALL project_group_category_models('RPTUG', ...
+I got 6 error messages:
+MariaDB [tiki]> MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
+MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
+MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
+MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
+MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
+MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
+MariaDB [tiki]> Query OK, 1 row affected (0.14 sec)
+
+Those error messages went away after I did:
+select ensure_categorypath_comment('RPTUG::ObserverReadable', 'for RPTUG');
+
+==> see if can replicate with project_group_category_models('DesignSpace', ...);
+
+This ran suspiciously quickly afterwards:
+call let_stewards_view_categories;
+MariaDB [tiki]> Query OK, 0 rows affected (0.01 sec)
+
+==> check if the associations got made!
+
+*** Can we simplify permissions for more exalted groups?
+
+How can we make it simple so that
+- Observers need specific categories for Readable, Postable, Editable
+- Associates should be able to Post if they can Read
+- Partners should be able to Read, Post, Write anything in the general category
+- And remember there may be other groups, e.g. Admins, Interns, Learners, etc.
+-- which will want to be treated as carefully as observers!
+
+What's the easiest way to make some pages Public Readable?
+- Right now, I'm preferring to be explicit about that!
+
 *** New Idea
 
 In adding the let_stewards_view_categories

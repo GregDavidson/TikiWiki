@@ -125,6 +125,57 @@ There are no FROM clauses in MySQL UPDATE so the
 Multiple-table syntax has to be used to introduce any
 additional tables involved in the WHERE constraints.
 
+** MySql Backup & Recovery
+*** Backup Options
+Note options used in 
+
+mysqldump --routines --all-databases --add-drop-database \
+--add-locks --extended-insert -
+
+*** Password Changes & Recovery
+
+**** Privileges are cached
+
+flush previleges; -- for changes to take effect
+
+
+Fist you can check your access.
+
+1.- Check for your access in the new server
+
+$mysql -u root -p -hlocalhost
+
+Enter password:
+
+2.- show your grants
+
+$mysql>SHOW GRANTS FOR 'root'@'localhost';
+
+To solve the problem you can do this.
+
+1.- stop your services.
+
+service mysqld stop
+
+2.- start your services with "stop grant tables"
+
+mysqld --skip-grant-tables
+
+3.-update the password of user root
+
+$mysql>UPDATE user SET Password=PASSWORD('my_password') where USER='root';
+
+(if you want you can create your user) $mysql>CREATE USER 'root'@'localhost' IDENTIFIED BY 'password';
+
+4.- Flush the privilages
+
+$mysql> FLUSH PRIVILEGES;
+
+5.- Restart your server
+
+service mysqld start
+
+
 
 * Tiki Database Problems
 There seem to be some DATA CORRUPTIONS as shown by:
