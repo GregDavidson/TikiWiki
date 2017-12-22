@@ -115,3 +115,19 @@ CALL project_group_category_models('', 'UncommonKnowledgeAdmins', 'UncommonKnowl
 -- CALL perms_grp_cat(group_named('Project_Editors'), category_of_path('User::Test::Editable'));; -- 14 rows
 -- CALL perms_grp_cat(group_named('Project_Admins'), category_of_path('User::Test::Admin')); -- 70 rows
 
+CALL project_group_category_models('RPTUG', 'Observers', 'Observer', 'Project_Readers', 'Readable');
+CALL project_group_category_models('RPTUG', 'Observers', 'Observer', 'Project_Posters', 'Postable');
+CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Readers', 'Readable');
+CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
+CALL project_group_category_models('RPTUG', 'Partners', 'Partner', 'Project_Readers', 'Readable');
+CALL project_group_category_models('RPTUG', 'Partners', 'Partner', 'Project_Editors', 'Editable');
+CALL project_group_category_models('', 'RPTUGAdmins', 'RPTUG!', 'Project_Admins', 'Admin');
+
+CALL project_group_category_models('DesignSpace', 'Observers', 'Observer', 'Project_Readers', 'Readable');
+CALL project_group_category_models('DesignSpace', 'Observers', 'Observer', 'Project_Posters', 'Postable');
+CALL project_group_category_models('DesignSpace', 'Associates', 'Associate', 'Project_Readers', 'Readable');
+CALL project_group_category_models('DesignSpace', 'Associates', 'Associate', 'Project_Editors', 'Editable');
+CALL project_group_category_models('DesignSpace', 'Partners', 'Partner', 'Project_Readers', 'Readable');
+CALL project_group_category_models('DesignSpace', 'Partners', 'Partner', 'Project_Editors', 'Editable');
+CALL project_group_category_models('', 'DesignSpaceAdmins', 'DesignSpace!', 'Project_Admins', 'Admin');
+0
