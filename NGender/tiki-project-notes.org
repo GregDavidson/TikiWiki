@@ -2,6 +2,44 @@
 
 ** Status
 
+*** Can we simplify permissions for more exalted groups?
+
+Review how Steward Project permissions work with someone
+- If I have something associated with project Foo
+-- Why can't I have FooPartners able to do anything with Foo
+-- FooAssociates && Foo Observers always able to Post
+-- That should cut down what I need to set up explicitly
+
+How can we make it simple so that
+- Observers need specific categories for Readable, Postable, Editable
+- Associates should be able to Post if they can Read
+- Partners should be able to Read, Post, Write anything in the general category
+- And remember there may be other groups, e.g. Admins, Interns, Learners, etc.
+-- which will want to be treated as carefully as observers!
+
+What's the easiest way to make some pages Public Readable?
+- Right now, I'm preferring to be explicit about that!
+
+*** New Idea
+
+In adding the let_stewards_view_categories
+permissions-giving, exclude categories which are not leaves
+unless there's an explicit exception (which will require a
+new table for such) as well as the non_steward_categories
+list.  Make sure the non_steward_categories list contains
+the meta-categories under User::Test --> which really should
+be renamed, darnit!  Maybe User::Meta?  Would it be
+worthwhile to have let_stewards_view_categories exclude all
+descendants of non_steward_categories?  Then the rules wouldx
+be:
+
+All categories
+- set minus (proper or improper) descendants of non_steward_categories
+- set minus non leaf categories, i.e. categories with descendants
+- set union steward_ok_categories
+
+*** Issues
+
 *** Bug in project_group_category_models
 
 When I first tried to execute the 7 commands starting with:
@@ -26,37 +64,81 @@ MariaDB [tiki]> Query OK, 0 rows affected (0.01 sec)
 
 ==> check if the associations got made!
 
-*** Can we simplify permissions for more exalted groups?
+**** Bug in rebuild search index
 
-How can we make it simple so that
-- Observers need specific categories for Readable, Postable, Editable
-- Associates should be able to Post if they can Read
-- Partners should be able to Read, Post, Write anything in the general category
-- And remember there may be other groups, e.g. Admins, Interns, Learners, etc.
--- which will want to be treated as carefully as observers!
+https://ngender.org/tiki-ajax_services.php?controller=search&action=rebuild
 
-What's the easiest way to make some pages Public Readable?
-- Right now, I'm preferring to be explicit about that!
+( ! ) Fatal error: Uncaught Error: Call to undefined function mb_detect_encoding() in /WebPages/ngender.tiki.wiki/public/lib/encoding/lib-encoding.php on line 56
+( ! ) Error: Call to undefined function mb_detect_encoding() in /WebPages/ngender.tiki.wiki/public/lib/encoding/lib-encoding.php on line 56
+Call Stack
+#	Time	Memory	Function	Location
+1	0.0011	429120	{main}( )	.../tiki-ajax_services.php:0
+2	0.6517	13375232	Services_Broker->process( )	.../tiki-ajax_services.php:51
+3	0.6517	13375232	Services_Broker->attemptProcess( )	.../Broker.php:28
+4	0.6519	13400696	Services_Search_Controller->action_rebuild( )	.../Broker.php:107
+5	0.6533	13585728	UnifiedSearchLib->rebuild( )	.../Controller.php:36
+6	0.6852	16943864	TikiLib->allocate_extra( )	.../searchlib-unified.php:237
+7	0.6852	16943976	UnifiedSearchLib->{closure:/WebPages/ngender.tiki.wiki/public/lib/search/searchlib-unified.php:235-237}( )	.../tikilib.php:169
+8	0.6852	16943976	Search_Indexer->rebuild( )	.../searchlib-unified.php:236
+9	4.1957	22472240	Search_Indexer->addDocument( )	.../Indexer.php:72
+10	4.1958	22472240	Search_Indexer->getDocuments( )	.../Indexer.php:98
+11	4.1958	22472656	Search_ContentSource_SheetSource->getDocument( )	.../Indexer.php:124
+12	4.3822	24621176	TikiSheet->export( )	.../SheetSource.php:52
+13	4.3822	24621200	TikiSheetCSVHandler->_save( )	.../grid.php:325
+14	4.3844	24658904	Encoding->convert_encoding( )	.../grid.php:992
+15	4.3845	24659288	Encoding->detect_encoding( )	.../lib-encoding.php:65
 
-*** New Idea
+**** Bug in Search:Control Panels
 
-In adding the let_stewards_view_categories
-permissions-giving, exclude categories which are not leaves
-unless there's an explicit exception (which will require a
-new table for such) as well as the non_steward_categories
-list.  Make sure the non_steward_categories list contains
-the meta-categories under User::Test --> which really should
-be renamed, darnit!  Maybe User::Meta?  Would it be
-worthwhile to have let_stewards_view_categories exclude all
-descendants of non_steward_categories?  Then the rules would
-be:
+https://ngender.org/tiki-admin.php?page=search
 
-All categories
-- set minus (proper or improper) descendants of non_steward_categories
-- set minus non leaf categories, i.e. categories with descendants
-- set union steward_ok_categories
+( ! ) Notice: Undefined offset: 2 in /WebPages/ngender.tiki.wiki/public/tiki-admin.php on line 172
+Call Stack
+#	Time	Memory	Function	Location
+1	0.0194	520848	{main}( )	.../tiki-admin.php:0
+2	0.0218	657208	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup.php' )	.../tiki-admin.php:14
+3	0.0393	2359424	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup_base.php' )	.../tiki-setup.php:49
+4	0.1499	7462344	require_once( '/WebPages/ngender.tiki.wiki/public/lib/setup/prefs.php' )	.../tiki-setup_base.php:239
+5	0.1499	7462368	initialize_prefs( )	.../prefs.php:35
+6	0.1499	7462416	get_default_prefs( )	.../prefs.php:349
+7	0.1512	7615128	PreferencesLib->getDefaults( )	.../prefs.php:50
+8	0.2035	10654832	PreferencesLib->getFileData( )	.../prefslib.php:819
+9	0.2035	10654832	PreferencesLib->realLoad( )	.../prefslib.php:434
+10	0.2036	10667024	prefs_pass_list( )	.../prefslib.php:462
+11	0.2037	10668152	genIndexedBlacks( )	.../pass.php:27
+12	0.2037	10671104	readableBlackName( )	.../tiki-admin.php:154
 
-*** Issues
+( ! ) Notice: Undefined offset: 3 in /WebPages/ngender.tiki.wiki/public/tiki-admin.php on line 173
+Call Stack
+#	Time	Memory	Function	Location
+1	0.0194	520848	{main}( )	.../tiki-admin.php:0
+2	0.0218	657208	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup.php' )	.../tiki-admin.php:14
+3	0.0393	2359424	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup_base.php' )	.../tiki-setup.php:49
+4	0.1499	7462344	require_once( '/WebPages/ngender.tiki.wiki/public/lib/setup/prefs.php' )	.../tiki-setup_base.php:239
+5	0.1499	7462368	initialize_prefs( )	.../prefs.php:35
+6	0.1499	7462416	get_default_prefs( )	.../prefs.php:349
+7	0.1512	7615128	PreferencesLib->getDefaults( )	.../prefs.php:50
+8	0.2035	10654832	PreferencesLib->getFileData( )	.../prefslib.php:819
+9	0.2035	10654832	PreferencesLib->realLoad( )	.../prefslib.php:434
+10	0.2036	10667024	prefs_pass_list( )	.../prefslib.php:462
+11	0.2037	10668152	genIndexedBlacks( )	.../pass.php:27
+12	0.2037	10671104	readableBlackName( )	.../tiki-admin.php:154
+
+( ! ) Notice: Undefined offset: 4 in /WebPages/ngender.tiki.wiki/public/tiki-admin.php on line 174
+Call Stack
+#	Time	Memory	Function	Location
+1	0.0194	520848	{main}( )	.../tiki-admin.php:0
+2	0.0218	657208	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup.php' )	.../tiki-admin.php:14
+3	0.0393	2359424	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup_base.php' )	.../tiki-setup.php:49
+4	0.1499	7462344	require_once( '/WebPages/ngender.tiki.wiki/public/lib/setup/prefs.php' )	.../tiki-setup_base.php:239
+5	0.1499	7462368	initialize_prefs( )	.../prefs.php:35
+6	0.1499	7462416	get_default_prefs( )	.../prefs.php:349
+7	0.1512	7615128	PreferencesLib->getDefaults( )	.../prefs.php:50
+8	0.2035	10654832	PreferencesLib->getFileData( )	.../prefslib.php:819
+9	0.2035	10654832	PreferencesLib->realLoad( )	.../prefslib.php:434
+10	0.2036	10667024	prefs_pass_list( )	.../prefslib.php:462
+11	0.2037	10668152	genIndexedBlacks( )	.../pass.php:27
+12	0.2037	10671104	readableBlackName( )	.../tiki-admin.php:154
 
 **** let_stewards_view_categories is broken
 
@@ -369,7 +451,7 @@ For maximum simplicity, when feature_categorical_stewardship == 'y'
 -- Ensure their Default Category has suitable permissions
 --- Avoid permission of being able to add other objects to it!!
 --- Never allow that permission for a Default Category?
-- Test account names begin with Z[:uppercase_allpha:]
+- Test account names begin with Z[:uppercase_alpha:]
 -- Test account default categories are User::Test::TheirUserName
 - Permissions can be copied from a model
 -- Model permissions are those between a model group and a model category
@@ -707,7 +789,6 @@ $wiki_authors_style='', $minor=0, $created='')
 
 In there we set user and creator to the loggin user.
 
-
 ** Categorical Project Management
 
 Categorical Project Management allows for the administrator
@@ -877,6 +958,19 @@ DELIMITER ;
 
 *** Possible Problems
 
+** Tiki Key Files
+*** Tiki MySQL Schema Files
+[[file:../db/tiki.sql]]
+[[file:tiki-ngender.sql]]
+[[file:tiki-ngender-schema.sql]]
+[[file:tiki-ngender-data.sql]]
+*** Tiki Features
+Tiki features are stored in a number of files under [[file:../lib/prefs]]
+(cd /Tiki/lib/prefs ; grep -l "'name'" *.php)
+(cd /Tiki/lib/prefs ; grep -w 'prefs[a-z_]*list(' *.php)
+
+[[file:../lib/prefs/feature.php]]
+[[file:../lib/prefs/global.php]]
 ** Features 
 
 https://dev.tiki.org/Create+a+new+preference?highlight=creating+new+preferences

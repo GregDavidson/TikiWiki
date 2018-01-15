@@ -25,60 +25,108 @@ CALL assert_groupname_comment( 'Project_Posters', 'permissions model with User::
 CALL assert_groupname_comment( 'Project_Editors', 'permissions model with User::Test::Editable' );
 CALL assert_groupname_comment( 'Project_Admins', 'permissions model with User::Test::Admin' );
 
--- We could do with less permissions with
--- - the right inheritance model
--- - more categories assigned to each object
--- Do we want to grant the project admins rights over all project categories or only some?
+-- Before these Groups and Categories can be used as Models
+-- the Tiki Admin must set them up so that
+-- Group + Category => Permissions as follows:
+-- Project_Readers + User::Test::Readable => Read
+-- Project_Posters + User::Test::Postable => Read, Post, Comment
+-- Project_Editors + User::Test::Editable => Read, Write, Post, Comment
+-- Project_Admins + User::Test::Admin => admin permissions
 
--- project_group_category_models(project_path, group_name, category_name, model_group_name, model_category_name)
--- will prefix group_name with tail of project_path unless group_name ends with ! (which will be removed)
--- will suffix category_name with model_category_name unless category_name ends with ! (which will be removed)
--- will prefix category_name with project_name unless category_name contains a :: substring
+-- ** Group Registered => Category Registered
+
+-- Group Registered (all logged in Users) have Read permission on Objects in Category RegisteredReadable
 
 CALL project_group_category_models('', 'Registered', 'Registered', 'Project_Readers', 'Readable');
 
--- How do we want Project_Admins to work?
--- We shouldn't have a PROJECT::Admin category within a given PROJECT
--- PROJECT_Admins should generally have Project_Admins/Admin permissions on all PROJECT categories
--- If all PROJECT categories are children of PROJECT_PARENT_CATEGORY, how can this best be done?
--- Possible solution:
--- -  Have all PROJECT categories inherit from PROJECT_PARENT_CATEGORY
--- - Have PROJECT_Admins be the ONLY group with any permissions on PROJECT_PARENT_CATEGORY!
--- - Super-secure project categories can simply block inheritance!
+-- ** Project NGender
 
--- we just unnested these categories to eliminate inheritance
-CALL project_group_category_models('SkillsBank', 'Observers', 'Observer', 'Project_Readers', 'Readable');
-CALL project_group_category_models('SkillsBank', 'Observers', 'Observer', 'Project_Posters', 'Postable');
-CALL project_group_category_models('SkillsBank', 'Associates', 'Associate', 'Project_Readers', 'Readable');
+-- Most NGender pages will be explicitly marked with category public
+-- NGenderPartners and NGenderAdmins
+
+-- CALL project_group_models__('NGender', 'Partners', 'Project_Editors', 'Editable');
+-- CALL project_group_category_models__('NGender', 'Partners', 'NGender!', 'Project_Editors', 'Editable');
+
+CALL project_group_models('NGender', 'Partners', 'Project_Editors', 'Editable');
+CALL project_group_models('NGender', 'Admins', 'Project_Admins', 'Admin');
+
+-- ** Project Abundance
+
+-- Anonymous (Public) -> Registered -> Abundancers and AbundanceAdmins
+
+CALL project_group_models('Abundance', 'Anonymous!', 'Project_Readers', 'Readable');
+CALL project_group_models('Abundance', 'Registered!', 'Project_Posters', 'Postable');
+CALL project_group_models('Abundance', 'Abundancers!', 'Project_Editors', 'Editable');
+CALL project_group_models('Abundance', 'Admins', 'Project_Admins', 'Admin');
+
+-- ** Project Someclues
+
+-- Registered -> SomeCluesObservers -> SomeCluesDispensors and SomeCluesAdmins
+
+CALL project_group_models('SomeClues', 'Registered!', 'Project_Readers', 'Readable');
+CALL project_group_models('SomeClues', 'Observers', 'Project_Posters', 'Postable');
+CALL project_group_models('SomeClues', 'Dispensors', 'Project_Editors', 'Editable');
+CALL project_group_models('SomeClues', 'Admins', 'Project_Admins', 'Admin');
+
+-- ** Project UncommonKnowledge
+
+-- Registered -> Uncommoners and UncommonKnowledgeAdmins
+
+CALL project_group_models('UncommonKnowledge', 'Registered!', 'Project_Posters', 'Postable');
+CALL project_group_models('UncommonKnowledge', 'Uncommoners!', 'Project_Editors', 'Editable');
+CALL project_group_models('UncommonKnowledge', 'Admins', 'Project_Admins', 'Admin');
+
+-- ** Project SkillsBank
+
+-- SkillsBankObservers -> SkillsBankAssociates -> SkillsBankPartners and SkillsBankAdmins
+
+CALL project_group_models('SkillsBank', 'Observers', 'Project_Posters', 'Postable');
+CALL project_group_models('SkillsBank', 'Associates', 'Project_Posters', 'Postable');
+CALL project_group_models('SkillsBank', 'Partners', 'Project_Editors', 'Editable');
+CALL project_group_models('SkillsBank', 'Admins', 'Project_Admins', 'Admin');
 CALL project_group_category_models('SkillsBank', 'Associates', 'Associate', 'Project_Editors', 'Editable');
-CALL project_group_category_models('SkillsBank', 'Partners', 'Partner', 'Project_Readers', 'Readable');
-CALL project_group_category_models('SkillsBank', 'Partners', 'Partner', 'Project_Editors', 'Editable');
-CALL project_group_category_models('', 'SkillsBankAdmins', 'SkillsBank!', 'Project_Admins', 'Admin');
 
--- Rename LearnerReadable to LearnerPostable??
+-- ** Project LOYL
 
--- we just unnested these categories to eliminate inheritance
-CALL project_group_category_models('LOYL', '_Observers', 'Observer_', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', '_Observers', 'Observer_', 'Project_Posters', 'Postable');
-CALL project_group_category_models('LOYL', '_Learners', 'Learner_', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', '_Learners', 'Learner_', 'Project_Editors', 'Editable');
-CALL project_group_category_models('LOYL', '_Peers', 'Peer_', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', '_Peers', 'Peer_', 'Project_Editors', 'Editable');
-CALL project_group_category_models('LOYL', '_Partners', 'Partner_', 'Project_Readers', 'Readable');
-CALL project_group_category_models('LOYL', '_Partners', 'Partner_', 'Project_Editors', 'Editable');
-CALL project_group_category_models('', 'LOYL_Admins', 'LOYL!', 'Project_Admins', 'Admin');
+-- Registered -> LOYL_Observers -> LOYL_Learners -> LOYL_Peers -> LOYL_Partners and LOYL_Admins
 
-CALL project_group_category_models('SomeClues', 'Observers', 'Observer', 'Project_Posters', 'Postable');
-CALL project_group_category_models('SomeClues', 'Dispensors', 'Partner', 'Project_Editors', 'Editable');
-CALL project_group_category_models('', 'SomeCluesAdmins', 'SomeClues!', 'Project_Admins', 'Admin');
+CALL project_group_models('LOYL', 'Registered!', 'Project_Readers', 'Readable');
+CALL project_group_models('LOYL', 'Observers', 'Project_Posters', 'Postable');
+CALL project_group_models('LOYL', 'Learners', 'Project_Posters', 'Postable');
+CALL project_group_models('LOYL', 'Peers', 'Project_Posters', 'Postable');
+CALL project_group_models('LOYL', 'Admins', 'Project_Admins', 'Admin');
+CALL project_group_category_models('LOYL', 'Learners', 'Learner', 'Project_Editors', 'Editable');
+CALL project_group_category_models('LOYL', 'Peers', 'Peer', 'Project_Editors', 'Editable');
 
-CALL project_group_category_models('Abundance', 'Observers', 'Observer', 'Project_Posters', 'Postable');
-CALL project_group_category_models('Abundance', 'Abundancers!', '', 'Project_Editors', 'Editable');
-CALL project_group_category_models('', 'AbundanceAdmins', 'Abundance!', 'Project_Admins', 'Admin');
+-- ** Project RPTUG
 
-CALL project_group_category_models('UncommonKnowledge', 'Observers', 'Observer', 'Project_Posters', 'Postable');
-CALL project_group_category_models('UncommonKnowledge', 'Uncommoners!', '', 'Project_Editors', 'Editable');
-CALL project_group_category_models('', 'UncommonKnowledgeAdmins', 'UncommonKnowledge!', 'Project_Admins', 'Admin');
+-- Registered -> RPTUG_Associates -> RPTUG_Partners and RPTUG_Admins
+-- Most PRTUG pages will be explicitly marked with category public
+
+CALL project_group_models('RPTUG', 'Registered!', 'Project_Posters', 'Postable');
+CALL project_group_models('RPTUG', 'Associates', 'Project_Posters', 'Postable');
+CALL project_group_models('RPTUG', 'Partners', 'Project_Editors', 'Editable');
+CALL project_group_models('RPTUG', 'Admins', 'Project_Admins', 'Admin');
+CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
+
+-- ** Project DesignSpace
+
+-- Registered -> DesignSpaceObservers -> DesignSpacePartners and DesignSpaceAdmins
+
+CALL project_group_models('DesignSpace', 'Registered!', 'Project_Posters', 'Postable');
+CALL project_group_models('DesignSpace', 'Observers', 'Project_Posters', 'Postable');
+CALL project_group_models('DesignSpace', 'Partners', 'Project_Editors', 'Editable');
+CALL project_group_models('DesignSpace', 'Admins', 'Project_Admins', 'Admin');
+
+-- ** Project LTHL
+
+-- LTHL_Observers -> LTHL_Partners and LTHL_Admins
+
+CALL project_group_models('LTHL', 'Observers', 'Project_Posters', 'Postable');
+CALL project_group_models('LTHL', 'Partners', 'Project_Editors', 'Editable');
+CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
+
+-- * Instructions and MIscellaneous
 
 -- -- SELECT * FROM group_category_models_view;
 
@@ -101,6 +149,8 @@ CALL project_group_category_models('', 'UncommonKnowledgeAdmins', 'UncommonKnowl
 -- Pair up your the Gruop/Category pairs for your projects with their models
 -- using project_group_category_models as above.
 
+-- SELECT * FROM group_category_models_view ORDER BY target_category, target_group;
+
 -- -- CALL establish_group_category_models();
 
 -- You can also do this manually through the Category features:
@@ -115,19 +165,8 @@ CALL project_group_category_models('', 'UncommonKnowledgeAdmins', 'UncommonKnowl
 -- CALL perms_grp_cat(group_named('Project_Editors'), category_of_path('User::Test::Editable'));; -- 14 rows
 -- CALL perms_grp_cat(group_named('Project_Admins'), category_of_path('User::Test::Admin')); -- 70 rows
 
-CALL project_group_category_models('RPTUG', 'Observers', 'Observer', 'Project_Readers', 'Readable');
-CALL project_group_category_models('RPTUG', 'Observers', 'Observer', 'Project_Posters', 'Postable');
-CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Readers', 'Readable');
-CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
-CALL project_group_category_models('RPTUG', 'Partners', 'Partner', 'Project_Readers', 'Readable');
-CALL project_group_category_models('RPTUG', 'Partners', 'Partner', 'Project_Editors', 'Editable');
-CALL project_group_category_models('', 'RPTUGAdmins', 'RPTUG!', 'Project_Admins', 'Admin');
+-- ** Cleanup Obsolete Groups and Categories
 
-CALL project_group_category_models('DesignSpace', 'Observers', 'Observer', 'Project_Readers', 'Readable');
-CALL project_group_category_models('DesignSpace', 'Observers', 'Observer', 'Project_Posters', 'Postable');
-CALL project_group_category_models('DesignSpace', 'Associates', 'Associate', 'Project_Readers', 'Readable');
-CALL project_group_category_models('DesignSpace', 'Associates', 'Associate', 'Project_Editors', 'Editable');
-CALL project_group_category_models('DesignSpace', 'Partners', 'Partner', 'Project_Readers', 'Readable');
-CALL project_group_category_models('DesignSpace', 'Partners', 'Partner', 'Project_Editors', 'Editable');
-CALL project_group_category_models('', 'DesignSpaceAdmins', 'DesignSpace!', 'Project_Admins', 'Admin');
-0
+-- After everything current is in group_category_models
+-- delete all groups and categories from the Tiki and from old_groups_and_categories
+-- that are in old_groups_and_categories and are NOT in group_category_models

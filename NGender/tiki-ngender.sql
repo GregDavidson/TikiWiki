@@ -632,8 +632,8 @@ BEGIN
 	END IF;
 	RETURN COALESCE(							-- avoid using up ids in collisions
 		try_category_named_parent(tail_, parent_),
-		try_create_categoryname_parent_comment(tail_, parent_, comment_),
-		category_named_parent(tail_, parent_)
+		try_create_categoryname_parent_comment(tail_, parent_, comment_) -- ,
+		-- category_named_parent(tail_, parent_)
 	);
 END//
 DELIMITER ;
@@ -992,7 +992,7 @@ FUNCTION `ensure_groupname_comment`(group_name TEXT, comment_ TEXT)
 BEGIN
 		-- some fields are NOT defaulted!!
 		-- following non-default values set by Web Interface
-		-- why is prorateInterval = 'day' ??
+		-- why is meaning of prorateInterval = 'day' ??
 		INSERT IGNORE INTO `users_groups`(
 			`groupName`, `groupHome`,	`usersTrackerId`, `groupTrackerId`,
 			`usersFieldId`,	`groupFieldId`,	`registrationUsersFieldIds`,
