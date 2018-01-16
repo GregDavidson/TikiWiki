@@ -332,8 +332,10 @@ Questions:
 - Which fieldname corresponds to ItemId? To name?
 - Please fill in in above table!
 
-select distinct type from tiki_objects where itemId REGEXP '^[[:digit:]]+$';
-select distinct type from tiki_objects where itemId <> `name`;
+#+BEGIN_SRC sql
+SELECT DISTINCT type FROM tiki_objects WHERE itemId REGEXP '^[[:digit:]]+$';
+SELECT DISTINCT type FROM tiki_objects WHERE itemId <> `name`;
+#+END_SRC
 | type       |
 |------------|
 | blog       |
@@ -342,25 +344,32 @@ select distinct type from tiki_objects where itemId <> `name`;
 | forum      |
 | forum post |
 
+#+BEGIN_SRC sql
 select distinct type from tiki_objects where NOT ( itemId REGEXP '^[[:digit:]]+$');
 select distinct type from tiki_objects where itemId = `name`;
+#+END_SRC
 | type      |
 |-----------|
 | wiki page |
 
+#+BEGIN_SRC sql
 select itemId from tiki_objects where `type` = 'wiki page' limit 2;
+#+END_SRC
 | itemId            |
 |-------------------|
 | SandBox           |
 | Abundance Culture |
 
+#+BEGIN_SRC sql
 select objectId from tiki_objects
 where `type` = 'wiki pages'
 and objectId not in (select pageName from tiki_pages);
+#+END_SRC
 --> empty set!
 
 Note the off-by-1 errors: -- add some details of the odd-man-out!!
 
+#+BEGIN_SRC sql
 select count(*) from tiki_objects where `type` = 'blog post'; -- 11
 select count(*) from tiki_blog_posts; -- 12
 
@@ -372,7 +381,7 @@ select count(*) from tiki_forums; -- 10
 
 select count(*) from tiki_objects where `type` = 'calendar'; -- 1
 select count(*) from tiki_calendars; -- 2
-
+#+END_SRC
 There doesn't seem to be a tiki table for Forum Posts!
 There doesn't seem to be a tiki table for Forum Topics!
 
@@ -383,8 +392,10 @@ CREATE TABLE `tiki_forums` (
 CREATE TABLE `tiki_forums_queue` (
 CREATE TABLE `tiki_forums_reported` (
 
+#+BEGIN_SRC sql
 select table_name from information_schema.tables
 where table_schema = 'tiki' and table_name like '%forum%';
+#+END_SRC
 | table_name             |
 |------------------------|
 | tiki_forum_attachments |
@@ -797,8 +808,8 @@ given Tiki such that users can manage all normal permissions
 on all project resources through the category system.
 	 
 See
-- [[tiki-ngender-schema.sql]]
-- [[tiki-ngender-data.sql]]
+- [[file:tiki-ngender-schema.sql]]
+- [[file:tiki-ngender-data.sql]]
 
 *** convert Tiki's Tables from MyISAM to innodb
 	 
@@ -839,8 +850,8 @@ ON DUPLICATE KEY UPDATE
 #+END_SRC
 
 See:
-- [[file:Tiki/db/tiki_innodb.sql]]
-- [[NGender/Tiki/db/tiki_convert_myisam_to_innodb.sql]]
+- [[file:/Tiki/db/tiki_innodb.sql]]
+- [[file:/Tiki/NGender/Tiki/db/tiki_convert_myisam_to_innodb.sql]]
 
 ** Procedure and Function Experiments 
 
