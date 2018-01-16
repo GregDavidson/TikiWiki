@@ -1,3 +1,10 @@
+#+TITLE: tiki-project-notes
+#+DATE: \today
+#+AUTHOR: J. Greg Davidson
+#+EMAIL: greg.davidson@gmail.com
+#+OPTIONS: ^:{}
+#+latex_header: \usepackage[margin=0.5in]{geometry}
+
 * Tiki Project Notes
 
 ** Status
@@ -6,16 +13,16 @@
 
 Review how Steward Project permissions work with someone
 - If I have something associated with project Foo
--- Why can't I have FooPartners able to do anything with Foo
--- FooAssociates && Foo Observers always able to Post
--- That should cut down what I need to set up explicitly
+	- Why can't I have FooPartners able to do anything with Foo
+	- FooAssociates && Foo Observers always able to Post
+	- That should cut down what I need to set up explicitly
 
 How can we make it simple so that
 - Observers need specific categories for Readable, Postable, Editable
 - Associates should be able to Post if they can Read
 - Partners should be able to Read, Post, Write anything in the general category
 - And remember there may be other groups, e.g. Admins, Interns, Learners, etc.
--- which will want to be treated as carefully as observers!
+	- which will want to be treated as carefully as observers!
 
 What's the easiest way to make some pages Public Readable?
 - Right now, I'm preferring to be explicit about that!
@@ -43,8 +50,11 @@ All categories
 *** Bug in project_group_category_models
 
 When I first tried to execute the 7 commands starting with:
+#+BEGIN_SRC sql
 CALL project_group_category_models('RPTUG', ...
+#+END_SRC
 I got 6 error messages:
+#+BEGIN_SRC
 MariaDB [tiki]> MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
 MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
 MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
@@ -52,14 +62,18 @@ MariaDB [tiki]> MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG
 MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
 MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
 MariaDB [tiki]> Query OK, 1 row affected (0.14 sec)
-
+#+END_SRC
 Those error messages went away after I did:
+#+BEGIN_SRC sql
 select ensure_categorypath_comment('RPTUG::ObserverReadable', 'for RPTUG');
+#+END_SRC
 
 ==> see if can replicate with project_group_category_models('DesignSpace', ...);
 
 This ran suspiciously quickly afterwards:
+#+BEGIN_SRC sql
 call let_stewards_view_categories;
+#+END_SRC
 MariaDB [tiki]> Query OK, 0 rows affected (0.01 sec)
 
 ==> check if the associations got made!
@@ -68,6 +82,7 @@ MariaDB [tiki]> Query OK, 0 rows affected (0.01 sec)
 
 https://ngender.org/tiki-ajax_services.php?controller=search&action=rebuild
 
+#+BEGIN_SRC
 ( ! ) Fatal error: Uncaught Error: Call to undefined function mb_detect_encoding() in /WebPages/ngender.tiki.wiki/public/lib/encoding/lib-encoding.php on line 56
 ( ! ) Error: Call to undefined function mb_detect_encoding() in /WebPages/ngender.tiki.wiki/public/lib/encoding/lib-encoding.php on line 56
 Call Stack
@@ -87,11 +102,13 @@ Call Stack
 13	4.3822	24621200	TikiSheetCSVHandler->_save( )	.../grid.php:325
 14	4.3844	24658904	Encoding->convert_encoding( )	.../grid.php:992
 15	4.3845	24659288	Encoding->detect_encoding( )	.../lib-encoding.php:65
+#+END_SRC
 
 **** Bug in Search:Control Panels
 
 https://ngender.org/tiki-admin.php?page=search
 
+#+BEGIN_SRC
 ( ! ) Notice: Undefined offset: 2 in /WebPages/ngender.tiki.wiki/public/tiki-admin.php on line 172
 Call Stack
 #	Time	Memory	Function	Location
@@ -139,6 +156,7 @@ Call Stack
 10	0.2036	10667024	prefs_pass_list( )	.../prefslib.php:462
 11	0.2037	10668152	genIndexedBlacks( )	.../pass.php:27
 12	0.2037	10671104	readableBlackName( )	.../tiki-admin.php:154
+#+END_SRC
 
 **** let_stewards_view_categories is broken
 
@@ -151,20 +169,25 @@ tiki_p_view_categories is NOT getting in there!
 After getting unexpected data from:
 
 #+BEGIN_SRC sql
-SELECT count(permName), ug.groupName as `groupName`
+SELECT count(permName), ug.groupName AS `groupName`
 FROM users_objectpermissions uop, group_category_models gcm, users_groups ug
 WHERE uop.groupName = ug.groupName AND gcm.group_model = ug.id
-group by `groupName` order by `groupName`;
+GROUP BY `groupName` ORDER BY `groupName`;
 #+END_SRC
 
 and getting
 
++-----------------+-----------------+
 | count(permName) | groupName       |
-|-----------------+-----------------|
++-----------------+-----------------+
 |             350 | Project_Admins  |
++-----------------+-----------------+
 |             352 | Project_Editors |
++-----------------+-----------------+
 |             110 | Project_Posters |
++-----------------+-----------------+
 |             112 | Project_Readers |
++-----------------+-----------------+
 
 I did
 
@@ -181,12 +204,17 @@ CALL copy_perms_grp_cat_grp_cat(
 
 only to get
 
++-----------------+-----------------+
 | count(permName) | groupName       |
-|-----------------+-----------------|
++-----------------+-----------------+
 |             350 | Project_Admins  |
++-----------------+-----------------+
 |             112 | Project_Editors |
++-----------------+-----------------+
 |              70 | Project_Posters |
++-----------------+-----------------+
 |             112 | Project_Readers |
++-----------------+-----------------+
 
 where permission counts have gone down!
 
@@ -260,7 +288,7 @@ Stewards functionality for Wiki pages seems to work.
 - Can removing the kludginess help make scope > Wiki pages?
 
 How to test that
--- CALL establish_group_category_models();
+	- CALL establish_group_category_models();
 actually did its job?
 
 I need some SQL code to test that all pages are associated
@@ -313,14 +341,21 @@ We have similar questions about table tiki_objects but w/o md5 confusion:
 
 Correspondences between tiki_objects and the "master" table for each type:
 
++------------+----------+----------+----------+---------------------+
 | type       | objectId | ItemId   | name     | corresponding table |
-|------------+----------+----------+----------+---------------------|
++------------+----------+----------+----------+---------------------+
 | blog       |          | blobId   | title    | tiki_blogs          |
++------------+----------+----------+----------+---------------------+
 | blog post  |          | postId   | title    | tiki_blog_posts     |
++------------+----------+----------+----------+---------------------+
 | calendar   |          | id       |          |                     |
++------------+----------+----------+----------+---------------------+
 | forum      |          | forumId  | name?    | tiki_forums         |
++------------+----------+----------+----------+---------------------+
 | forum post |          | id       |          | ??                  |
++------------+----------+----------+----------+---------------------+
 | wiki page  |          | pageName | pageName | wiki_pages          |
++------------+----------+----------+----------+---------------------+
 objectId is a serial int so unique to this table.  ItemId
 and name are both text.
 Questions:
@@ -382,15 +417,17 @@ select count(*) from tiki_forums; -- 10
 select count(*) from tiki_objects where `type` = 'calendar'; -- 1
 select count(*) from tiki_calendars; -- 2
 #+END_SRC
-There doesn't seem to be a tiki table for Forum Posts!
-There doesn't seem to be a tiki table for Forum Topics!
+- There doesn't seem to be a tiki table for Forum Posts!
+- There doesn't seem to be a tiki table for Forum Topics!
 
+#+BEGIN_EXAMPLE
 $ grep 'CREATE TABLE.*forum' db/tiki.sql 
 CREATE TABLE `tiki_forum_attachments` (
 CREATE TABLE `tiki_forum_reads` (
 CREATE TABLE `tiki_forums` (
 CREATE TABLE `tiki_forums_queue` (
 CREATE TABLE `tiki_forums_reported` (
+#+END_EXAMPLE
 
 #+BEGIN_SRC sql
 select table_name from information_schema.tables
@@ -420,7 +457,7 @@ shown, e.g. the description of the category.
 
 **** categlib patch for Stewards
 
-		 Really should be fixed in Perms.php Perms::get()
+Really should be fixed in Perms.php Perms::get()
 
 ** Categorical Stewardship Project
 
@@ -457,25 +494,25 @@ For maximum simplicity, when feature_categorical_stewardship == 'y'
 - Ensure Group Steward exists
 - Ensure Category User exists
 - When a regular user is created with Group Steward
--- Create their Default Group as User_TheirUserName
--- Create their Default Category as User::TheirUserName
--- Ensure their Default Category has suitable permissions
---- Avoid permission of being able to add other objects to it!!
---- Never allow that permission for a Default Category?
+	- Create their Default Group as User_TheirUserName
+	- Create their Default Category as User::TheirUserName
+	- Ensure their Default Category has suitable permissions
+		- Avoid permission of being able to add other objects to it!!
+		- Never allow that permission for a Default Category?
 - Test account names begin with Z[:uppercase_alpha:]
--- Test account default categories are User::Test::TheirUserName
+	- Test account default categories are User::Test::TheirUserName
 - Permissions can be copied from a model
--- Model permissions are those between a model group and a model category
--- Model categories are User::Test::<NAME>
+	- Model permissions are those between a model group and a model category
+	- Model categories are User::Test::<NAME>
 
 These conventions could be made more obvious??
 - Category parents could be
--- Steward::
--- Model::
+	- Steward::
+	- Model::
 - Groups could be more obvious
---  prefix could be Steward_ or Model_
--- Steward_* groups could inherit from Stewards
--- Model_* groups could inherit from Models
+	-  prefix could be Steward_ or Model_
+	- Steward_* groups could inherit from Stewards
+	- Model_* groups could inherit from Models
 
 
 *** [DONE] First Project: Setup Users with Default Groups with Default Categories
@@ -485,319 +522,563 @@ Did it with sql!
 Extra credit: Create it as an admin check box.
 
 *** Second Project: Fix Tiki Categories so that
-(1) [DONE] Any object created newly by a user is associated with that users' Default Category, if any.
-(2) A user can do anything they like with an object associated with their Default Category, including
-(2b) [TODO] Edit the categories associated with their object
-(2a) [DONE] In editing, See all possible categories (--> but consider having a list of "hidden" categories)
+1) [DONE] Any object created newly by a user is associated with that users' Default Category, if any.
+2) A user can do anything they like with an object associated with their Default Category, including
+	1) [DONE] In editing, See all possible categories (--> but consider having a list of "hidden" categories)
+	2) [TODO] Edit the categories associated with their object
 
 *** owner vs. creator vs. user
 
+#+BEGIN_SRC sql
 TABLE tiki_user_tasks
-- user varchar(200) NOT NULL DEFAULT '',              -- task user
-- creator varchar(200) NOT NULL,                     -- username of creator
+	user varchar(200) NOT NULL DEFAULT '',             -- task user
+	creator varchar(200) NOT NULL,                     -- username of creator
+#+END_SRC
 
 *** SELECT LIKE owner
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME = 'owner'
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki' and COLUMN_NAME = 'owner'
 #+END_SRC
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME like '%owner%'
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki' and COLUMN_NAME like '%owner%'
 #+END_SRC
 
++------------+--------------+-----------+
 | table_name | column_name  | DATA_TYPE |
-|------------+--------------+-----------|
++------------+--------------+-----------+
 | tiki_blogs | always_owner | char      |
++------------+--------------+-----------+
 
 *** SELECT LIKE creator
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME = 'creator'
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki' and COLUMN_NAME = 'creator'
 #+END_SRC
 
++-----------------+-------------+-----------+
 | table_name      | column_name | DATA_TYPE |
-|-----------------+-------------+-----------|
++-----------------+-------------+-----------+
 | tiki_pages      | creator     | varchar   |
++-----------------+-------------+-----------+
 | tiki_user_tasks | creator     | varchar   |
++-----------------+-------------+-----------+
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME like '%creator%'
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki' and COLUMN_NAME like '%creator%'
 #+END_SRC
 
++-------------------------+-------------------+-----------+
 | table_name              | column_name       | DATA_TYPE |
-|-------------------------+-------------------+-----------|
++-------------------------+-------------------+-----------+
 | tiki_article_types      | creator_edit      | varchar   |
++-------------------------+-------------------+-----------+
 | tiki_file_galleries     | show_creator      | char      |
++-------------------------+-------------------+-----------+
 | tiki_pages              | creator           | varchar   |
++-------------------------+-------------------+-----------+
 | tiki_user_tasks         | creator           | varchar   |
++-------------------------+-------------------+-----------+
 | tiki_user_tasks         | rights_by_creator | char      |
++-------------------------+-------------------+-----------+
 | tiki_user_tasks_history | accepted_creator  | char      |
++-------------------------+-------------------+-----------+
 
 *** SELECT LIKE user
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME = 'userid'
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki' and COLUMN_NAME = 'userid'
 #+END_SRC
 
++-------------------------+-------------+-----------+
 | table_name              | column_name | DATA_TYPE |
-|-------------------------+-------------+-----------|
++-------------------------+-------------+-----------+
 | tiki_credits            | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_credits_usage      | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_download           | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_language           | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_payment_received   | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_payment_requests   | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_search_queries     | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_user_login_cookies | userId      | int       |
++-------------------------+-------------+-----------+
 | tiki_user_monitors      | userId      | int       |
++-------------------------+-------------+-----------+
 | users_usergroups        | userId      | int       |
++-------------------------+-------------+-----------+
 | users_users             | userId      | int       |
++-------------------------+-------------+-----------+
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME LIKE '%user%id%'
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki' and COLUMN_NAME LIKE '%user%id%'
 #+END_SRC
 
++----------------------------+----------------------------+-----------+
 | table_name                 | column_name                | DATA_TYPE |
-|----------------------------+----------------------------+-----------|
++----------------------------+----------------------------+-----------+
 | index_582a38baa4237        | tracker_field_user_skypeid | text      |
++----------------------------+----------------------------+-----------+
 | tiki_acct_account          | accountUserId              | int       |
++----------------------------+----------------------------+-----------+
 | tiki_credits               | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_credits_usage         | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_download              | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_language              | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_live_support_requests | user_id                    | varchar   |
++----------------------------+----------------------------+-----------+
 | tiki_payment_received      | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_payment_requests      | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_search_queries        | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_user_answers          | userResultId               | int       |
++----------------------------+----------------------------+-----------+
 | tiki_user_answers_uploads  | userResultId               | int       |
++----------------------------+----------------------------+-----------+
 | tiki_user_login_cookies    | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_user_monitors         | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | tiki_user_quizzes          | userResultId               | int       |
++----------------------------+----------------------------+-----------+
 | users_groups               | usersTrackerId             | int       |
++----------------------------+----------------------------+-----------+
 | users_groups               | usersFieldId               | int       |
++----------------------------+----------------------------+-----------+
 | users_groups               | registrationUsersFieldIds  | text      |
++----------------------------+----------------------------+-----------+
 | users_usergroups           | userId                     | int       |
++----------------------------+----------------------------+-----------+
 | users_users                | userId                     | int       |
++----------------------------+----------------------------+-----------+
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME = 'user'
+SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki' and COLUMN_NAME = 'user'
 #+END_SRC
 
++-------------------------------+-------------+-----------+
 | table_name                    | column_name | DATA_TYPE |
-|-------------------------------+-------------+-----------|
++-------------------------------+-------------+-----------+
 | messu_archive                 | user        | varchar   |
++-------------------------------+-------------+-----------+
 | messu_messages                | user        | varchar   |
++-------------------------------+-------------+-----------+
 | messu_sent                    | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_actionlog                | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_banning                  | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_blogs                    | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_blog_posts               | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_calendars                | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_calendar_items           | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_calendar_recurrence      | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_files                    | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_file_drafts              | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_file_galleries           | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_forums_queue             | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_forums_reported          | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_forum_reads              | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_freetagged_objects       | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_galleries                | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_goal_events              | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_history                  | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_images                   | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_live_support_messages    | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_live_support_operators   | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_live_support_requests    | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_mailin_accounts          | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_minical_events           | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_minical_topics           | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_minichat                 | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_pages                    | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_page_footnotes           | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_semaphores               | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_sessions                 | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_sheet_values             | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_shoutbox                 | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_suggested_faq_questions  | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_tags                     | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_tracker_item_attachments | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_url_shortener            | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_userfiles                | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_userpoints               | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_assigned_modules    | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_bookmarks_folders   | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_bookmarks_urls      | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_mail_accounts       | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_menus               | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_notes               | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_postings            | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_preferences         | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_quizzes             | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_reports             | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_reports_cache       | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_taken_quizzes       | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_tasks               | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_votings             | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_user_watches             | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_webmail_contacts         | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_webmail_contacts_fields  | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_webmail_messages         | user        | varchar   |
++-------------------------------+-------------+-----------+
 | tiki_wiki_attachments         | user        | varchar   |
++-------------------------------+-------------+-----------+
 
 #+BEGIN_SRC sql
-SELECT table_name,column_name,DATA_TYPE FROM `COLUMNS` WHERE
-TABLE_SCHEMA='tiki' and COLUMN_NAME LIKE '%user%' and
-table_name not like 'index%' order by table_name,
-column_name
+SELECT table_name,column_name, DATA_TYPE
+FROM `COLUMNS`
+WHERE TABLE_SCHEMA='tiki'
+AND COLUMN_NAME LIKE '%user%'
+AND table_name NOT LIKE 'index%'
+ORDER BY table_name, column_name
 #+END_SRC
 
++-------------------------------+---------------------------+-----------+
 | table_name                    | column_name               | DATA_TYPE |
-|-------------------------------+---------------------------+-----------|
++-------------------------------+---------------------------+-----------+
 | messu_archive                 | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | messu_archive                 | user_bcc                  | text      |
++-------------------------------+---------------------------+-----------+
 | messu_archive                 | user_cc                   | text      |
++-------------------------------+---------------------------+-----------+
 | messu_archive                 | user_from                 | varchar   |
++-------------------------------+---------------------------+-----------+
 | messu_archive                 | user_to                   | text      |
++-------------------------------+---------------------------+-----------+
 | messu_messages                | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | messu_messages                | user_bcc                  | text      |
++-------------------------------+---------------------------+-----------+
 | messu_messages                | user_cc                   | text      |
++-------------------------------+---------------------------+-----------+
 | messu_messages                | user_from                 | varchar   |
++-------------------------------+---------------------------+-----------+
 | messu_messages                | user_to                   | text      |
++-------------------------------+---------------------------+-----------+
 | messu_sent                    | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | messu_sent                    | user_bcc                  | text      |
++-------------------------------+---------------------------+-----------+
 | messu_sent                    | user_cc                   | text      |
++-------------------------------+---------------------------+-----------+
 | messu_sent                    | user_from                 | varchar   |
++-------------------------------+---------------------------+-----------+
 | messu_sent                    | user_to                   | text      |
++-------------------------------+---------------------------+-----------+
 | tiki_acct_account             | accountUserId             | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_actionlog                | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_auth_tokens              | createUser                | char      |
++-------------------------------+---------------------------+-----------+
 | tiki_auth_tokens              | userPrefix                | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_banners                  | maxUserImpressions        | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_banning                  | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_blogs                    | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_blog_posts               | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_calendars                | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_calendar_items           | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_calendar_recurrence      | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_calendar_roles           | username                  | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_chat_channels            | max_users                 | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_comments                 | userName                  | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_comments                 | user_ip                   | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_copyrights               | userName                  | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_credits                  | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_credits_usage            | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_download                 | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_files                    | lastModifUser             | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_files                    | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_file_drafts              | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_file_galleries           | show_last_user            | char      |
++-------------------------------+---------------------------+-----------+
 | tiki_file_galleries           | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_forums                   | inbound_pop_user          | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_forums_queue             | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_forums_reported          | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_forum_reads              | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_freetagged_objects       | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_galleries                | showuser                  | char      |
++-------------------------------+---------------------------+-----------+
 | tiki_galleries                | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_goal_events              | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_groupalert               | displayEachuser           | char      |
++-------------------------------+---------------------------+-----------+
 | tiki_history                  | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_images                   | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_invited                  | used_on_user              | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_language                 | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_live_support_messages    | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_live_support_messages    | username                  | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_live_support_operators   | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_live_support_requests    | tiki_user                 | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_live_support_requests    | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_live_support_requests    | user_id                   | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_logs                     | loguser                   | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_mailin_accounts          | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_mailin_accounts          | username                  | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_menu_options             | userlevel                 | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_minical_events           | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_minical_topics           | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_minichat                 | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_newsletters              | allowUserSub              | char      |
++-------------------------------+---------------------------+-----------+
 | tiki_newsletters              | users                     | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_newsletter_subscriptions | isUser                    | char      |
++-------------------------------+---------------------------+-----------+
 | tiki_object_scores            | triggerUser               | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_pages                    | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_page_footnotes           | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_payment_received         | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_payment_requests         | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_received_articles        | receivedFromUser          | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_received_pages           | receivedFromUser          | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_search_queries           | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_semaphores               | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_sent_newsletters         | users                     | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_sessions                 | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_sheet_values             | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_shoutbox                 | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_suggested_faq_questions  | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_tags                     | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_tracker_item_attachments | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_url_shortener            | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_userfiles                | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_userpoints               | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_answers             | userResultId              | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_user_answers_uploads     | userResultId              | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_user_assigned_modules    | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_bookmarks_folders   | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_bookmarks_urls      | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_login_cookies       | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_user_mailin_struct       | username                  | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_mail_accounts       | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_mail_accounts       | username                  | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_menus               | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_monitors            | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_user_notes               | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_postings            | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_preferences         | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_quizzes             | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_quizzes             | userResultId              | int       |
++-------------------------------+---------------------------+-----------+
 | tiki_user_reports             | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_reports_cache       | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_taken_quizzes       | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_tasks               | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_tasks_history       | accepted_user             | char      |
++-------------------------------+---------------------------+-----------+
 | tiki_user_votings             | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_user_watches             | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_webmail_contacts         | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_webmail_contacts_fields  | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_webmail_messages         | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | tiki_wiki_attachments         | user                      | varchar   |
++-------------------------------+---------------------------+-----------+
 | users_groups                  | registrationUsersFieldIds | text      |
++-------------------------------+---------------------------+-----------+
 | users_groups                  | userChoice                | char      |
++-------------------------------+---------------------------+-----------+
 | users_groups                  | usersFieldId              | int       |
++-------------------------------+---------------------------+-----------+
 | users_groups                  | usersTrackerId            | int       |
++-------------------------------+---------------------------+-----------+
 | users_usergroups              | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 | users_users                   | userId                    | int       |
++-------------------------------+---------------------------+-----------+
 
-| tiki_calendar_categories           |
-| tiki_categories                    |
-| tiki_categorized_objects           |
-| tiki_category_objects              |
-| tiki_category_sites                |
-| tiki_directory_categories          |
-| tiki_related_categories            |
-| tiki_theme_control_categs          |
++---------------------------+
+| tiki_calendar_categories  |
++---------------------------+
+| tiki_categories           |
++---------------------------+
+| tiki_categorized_objects  |
++---------------------------+
+| tiki_category_objects     |
++---------------------------+
+| tiki_category_sites       |
++---------------------------+
+| tiki_directory_categories |
++---------------------------+
+| tiki_related_categories   |
++---------------------------+
+| tiki_theme_control_categs |
++---------------------------+
 *** Things about creator and user
-In tikilib.php, there is function create_page($name, $hits, $data,
-$lastModif, $comment, $user = 'admin', $ip = '0.0.0.0', $description =
-'', $lang='', $is_html = false, $hash=null, $wysiwyg=NULL,
-$wiki_authors_style='', $minor=0, $created='')
-
+In tikilib.php, there is
+#+BEGIN_SRC sql
+function create_page(
+	$name, $hits, $data, $lastModif, $comment,
+	$user = 'admin', $ip = '0.0.0.0',
+	$description = '', $lang='', $is_html = false,
+	$hash=null, $wysiwyg=NULL,
+	$wiki_authors_style='', $minor=0, $created=''
+)
+#+END_SRC
 In there we set user and creator to the loggin user.
 
 ** Categorical Project Management
@@ -818,7 +1099,7 @@ In order to convert Tiki's Tables from MyISAM to innodb we must to either:
 #+BEGIN_SRC sql
 update  tiki_preferences set value = 'n' where name = 'feature_search_fulltext';
 insert into tiki_preferences (name, value) values ('feature_search_fulltext', 'n');
--- or even better as an upsert!!
+	- or even better as an upsert!!
 #+END_SRC
 
 This would work if name was a primary key which, yay, it is!
@@ -977,8 +1258,10 @@ DELIMITER ;
 [[file:tiki-ngender-data.sql]]
 *** Tiki Features
 Tiki features are stored in a number of files under [[file:../lib/prefs]]
+#+BEGIN_SRC sh
 (cd /Tiki/lib/prefs ; grep -l "'name'" *.php)
 (cd /Tiki/lib/prefs ; grep -w 'prefs[a-z_]*list(' *.php)
+#+END_SRC
 
 [[file:../lib/prefs/feature.php]]
 [[file:../lib/prefs/global.php]]
@@ -1043,8 +1326,8 @@ is a hash:
 SELECT DISTINCT
 permName, groupName, category_path(group_default_category(name_to_group(groupName)))
 FROM users_objectpermissions
-WHERE objectType = 'category' AND groupName = 'User_Test_Observer' AND objectId =
-MD5(CONCAT('category', group_default_category(name_to_group(groupName))));
+WHERE objectType = 'category' AND groupName = 'User_Test_Observer'
+AND objectId = MD5(CONCAT('category', group_default_category(name_to_group(groupName))));
 #+END_SRC
 
 Could change from using 'User' to using 'Steward' for
@@ -1096,7 +1379,6 @@ if ($groupList) {
 	$_permissionContext->overrideGroups($groupList);
 }
 
-
 $_permissionContext->activate(true);
 #+END_SRC
 
@@ -1105,11 +1387,12 @@ $_permissionContext->activate(true);
 
 *** Permissions to Create Things:
 
+#+BEGIN_EXAMPLE
 $ grep "'tiki_p_" lib/userslib.php  | grep create
 				'name' => 'tiki_p_acct_create_book',
 				'name' => 'tiki_p_bigbluebutton_create',
 				'name' => 'tiki_p_create_blogs',
-			//	'name' => 'tiki_p_create_category',
+		//	'name' => 'tiki_p_create_category',
 				'name' => 'tiki_p_create_file_galleries',
 				'name' => 'tiki_p_create_galleries',
 				'name' => 'tiki_p_perspective_create',
@@ -1119,9 +1402,11 @@ $ grep "'tiki_p_" lib/userslib.php  | grep create
 
 				'name' => 'tiki_p_admin_calendar',
 				'description' => tr('Can create/admin calendars'),
+#+END_EXAMPLE
 
 *** Permissions to Edit Things:
 
+#+BEGIN_EXAMPLE
 				'name' => 'tiki_p_edit_article',
 				'name' => 'tiki_p_edit_article_user',
 				'name' => 'tiki_p_edit_submission',
@@ -1146,16 +1431,18 @@ $ grep "'tiki_p_" lib/userslib.php  | grep create
 				'name' => 'tiki_p_edit_menu_option',
 				'name' => 'tiki_p_edit_templates',
 				'name' => 'tiki_p_edit_switch_mode',
+#+END_EXAMPLE
 
 Note: tiki_p_edit seems to also permit creating Wiki pages!
 
 *** Category permissions
 
+#+BEGIN_EXAMPLE
 $ grep "'tiki_p_" lib/userslib.php  | grep categ 
 				'name' => 'tiki_p_admin_categories',
 				'name' => 'tiki_p_view_category',
 				'name' => 'tiki_p_assign_perm_category',
-			//	'name' => 'tiki_p_create_category',
+		//	'name' => 'tiki_p_create_category',
 				'name' => 'tiki_p_modify_object_categories',
 
 			array(
@@ -1231,6 +1518,7 @@ $ grep "'tiki_p_" lib/userslib.php  | grep categ
 				'scope' => 'object',
 				'apply_to' => array('wiki', 'trackers'),
 			),
+#+END_EXAMPLE
 
 Seems like we should want to have tiki_p_modify_object_categories between
 Steward's Default Group <-> Steward's Default Category
@@ -1290,7 +1578,6 @@ if ( $prefs['eponymousGroups'] == 'y' ) {
 	// Create a group just for this user, for permissions
 	// assignment.
 	$this->add_group($user, "Personal group for $user.", '', 0, 0, 0, '');
-
 	$this->assign_user_to_group($user, $user);
 }
 #+END_SRC
@@ -1352,22 +1639,23 @@ returning such a status or have them throw an exception.
 ** Creator special privileges
 
  Re: Page edit permissions in Features / Usability
-
-    Re: Page edit permissions Yes, there's a configuration
-    option on the Admin Wiki page, under the
-    "Features"..."Features" tab: "Page creators are admin of
-    their pages" that has that effect, I believe. -- Gary
+#+BEGIN_QUOTE
+Re: Page edit permissions Yes, there's a configuration
+option on the Admin Wiki page, under the
+"Features"..."Features" tab: "Page creators are admin of
+their pages" that has that effect, I believe. -- Gary
+#+END_QUOTE
 
 Trying to track this down!
 
 OK, according to
 
 https://doc.tiki.org/Wiki%20Config#Page_creators_are_admin_of_their_pages
-
-	Page creators are admin of their pages
-	If enabled then users who create a page are also in control
-	of that page. They have administrators rights over it.
-
+#+BEGIN_QUOTE
+Page creators are admin of their pages
+If enabled then users who create a page are also in control
+of that page. They have administrators rights over it.
+#+END_QUOTE
 which might have obviated feature_ngender_stewards, but is
 clearly less flexible.
 
@@ -1402,6 +1690,7 @@ I can look at timestamps
 
 **** Commands
 
+#+BEGIN_SRC sql
 SELECT login, from_unixtime(created) from users_users
 ORDER BY created DESC LIMIT 2;
 
@@ -1413,10 +1702,14 @@ ORDER BY lastModif DESC LIMIT 5;
 
 SELECT pageName, from_unixtime(created) from tiki_pages
 ORDER BY created DESC LIMIT 5;
+#+END_SRC
 
 **** Running on a.office:
 
-SELECT login, from_unixtime(created) from users_users ORDER BY created DESC LIMIT 2;
+#+BEGIN_SRC sql
+SELECT login, from_unixtime(created) from users_users
+ORDER BY created DESC LIMIT 2;
+#+END_SRC
 +-------+------------------------+
 | login | from_unixtime(created) |
 +-------+------------------------+
@@ -1425,7 +1718,10 @@ SELECT login, from_unixtime(created) from users_users ORDER BY created DESC LIMI
 +-------+------------------------+
 2 rows in set (0.00 sec)
 
-SELECT login, from_unixtime(lastLogin) from users_users ORDER BY lastLogin DESC LIMIT 5;
+#+BEGIN_SRC sql
+SELECT login, from_unixtime(lastLogin) from users_users
+ORDER BY lastLogin DESC LIMIT 5;
+#+END_SRC
 +-------------+--------------------------+
 | login       | from_unixtime(lastLogin) |
 +-------------+--------------------------+
@@ -1437,7 +1733,10 @@ SELECT login, from_unixtime(lastLogin) from users_users ORDER BY lastLogin DESC 
 +-------------+--------------------------+
 5 rows in set (0.00 sec)
 
-SELECT pageName, from_unixtime(lastModif) from tiki_pages ORDER BY lastModif DESC LIMIT 5;
+#+BEGIN_SRC sql
+SELECT pageName, from_unixtime(lastModif) from tiki_pages
+ORDER BY lastModif DESC LIMIT 5;
+#+END_SRC
 +------------------------------+--------------------------+
 | pageName                     | from_unixtime(lastModif) |
 +------------------------------+--------------------------+
@@ -1449,7 +1748,10 @@ SELECT pageName, from_unixtime(lastModif) from tiki_pages ORDER BY lastModif DES
 +------------------------------+--------------------------+
 5 rows in set (0.00 sec)
 
-SELECT pageName, from_unixtime(created) from tiki_pages ORDER BY created DESC LIMIT 5;
+#+BEGIN_SRC sql
+SELECT pageName, from_unixtime(created) from tiki_pages
+ORDER BY created DESC LIMIT 5;
+#+END_SRC
 +--------------------------------+------------------------+
 | pageName                       | from_unixtime(created) |
 +--------------------------------+------------------------+
@@ -1463,9 +1765,10 @@ SELECT pageName, from_unixtime(created) from tiki_pages ORDER BY created DESC LI
 
 **** Running on ngender.org
 
+#+BEGIN_SRC sql
 SELECT login, from_unixtime(created) from users_users
 ORDER BY created DESC LIMIT 2;
-
+#+END_SRC
 +-------+------------------------+
 | login | from_unixtime(created) |
 +-------+------------------------+
@@ -1475,9 +1778,10 @@ ORDER BY created DESC LIMIT 2;
 2 rows in set (0.05 sec)
 
 
+#+BEGIN_SRC sql
 SELECT login, from_unixtime(lastLogin) from users_users
 ORDER BY lastLogin DESC LIMIT 5;
-
+#+END_SRC
 +-----------+--------------------------+
 | login     | from_unixtime(lastLogin) |
 +-----------+--------------------------+
@@ -1489,9 +1793,10 @@ ORDER BY lastLogin DESC LIMIT 5;
 +-----------+--------------------------+
 5 rows in set (0.00 sec)
 
+#+BEGIN_SRC sql
 SELECT pageName, from_unixtime(lastModif) from tiki_pages
 ORDER BY lastModif DESC LIMIT 5;
-
+#+END_SRC
 +------------------------------+--------------------------+
 | pageName                     | from_unixtime(lastModif) |
 +------------------------------+--------------------------+
@@ -1503,11 +1808,15 @@ ORDER BY lastModif DESC LIMIT 5;
 +------------------------------+--------------------------+
 5 rows in set (0.00 sec)
 
+#+BEGIN_SRC sql
 SELECT pageName, from_unixtime(created) from tiki_pages
 ORDER BY created DESC LIMIT 5;
+#+END_SRC
 
+#+BEGIN_SRC sql
 SELECT pageName, from_unixtime(created) from tiki_pages
-    -> ORDER BY created DESC LIMIT 5;
+ORDER BY created DESC LIMIT 5;
+#+END_SRC
 +--------------------------------+------------------------+
 | pageName                       | from_unixtime(created) |
 +--------------------------------+------------------------+
@@ -1525,85 +1834,85 @@ SELECT pageName, from_unixtime(created) from tiki_pages
 See lib/userslib.php get_raw_permissions() for ?complete? list
 		
 - articles
--- Can admin the articles (tiki_p_admin_cms)
--- Can approve submissions (tiki_p_approve_submission)
--- Can read article headings (tiki_p_articles_read_heading)
--- Can edit articles (tiki_p_edit_article)
--- Can edit the user (owner) of articles (tiki_p_edit_article_user)
--- Can edit submissions (tiki_p_edit_submission)
--- Can read articles (tiki_p_read_article)
--- Can remove articles (tiki_p_remove_article)
--- Can remove submissions (tiki_p_remove_submission)
--- Can rate articles (tiki_p_rate_article)
--- Can read a topic (applies only to individual topic permissions) (tiki_p_topic_read)
+	- Can admin the articles (tiki_p_admin_cms)
+	- Can approve submissions (tiki_p_approve_submission)
+	- Can read article headings (tiki_p_articles_read_heading)
+	- Can edit articles (tiki_p_edit_article)
+	- Can edit the user (owner) of articles (tiki_p_edit_article_user)
+	- Can edit submissions (tiki_p_edit_submission)
+	- Can read articles (tiki_p_read_article)
+	- Can remove articles (tiki_p_remove_article)
+	- Can remove submissions (tiki_p_remove_submission)
+	- Can rate articles (tiki_p_rate_article)
+	- Can read a topic (applies only to individual topic permissions) (tiki_p_topic_read)
 - blogs
--- Can admin blogs (tiki_p_blog_admin)
--- Can assign perms to blog (tiki_p_assign_perm_blog)
--- Can post to a blog (tiki_p_blog_post)
--- Can read blogs (tiki_p_read_blog)
--- Can view in module and feed the blog posts (tiki_p_blog_post_view_ref)
--- Can view in module and feed the blog (tiki_p_blog_view_ref)
+	- Can admin blogs (tiki_p_blog_admin)
+	- Can assign perms to blog (tiki_p_assign_perm_blog)
+	- Can post to a blog (tiki_p_blog_post)
+	- Can read blogs (tiki_p_read_blog)
+	- Can view in module and feed the blog posts (tiki_p_blog_post_view_ref)
+	- Can view in module and feed the blog (tiki_p_blog_view_ref)
 - calendar
--- Can create/admin calendars (tiki_p_admin_calendar)
--- Can add events in the calendar (tiki_p_add_events)
--- Can edit events in the calendar (tiki_p_change_events)
--- Can browse the calendar (tiki_p_view_calendar)
--- Can view event details (tiki_p_view_events)
--- Can add himself or herself to the participants (tiki_p_calendar_add_my_particip)
--- Can add guest to the participants (tiki_p_calendar_add_guest_particip)
+	- Can create/admin calendars (tiki_p_admin_calendar)
+	- Can add events in the calendar (tiki_p_add_events)
+	- Can edit events in the calendar (tiki_p_change_events)
+	- Can browse the calendar (tiki_p_view_calendar)
+	- Can view event details (tiki_p_view_events)
+	- Can add himself or herself to the participants (tiki_p_calendar_add_my_particip)
+	- Can add guest to the participants (tiki_p_calendar_add_guest_particip)
 - comments
--- Can post new comments (tiki_p_post_comments)
--- Can read comments (tiki_p_read_comments)
--- Can admin comments (tiki_p_admin_comments)
--- Can edit all comments (tiki_p_edit_comments)
--- Can delete comments (tiki_p_remove_comments)
--- Can vote on comments (tiki_p_vote_comments)
+	- Can post new comments (tiki_p_post_comments)
+	- Can read comments (tiki_p_read_comments)
+	- Can admin comments (tiki_p_admin_comments)
+	- Can edit all comments (tiki_p_edit_comments)
+	- Can delete comments (tiki_p_remove_comments)
+	- Can vote on comments (tiki_p_vote_comments)
 - forums
--- Can admin forums (tiki_p_admin_forum)
--- Can attach files to forum posts (tiki_p_forum_attach)
--- Auto approve forum posts (tiki_p_forum_autoapp)
--- Can edit one’s own forum posts (tiki_p_forum_edit_own_posts)
--- Can post in forums (tiki_p_forum_post)
--- Can start threads in forums (tiki_p_forum_post_topic)
--- Can read forums (tiki_p_forum_read)
--- Can report posts to moderator (tiki_p_forums_report)
--- Can vote on comments in forums (tiki_p_forum_vote)
+	- Can admin forums (tiki_p_admin_forum)
+	- Can attach files to forum posts (tiki_p_forum_attach)
+	- Auto approve forum posts (tiki_p_forum_autoapp)
+	- Can edit one’s own forum posts (tiki_p_forum_edit_own_posts)
+	- Can post in forums (tiki_p_forum_post)
+	- Can start threads in forums (tiki_p_forum_post_topic)
+	- Can read forums (tiki_p_forum_read)
+	- Can report posts to moderator (tiki_p_forums_report)
+	- Can vote on comments in forums (tiki_p_forum_vote)
 - newsletters
--- Can admin newsletters (tiki_p_admin_newsletters)
--- Can send newsletters (tiki_p_send_newsletters)
--- Can subscribe to newsletters (tiki_p_subscribe_newsletters)
--- Can view the archive of a newsletters (tiki_p_view_newsletter)
+	- Can admin newsletters (tiki_p_admin_newsletters)
+	- Can send newsletters (tiki_p_send_newsletters)
+	- Can subscribe to newsletters (tiki_p_subscribe_newsletters)
+	- Can view the archive of a newsletters (tiki_p_view_newsletter)
 - polls
--- Can view poll user choices (tiki_p_view_poll_choices)
--- Can vote in polls (tiki_p_vote_poll)
--- Can view poll voters (tiki_p_view_poll_voters)
+	- Can view poll user choices (tiki_p_view_poll_choices)
+	- Can vote in polls (tiki_p_vote_poll)
+	- Can view poll voters (tiki_p_view_poll_voters)
 - sheet
--- Can admin spreadsheets (tiki_p_admin_sheet)
--- Can create and edit spreadsheets (tiki_p_edit_sheet)
--- Can view spreadsheets (tiki_p_view_sheet)
--- Can view spreadsheets history (tiki_p_view_sheet_history)
+	- Can admin spreadsheets (tiki_p_admin_sheet)
+	- Can create and edit spreadsheets (tiki_p_edit_sheet)
+	- Can view spreadsheets (tiki_p_view_sheet)
+	- Can view spreadsheets history (tiki_p_view_sheet_history)
 - wiki
--- Can view page/pages (tiki_p_view)
--- Can edit pages (tiki_p_edit)
--- Can inline-edit pages (tiki_p_edit_inline)
--- Can view wiki history (tiki_p_wiki_view_history)
--- Can admin the wiki (tiki_p_admin_wiki)
--- Can assign permissions to wiki pages (tiki_p_assign_perm_wiki_page)
--- Can remove (tiki_p_remove)
--- Can rename pages (tiki_p_rename)
--- Can roll back pages (tiki_p_rollback)
--- Can upload pictures to wiki pages (tiki_p_upload_picture)
--- Can use the page as a template for a tracker or unified search (tiki_p_use_as_template)
--- Can view in module and feed the wiki pages reference (tiki_p_wiki_view_ref)
--- Can admin attachments on wiki pages (tiki_p_wiki_admin_attachments)
--- Can attach files to wiki pages (tiki_p_wiki_attach_files)
--- Can view and download wiki page attachments (tiki_p_wiki_view_attachments)
--- Can view wiki comments (tiki_p_wiki_view_comments)
--- Can view source of wiki pages (tiki_p_wiki_view_source)
+	- Can view page/pages (tiki_p_view)
+	- Can edit pages (tiki_p_edit)
+	- Can inline-edit pages (tiki_p_edit_inline)
+	- Can view wiki history (tiki_p_wiki_view_history)
+	- Can admin the wiki (tiki_p_admin_wiki)
+	- Can assign permissions to wiki pages (tiki_p_assign_perm_wiki_page)
+	- Can remove (tiki_p_remove)
+	- Can rename pages (tiki_p_rename)
+	- Can roll back pages (tiki_p_rollback)
+	- Can upload pictures to wiki pages (tiki_p_upload_picture)
+	- Can use the page as a template for a tracker or unified search (tiki_p_use_as_template)
+	- Can view in module and feed the wiki pages reference (tiki_p_wiki_view_ref)
+	- Can admin attachments on wiki pages (tiki_p_wiki_admin_attachments)
+	- Can attach files to wiki pages (tiki_p_wiki_attach_files)
+	- Can view and download wiki page attachments (tiki_p_wiki_view_attachments)
+	- Can view wiki comments (tiki_p_wiki_view_comments)
+	- Can view source of wiki pages (tiki_p_wiki_view_source)
 - wiki structure
--- Can administer structures (tiki_p_admin_structures)
--- Can create and edit structures (tiki_p_edit_structures)
--- Can lock structures (tiki_p_lock_structures)
+	- Can administer structures (tiki_p_admin_structures)
+	- Can create and edit structures (tiki_p_edit_structures)
+	- Can lock structures (tiki_p_lock_structures)
 
 *** Tiki UserPage prefix 
 
@@ -1648,16 +1957,18 @@ NGender/gen-innodb-convert-script.sh
 ** A few more Bugs
 When I tried to rebuild the Tiki Index through the Web Interface I got:
 
+#+BEGIN_EXAMPLE
 Fatal error: Uncaught Error: Call to undefined function
 mb_strtoupper() in
 /WebPages/ngender.tiki.wiki/public/lib/core/Search/GlobalSource/TitleInitialSource.php:54
 ...
+#+END_EXAMPLE
 
 The Web interface also suggests: 
 
-php console.php index:optimize
-php console.php index:rebuild
-php console.php index:rebuild --log
+- php console.php index:optimize
+- php console.php index:rebuild
+- php console.php index:rebuild --log
 
 Log file is saved as temp/Search_Indexer_console.log
 
@@ -1669,6 +1980,7 @@ only to get the same error:
 
 *** failing: /usr/local/php/php-7.1.4/bin/php console.php index:rebuild --log
 
+#+BEGIN_EXAMPLE
 PHP Fatal error:  Uncaught Error: Call to undefined function mb_strtoupper() in /WebPages/ngender.tiki.wiki/public/lib/core/Search/GlobalSource/TitleInitialSource.php:54
 Stack trace:
 #0 /WebPages/ngender.tiki.wiki/public/lib/core/Search/Indexer.php(148): Search_GlobalSource_TitleInitialSource->getData('wiki page', 'about', Object(Search_MySql_TypeFactory), Array)
@@ -1678,11 +1990,13 @@ Stack trace:
 #4 /WebPages/ngender.tiki.wiki/public/lib/search/searchlib-unified.php(236): Search_Indexer->rebuild()
 #5 /WebPages/ngender.tiki.wiki/public/lib/tikilib.php(169): UnifiedSearchLib->{closure}()
 #6 /WebPages/ngender.tiki.wiki/public/lib/search/searchlib-unified in /WebPages/ngender.tiki.wiki/public/lib/core/Search/GlobalSource/TitleInitialSource.php on line 54
+#+END_EXAMPLE
 
 *** partially succeeding: /usr/local/php/php-7.1.4/bin/php console.php index:rebuild --log
 
 I found and fixed the bug.  Indexing seemed to succeed but it did also report one more error which I kludged with a patch.
 
+#+BEGIN_EXAMPLE
 /usr/local/php/php-7.1.4/bin/php console.php index:rebuild --log
 /WebPages/ngender.tiki.wiki/public/vendor/adodb/adodb/adodb.inc.php, 4216, ADONewConnection: db = mysqli
 /WebPages/ngender.tiki.wiki/public/lib/core/TikiDb/Initializer/Adodb.php, 23
@@ -1717,35 +2031,35 @@ Current Memory usage: 33.0 MiB
 Memory peak usage before indexing: 12.7 MiB
 Memory peak usage after indexing: 33.0 MiB
 Number of queries: 12826
-
+#+END_EXAMPLE
 
 ** Snippets for Tracing code
 
 #+BEGIN_SRC php
-			echo '<pre>';
-			echo 'foo = "';
-			var_dump($foo);
-			echo '"<br />';
-			echo 'bar = "';
-			var_dump($bar);
-			echo '"<br />';
-			echo '</pre>';
+echo '<pre>';
+echo 'foo = "';
+var_dump($foo);
+echo '"<br />';
+echo 'bar = "';
+var_dump($bar);
+echo '"<br />';
+echo '</pre>';
 
-			echo '<pre>';
-			echo 'is_array(parent::code[self::level1][self::level2]) = ';
-			echo is_array(parent::$code[self::$level1][self::$level2])?'1':'0';
-			echo '<br />';
-			echo '</pre>';
+echo '<pre>';
+echo 'is_array(parent::code[self::level1][self::level2]) = ';
+echo is_array(parent::$code[self::$level1][self::$level2])?'1':'0';
+echo '<br />';
+echo '</pre>';
 
-			error_log(__FILE__ . ', ' . __LINE__); // NGender!!
-			error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'NAME = ' . $NAME); 
-			error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'gettype(VAR) = ' . gettype($VAR));
-			error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'VAR = ' . var_export($VAR,1));
-#+END_SRC php
+error_log(__FILE__ . ', ' . __LINE__); // NGender!!
+error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'NAME = ' . $NAME); 
+error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'gettype(VAR) = ' . gettype($VAR));
+error_log(__FILE__ . ', ' . __LINE__ . ' ' . 'VAR = ' . var_export($VAR,1));
+#+END_SRC
 
-			var_dump produces the best output since it includes types.
-			ideally for multi-line output we should call error_log for each line
-			we could write a function to do the best possible thing
+var_dump produces the best output since it includes types.
+ideally for multi-line output we should call error_log for each line
+we could write a function to do the best possible thing
 
 #+BEGIN_SRC php
 function var_log( $file, $line, $var_name, $val, $func_name='', $class_name='' ) {
@@ -1768,10 +2082,7 @@ $object = new SomeClass();
 var_log( __FILE__, __LINE__, 'object', $object );
 var_log( __FILE__, __LINE__, 'object', $object, __FILE__, __LINE__);
 var_log(isset($tiki_p_edit), 'isset(tiki_p_edit)', __FILE__, __LINE__);
-
-
-#+END_SRC php
-
+#+END_SRC
 
 ** Need more tests!
 
@@ -1795,10 +2106,10 @@ Stewards!
 
 when $parentid is unknown, query =
 #+BEGIN_SRC sql
-select `categId`
-from `tiki_category_objects` tco, `tiki_categorized_objects` tto, `tiki_objects` o
-where tco.`catObjectId`=tto.`catObjectId` and o.`objectId`=tto.`catObjectId`
-and o.`type`=? and `itemId`=?"
+SELECT `categId`
+FROM `tiki_category_objects` tco, `tiki_categorized_objects` tto, `tiki_objects` o
+WHERE tco.`catObjectId`=tto.`catObjectId` AND o.`objectId`=tto.`catObjectId`
+AND o.`type`=? AND `itemId`=?"
 #+END_SRC
 Guess: This is getting a list of all categories that are
 actually in use, just in case there are categories that are
@@ -1806,10 +2117,11 @@ somehow bogus!
 
 when $parentid is known, query =
 #+BEGIN_SRC sql
-select tc.`categId`
-from `tiki_category_objects` tco, `tiki_categorized_objects` tto, `tiki_objects` o,`tiki_categories` tc
-where tco.`catObjectId`=tto.`catObjectId` and o.`objectId`=tto.`catObjectId`
-and o.`type`=? and `itemId`=? and tc.`parentId` = ? and tc.`categId`=tco.`categId`
+SELECT tc.`categId`
+FROM `tiki_category_objects` tco, `tiki_categorized_objects` tto,
+`tiki_objects` o,`tiki_categories` tc
+WHERE tco.`catObjectId`=tto.`catObjectId` AND o.`objectId`=tto.`catObjectId`
+AND o.`type`=? AND `itemId`=? AND tc.`parentId` = ? AND tc.`categId`=tco.`categId`
 #+END_SRC
 This implies that the $parentid being passed is a category parentId - huh?
 
@@ -1820,9 +2132,10 @@ CREATE TABLE `tiki_categorized_objects` ( `catObjectId` int(11) PRIMARY KEY defa
 #+END_SRC
 
 #+BEGIN_SRC sql
-select tiki_categorized_objects.catObjectId
-from tiki_categorized_objects where not exists(
-		 select 1 from tiki_category_objects where tiki_categorized_objects.catObjectId = tiki_category_objects.catObjectId
+SELECT tiki_categorized_objects.catObjectId
+FROM tiki_categorized_objects WHERE NOT EXISTS(
+		 SELECT 1 FROM tiki_category_objects
+		 WHERE tiki_categorized_objects.catObjectId = tiki_category_objects.catObjectId
 );															-- empty set
 #+END_SRC
 
@@ -1832,10 +2145,11 @@ from tiki_categorized_objects where not exists(
 | category   |     7035 |
 | wiki page  |        2 |
 ** Tracing Notes
-	 tiki_setup.php has a big section around line 300 with defaults
-	 and non-defaults being set in the output template!
+tiki_setup.php has a big section around line 300 with defaults
+and non-defaults being set in the output template!
 
-	 L21 of tiki-forums.php says
+L21 of tiki-forums.php says
+#+BEGIN_EXAMPLE
 // This shows a list of forums everybody can use this listing
 $commentslib = TikiLib::lib('comments');
 but it's value is:
@@ -1852,6 +2166,7 @@ L49, $channels['data']
 
 result: (("0") ("1") ("2") ("3") ("4") ("5") ("6") ("7")
 ("8") ("9"))
+#+END_EXAMPLE
 
 This seems right
 
