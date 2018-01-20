@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS `old_groups_and_categories` (
 -- The relationships represented by this table are added to the Tiki
 -- by calling establish_group_category_models().
 CREATE TABLE IF NOT EXISTS `group_category_models` (
+  `project_` int(12) NOT NULL REFERENCES tiki_categories(categId), --kas
   `group_` int(11) NOT NULL REFERENCES users_groups(id),
   `category_` int(12) NOT NULL REFERENCES tiki_categories(categId),
   `group_model` int(11) NOT NULL REFERENCES users_groups(id),
