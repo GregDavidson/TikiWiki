@@ -37,7 +37,9 @@ CALL assert_groupname_comment( 'Project_Admins', 'permissions model with User::T
 
 -- Group Registered (all logged in Users) have Read permission on Objects in Category RegisteredReadable
 
-CALL project_group_category_models('', 'Registered', 'Registered', 'Project_Readers', 'Readable');
+CALL project_group_category_models__('RegisteredReadable', 'Registered!', 'Registered', 'Project_Readers', 'Readable');
+
+CALL project_group_category_models('RegisteredReadable', 'Registered!', 'Registered', 'Project_Readers', 'Readable');
 
 -- ** Project NGender
 
