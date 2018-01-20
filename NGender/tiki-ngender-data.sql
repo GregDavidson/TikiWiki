@@ -126,6 +126,13 @@ CALL project_group_models('LTHL', 'Observers', 'Project_Posters', 'Postable');
 CALL project_group_models('LTHL', 'Partners', 'Project_Editors', 'Editable');
 CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
 
+-- ** Personal Observers
+
+-- Some folks may want to empower more than one other to be able to
+-- easily observe and comment on a lot of what they do.
+
+CALL project_group_category_models__('user', 'GregRFC!', 'Project::RFC::GregRFC!', 'Project_Posters', 'Postable');
+
 -- * Instructions and MIscellaneous
 
 -- -- SELECT * FROM group_category_models_view;
