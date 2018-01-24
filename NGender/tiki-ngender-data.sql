@@ -37,7 +37,7 @@ CALL assert_groupname_comment( 'Project_Admins', 'permissions model with User::T
 
 -- Group Registered (all logged in Users) have Read permission on Objects in Category RegisteredReadable
 
-CALL project_group_category_models('', 'Registered', 'Registered', 'Project_Readers', 'Readable');
+CALL project_group_category_models('RegisteredReadable', 'Registered!', 'RegisteredReadable!', 'Project_Readers', 'Readable');
 
 -- ** Project NGender
 
@@ -46,7 +46,6 @@ CALL project_group_category_models('', 'Registered', 'Registered', 'Project_Read
 
 -- CALL project_group_models__('NGender', 'Partners', 'Project_Editors', 'Editable');
 -- CALL project_group_category_models__('NGender', 'Partners', 'NGender!', 'Project_Editors', 'Editable');
-
 CALL project_group_models('NGender', 'Partners', 'Project_Editors', 'Editable');
 CALL project_group_models('NGender', 'Admins', 'Project_Admins', 'Admin');
 
@@ -130,8 +129,10 @@ CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
 
 -- Some folks may want to empower more than one other to be able to
 -- easily observe and comment on a lot of what they do.
+-- This is a User-Specific project, so the Group and Category should be
+-- under the User's Default Group and Default Category, respectively!
 
-CALL project_group_category_models__('user', 'GregRFC!', 'Project::RFC::GregRFC!', 'Project_Posters', 'Postable');
+CALL project_group_category_models__('User::Greg', 'User_Greg_RFC!', 'User::Greg::RFC', 'Project_Posters', 'Postable');
 
 -- * Instructions and MIscellaneous
 

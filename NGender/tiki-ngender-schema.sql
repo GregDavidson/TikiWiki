@@ -56,13 +56,19 @@ CREATE TABLE IF NOT EXISTS `old_groups_and_categories` (
 -- Those Procedures are called by code in [[file:tiki-ngender-data.sql]]
 -- The relationships represented by this table are added to the Tiki
 -- by calling establish_group_category_models().
+-- DROP TABLE IF EXISTS `group_category_models`;
 CREATE TABLE IF NOT EXISTS `group_category_models` (
+  `project_` int(12) NOT NULL REFERENCES tiki_categories(categId),
   `group_` int(11) NOT NULL REFERENCES users_groups(id),
   `category_` int(12) NOT NULL REFERENCES tiki_categories(categId),
   `group_model` int(11) NOT NULL REFERENCES users_groups(id),
   `category_model` int(12) NOT NULL REFERENCES tiki_categories(categId),
   PRIMARY KEY `gc` (`group_`, `category_`)
 ) ENGINE=InnoDB COMMENT 'the permissions of group_ on category_ should be the same as those on group_model on category_model and can be made so using copy_perms_grp_cat_grp_cat()';
+-- Field comments:
+-- project_: kas
+-- category_:  -- either = to project_ or a child of project_ - enforce!!
+-- PRIMARY KEY `gc`:  -- should we include project_ ??
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
@@ -74,10 +80,12 @@ DELETE FROM group_category_models;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
+DROP VIEW group_category_models_view;
 CREATE VIEW group_category_models_view AS
-SELECT	group_name(group_) as target_group, category_path(category_) as target_category,
+SELECT	category_path(project_) as project,
+				group_name(group_) as target_group, category_path(category_) as target_category,
 				group_name(group_model) as model_group, category_path(category_model) as model_category
-FROM group_category_models;
+FROM group_category_models ORDER BY project, target_group, target_Category;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
@@ -148,13 +156,13 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS `add_group_category_models`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `add_group_category_models`(grp_ INT, cat_ INT, model_grp INT, model_cat INT)
+PROCEDURE `add_group_category_models`(prj_cat INT, grp_ INT, cat_ INT, model_grp INT, model_cat INT)
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure row of table group_category_models reflects given arguments'
 BEGIN
-	INSERT INTO `group_category_models`(`group_`, `category_`,`group_model`, `category_model`)
- 	VALUES (grp_, cat_, model_grp, model_cat)
-	ON DUPLICATE KEY UPDATE `group_model` = VALUES(`group_model`),  `category_model` = VALUES(`category_model`);
+	INSERT INTO `group_category_models`(`project_`, `group_`, `category_`,`group_model`, `category_model`)
+ 	VALUES (prj_cat, grp_, cat_, model_grp, model_cat)
+	ON DUPLICATE KEY UPDATE `project_` = prj_cat, `group_model` = model_grp, `category_model` = model_cat;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -289,6 +297,7 @@ PROCEDURE `project_group_category_models`(
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure row of table group_category_models; all args passed as names, not ids; project is context for cat_name'
 BEGIN
+	DECLARE project_category INT DEFAULT category_of_path(project);
 	DECLARE model_cat_parent TEXT DEFAULT 'User::Test';
 	DECLARE model_cat_path TEXT DEFAULT concat( model_cat_parent, '::', model_cat_name );
 	DECLARE maybe_project TEXT DEFAULT COALESCE( project, '' );
@@ -299,7 +308,7 @@ BEGIN
 	DECLARE model_cat INT DEFAULT category_of_path(model_cat_path);
 	DECLARE grp_ INT DEFAULT ensure_groupname_comment(project_group_name, comment_);
 	DECLARE cat_ INT DEFAULT ensure_categorypath_comment(cat_path, comment_);
-	CALL add_group_category_models(grp_, cat_, model_grp, model_cat);
+	CALL add_group_category_models(project_category, grp_, cat_, model_grp, model_cat);
 END//
 DELIMITER ;
 -- #+END_SRC
