@@ -9,6 +9,26 @@
 
 ** Status
 
+*** Need to make User::<USER>::<EVERYTHING> Private
+
+Categories for user private projects living under their category
+should be private.  The Categories which we want to make available
+to Stewards should be:
+- Anything under Project::
+- User::*
+- Anything else?
+- Do we still need the two tables?
+
+*** Moving to Project_ and Project:: top levels
+
+Finish renaming groups
+Rename categories with a query
+Move User::Test::<PATH> to Model::<PATH> ??
+any othe renaming refactorings we should do now?
+
+Change the code in schema & data to correspond to new naming system.
+
+
 *** Can we simplify permissions for more exalted groups?
 
 Review how Steward Project permissions work with someone
