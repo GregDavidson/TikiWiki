@@ -181,12 +181,7 @@ BEGIN
 	IF CHAR_LENGTH(right_) = 0 THEN RETURN left_trim;	END IF;
 	IF left_ != left_trim THEN RETURN left_trim; END IF;
 	IF right_ != right_trim THEN RETURN right_trim; END IF;
-	IF ( BINARY substr(left_trim, -1) = BINARY UPPER( substr(left_trim, -1) ) )
-	= ( BINARY substr(right_trim, 1, 1) = BINARY UPPER( substr(right_trim, 1, 1) ) ) THEN
- 		RETURN CONCAT(left_trim, '_', right_trim);
-	ELSE
- 		RETURN CONCAT(left_trim, right_trim);
-	END IF;
+ 	RETURN CONCAT(left_trim, '_', right_trim);
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -198,9 +193,9 @@ CALL assert_true( 'nice_concat(\'\', \'foo\') = \'foo\'' );
 CALL assert_true( 'nice_concat(\'\', \'\') = \'\'' ); -- ugly!!
 CALL assert_true( 'nice_concat(\'left\', \'right\') = \'left_right\'' );
 CALL assert_true( 'nice_concat(\'LEFT\', \'RIGHT\') = \'LEFT_RIGHT\'' );
-CALL assert_true( 'nice_concat(\'Left\', \'Right\') = \'LeftRight\'' );
+CALL assert_true( 'nice_concat(\'Left\', \'Right\') = \'Left_Right\'' );
 CALL assert_true( 'nice_concat(\'LEFT\', \'Right\') = \'LEFT_Right\'' );
-CALL assert_true( 'nice_concat(\'LEFT\', \'right\') = \'LEFTright\'' );
+CALL assert_true( 'nice_concat(\'LEFT\', \'right\') = \'LEFT_right\'' );
 CALL assert_true( 'nice_concat(\'Left!\', \'Right\') = \'Left\'' );
 CALL assert_true( 'nice_concat(\'Left!\', \'Right!\') = \'Left\'' ); -- ugly!!
 -- #+END_SRC
@@ -246,46 +241,69 @@ BEGIN
 	IF group_name = '' AND project_name = '' THEN
 		RETURN signal_no_text('inferred_group_name: Project Name or Group Name required!');
 	END IF;
- 	RETURN nice_concat(project_name, group_name);
+ 	RETURN concat('Project_', nice_concat(project_name, group_name));
 END//
 DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_true( 'inferred_group_name(\'User::Test::DesignSpace\', \'Observers\') = \'DesignSpaceObservers\'' );
-CALL assert_true( 'inferred_group_name(\'DesignSpace\', \'Observers\') = \'DesignSpaceObservers\'' );
-CALL assert_true( 'inferred_group_name(\'DesignSpace\', \'Observers!\') = \'Observers\'' );
-CALL assert_true( 'inferred_group_name(\'User::Test::LOYL\', \'Observers\') = \'LOYL_Observers\'' );
-CALL assert_true( 'inferred_group_name(\'LOYL\', \'Observers\') = \'LOYL_Observers\'' );
-CALL assert_true( 'inferred_group_name(\'LOYL\', \'Observers!\') = \'Observers\'' );
-CALL assert_true( 'inferred_group_name(\'\', \'Observers!\') = \'Observers\'' );
-CALL assert_true( 'inferred_group_name(\'Public::LOYL\', \'\') = \'LOYL\'' );
-CALL assert_true( 'inferred_group_name(\'LOYL\', \'\') = \'LOYL\'' );
+CALL assert_true( 'inferred_group_name(\'User::Test::DesignSpace\', \'Observers\') = \'Project_DesignSpace_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'DesignSpace\', \'Observers\') = \'Project_DesignSpace_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'DesignSpace\', \'Observers!\') = \'Project_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'User::Test::LOYL\', \'Observers\') = \'Project_LOYL_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'LOYL\', \'Observers\') = \'Project_LOYL_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'LOYL\', \'Observers!\') = \'Project_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'\', \'Observers!\') = \'Project_Observers\'' );
+CALL assert_true( 'inferred_group_name(\'Public::LOYL\', \'\') = \'Project_LOYL\'' );
+CALL assert_true( 'inferred_group_name(\'LOYL\', \'\') = \'Project_LOYL\'' );
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
--- Infer no suffix if name ends with exclamation point - but remove exclamation point!
--- Infer no path prefix if name contains one or more :: 
+DROP FUNCTION IF EXISTS `with_parent_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `with_parent_category`(parent_category TEXT, category TEXT)
+RETURNS TEXT DETERMINISTIC
+	COMMENT 'returns Project:: + parent_category + category except where redundant or category is already a path'
+BEGIN
+	DECLARE parent_ TEXT DEFAULT COALESCE(parent_category, '');
+	IF parent_ NOT LIKE 'Project::%' THEN
+		SET parent_ = CONCAT('Project::', parent_);
+	END IF;
+	IF category LIKE '%::%' THEN
+		RETURN category;
+	END IF;
+	IF parent_category = category THEN
+		RETURN parent_;
+	END IF;
+	RETURN CONCAT(parent_, '::', category);
+END//
+DELIMITER ;
+-- #+END_SRC
+
+CALL assert_true('with_parent_category(\'Project::NGender\', \'Admin\') = \'Project::NGender::Admin\'');
+CALL assert_true('with_parent_category(\'NGender\', \'Admin\') = \'Project::NGender::Admin\'');
+CALL assert_true('with_parent_category(\'NGender\', \'Public::Admin\') = \'Public::Admin\'');
+CALL assert_true('with_parent_category(\'NGender\', \'NGender\') = \'Project::NGender\'');
+
+-- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `inferred_cat_path`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `inferred_cat_path`(project_path TEXT, cat_name TEXT, model_name TEXT)
+FUNCTION `inferred_cat_path`(project_category TEXT, category TEXT, model_name TEXT)
 RETURNS TEXT	DETERMINISTIC
-	COMMENT 'returns path of category under project category, possibly nicely suffixed by model name'
+	COMMENT 'returns project_category + :: + category + _ + model_name except where contraindicated'
 BEGIN
-	DECLARE path_ TEXT DEFAULT nice_concat(cat_name, model_name);
-	IF COALESCE(project_path, '') = '' THEN RETURN path_; END IF;
-	IF path_ LIKE '%::%' OR substr(cat_name, -1) = '!' THEN RETURN path_; END IF;
-	RETURN CONCAT(project_path, '::', path_);
+	RETURN with_parent_category(project_category, nice_concat(category, model_name));
 END//
 DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Observer\', \'Readable\') = \'LOYL::ObserverReadable\'' );
-CALL assert_true( 'inferred_cat_path(\'LOYL\', \'ObserverCanSee!\', \'Readable\') = \'LOYL::ObserverCanSee\'' );
+CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Observer\', \'Readable\') = \'Project::LOYL::Observer_Readable\'' );
+CALL assert_true( 'inferred_cat_path(\'LOYL\', \'ObserverCanSee!\', \'Readable\') = \'Project::LOYL::ObserverCanSee\'' );
 CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Public::ObserverCanSee!\', \'Readable\') = \'Public::ObserverCanSee\'' );
-CALL assert_true( 'inferred_cat_path(\'NGender\', \'NGender!\', \'Editable\') = \'NGender\'' );
+CALL assert_true( 'inferred_cat_path(\'NGender\', \'NGender!\', \'Editable\') = \'Project::NGender\'' );
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql

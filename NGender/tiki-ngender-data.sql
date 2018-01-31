@@ -132,7 +132,8 @@ CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
 -- This is a User-Specific project, so the Group and Category should be
 -- under the User's Default Group and Default Category, respectively!
 
-CALL project_group_category_models__('User::Greg', 'User_Greg_RFC!', 'User::Greg::RFC', 'Project_Posters', 'Postable');
+-- CALL project_group_category_models__('User::Greg', 'User_Greg_RFC!', 'User::Greg::RFC', 'Project_Posters', 'Postable');
+CALL project_group_category_models('User::Greg', 'User_Greg_RFC!', 'User::Greg::RFC', 'Project_Posters', 'Postable');
 
 -- * Instructions and MIscellaneous
 

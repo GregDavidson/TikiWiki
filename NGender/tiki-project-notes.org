@@ -19,12 +19,19 @@ to Stewards should be:
 - Anything else?
 - Do we still need the two tables?
 
+[https://ngender.org/tiki-index.php?page=Design+Space]
+- won't let me create the new pages!
+
+Add an assert_equals which shows the values when not equal!
+Or: add emacs commands for
+- quoting & unquoting text
+- turning a CALL assert ... into a suitable SELECT
+
 *** Moving to Project_ and Project:: top levels
 
-Finish renaming groups
-Rename categories with a query
-Move User::Test::<PATH> to Model::<PATH> ??
-any othe renaming refactorings we should do now?
+- change Categories ::ObserverReadable
+- to ::Observer_Readable
+and so forth!
 
 Change the code in schema & data to correspond to new naming system.
 
