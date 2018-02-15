@@ -287,6 +287,64 @@ CALL assert_true('with_parent_category(\'NGender\', \'Public::Admin\') = \'Publi
 CALL assert_true('with_parent_category(\'NGender\', \'NGender\') = \'Project::NGender\'');
 
 -- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `project_category_parent`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `project_category_parent`() READS SQL DATA
+RETURNS INT	DETERMINISTIC
+	COMMENT 'returns id of parent of project categories'
+BEGIN
+	RETURN category_of_path('Project');
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `model_category_parent`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `model_category_parent`() READS SQL DATA
+RETURNS INT	DETERMINISTIC
+	COMMENT 'returns id of parent of model categories'
+BEGIN
+	RETURN category_of_path('User::Test');
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `model_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `model_category`(model_name TEXT) READS SQL DATA
+RETURNS INT	DETERMINISTIC
+	COMMENT 'returns category_id_of_model adding parent category if none'
+BEGIN
+	IF model_name LIKE '%::%' THEN
+	   RETURN category_of_path(model_name);
+	END IF;
+	RETURN category_named_parent(model_name, model_category_parent());
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `project_category`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `project_category`(project_name TEXT) READS SQL DATA
+RETURNS INT	DETERMINISTIC
+	COMMENT 'returns category_id_of_project adding parent category if none'
+BEGIN
+	IF project_name LIKE '%::%' THEN
+	   RETURN category_of_path(project_name);
+	END IF;
+	RETURN category_named_parent(project_name, project_category_parent());
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `inferred_cat_path`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
@@ -313,20 +371,16 @@ CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `project_group_category_models`(
 	project TEXT, grp_name TEXT, cat_name TEXT, model_grp_name TEXT, model_cat_name TEXT
 ) READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'ensure row of table group_category_models; all args passed as names, not ids; project is context for cat_name'
+	COMMENT 'ensure row of table group_category_models; all args passed as names, not ids; project is context for cat_name' 
 BEGIN
 	DECLARE project_category INT DEFAULT category_of_path(project);
-	DECLARE model_cat_parent TEXT DEFAULT 'User::Test';
-	DECLARE model_cat_path TEXT DEFAULT concat( model_cat_parent, '::', model_cat_name );
 	DECLARE maybe_project TEXT DEFAULT COALESCE( project, '' );
 	DECLARE project_group_name TEXT DEFAULT inferred_group_name(maybe_project, grp_name);
 	DECLARE cat_path TEXT DEFAULT inferred_cat_path(maybe_project, cat_name, model_cat_name);
 	DECLARE comment_ TEXT DEFAULT COALESCE(concat('for ', maybe_project), '');
-	DECLARE model_grp INT DEFAULT group_named(model_grp_name);
-	DECLARE model_cat INT DEFAULT category_of_path(model_cat_path);
 	DECLARE grp_ INT DEFAULT ensure_groupname_comment(project_group_name, comment_);
 	DECLARE cat_ INT DEFAULT ensure_categorypath_comment(cat_path, comment_);
-	CALL add_group_category_models(project_category, grp_, cat_, model_grp, model_cat);
+	CALL add_group_category_models(project_category, grp_, cat_, model_grp, model_category(model_cat));
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -362,7 +416,7 @@ PROCEDURE `project_group_models`(
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'call project_group_category_models with the category name the same as the project name'
 BEGIN
-	CALL project_group_category_models(project, grp_name, concat(project, '!'), model_grp_name, model_cat_name);
+	CALL project_group_category_models(concat('project::', project), grp_name, concat(project, '!'), model_grp_name, model_cat_name);
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -376,7 +430,7 @@ PROCEDURE `project_group_models__`(
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'call project_group_category_models with the category name the same as the project name'
 BEGIN
-	SELECT project, grp_name, concat(project, '!'), model_grp_name, model_cat_name;
+	CALL project_group_category_models__(concat('project::', project), grp_name, concat(project, '!'), model_grp_name, model_cat_name);
 END//
 DELIMITER ;
 -- #+END_SRC

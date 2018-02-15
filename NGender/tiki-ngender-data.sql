@@ -102,6 +102,8 @@ CALL project_group_category_models('LOYL', 'Peers', 'Peer', 'Project_Editors', '
 -- Registered -> RPTUG_Associates -> RPTUG_Partners and RPTUG_Admins
 -- Most PRTUG pages will be explicitly marked with category public
 
+-- Do we really want all registered users to be able to Post??
+-- We could allow them to read and create RPTUG observers
 CALL project_group_models('RPTUG', 'Registered!', 'Project_Posters', 'Postable');
 CALL project_group_models('RPTUG', 'Associates', 'Project_Posters', 'Postable');
 CALL project_group_models('RPTUG', 'Partners', 'Project_Editors', 'Editable');
@@ -155,7 +157,7 @@ CALL project_group_category_models('User::Greg', 'User_Greg_RFC!', 'User::Greg::
 
 -- Ensure the desired permissions between the model Group/Category pairs
 -- - This must be done manually!
--- Pair up your the Gruop/Category pairs for your projects with their models
+-- Pair up your the Group/Category pairs for your projects with their models
 -- using project_group_category_models as above.
 
 -- SELECT * FROM group_category_models_view ORDER BY target_category, target_group;
