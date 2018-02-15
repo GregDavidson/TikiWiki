@@ -27,6 +27,10 @@ Or: add emacs commands for
 - quoting & unquoting text
 - turning a CALL assert ... into a suitable SELECT
 
+*** Changes to Tiki Conventions
+
+Changed HomePage to Home since that's what the menu calls it.
+
 *** Moving to Project_ and Project:: top levels
 
 - change Categories ::ObserverReadable
