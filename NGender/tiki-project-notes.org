@@ -22,10 +22,10 @@ to Stewards should be:
 [https://ngender.org/tiki-index.php?page=Design+Space]
 - won't let me create the new pages!
 
-Add an assert_equals which shows the values when not equal!
-Or: add emacs commands for
+Create emacs commands for
 - quoting & unquoting text
 - turning a CALL assert ... into a suitable SELECT
+- see ~/.emacs.d/jgd/jgd-sql-quotes.el
 
 *** Changes to Tiki Conventions
 
