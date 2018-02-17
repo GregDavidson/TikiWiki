@@ -52,9 +52,11 @@ CALL project_group_models('NGender', 'Admins', 'Project_Admins', 'Admin');
 -- ** Project Abundance
 
 -- Anonymous (Public) -> Registered -> Abundancers and AbundanceAdmins
+-- Observers is available in case we ever change Registered to Readable
 
 CALL project_group_models('Abundance', 'Anonymous!', 'Project_Readers', 'Readable');
 CALL project_group_models('Abundance', 'Registered!', 'Project_Posters', 'Postable');
+CALL project_group_models('Abundance', 'Observers', 'Project_Posters', 'Postable');
 CALL project_group_models('Abundance', 'Abundancers!', 'Project_Editors', 'Editable');
 CALL project_group_models('Abundance', 'Admins', 'Project_Admins', 'Admin');
 
@@ -70,8 +72,10 @@ CALL project_group_models('SomeClues', 'Admins', 'Project_Admins', 'Admin');
 -- ** Project UncommonKnowledge
 
 -- Registered -> Uncommoners and UncommonKnowledgeAdmins
+-- Observers is available in case we ever change Registered to Readable
 
 CALL project_group_models('UncommonKnowledge', 'Registered!', 'Project_Posters', 'Postable');
+CALL project_group_models('UncommonKnowledge', 'Observers', 'Project_Posters', 'Postable');
 CALL project_group_models('UncommonKnowledge', 'Uncommoners!', 'Project_Editors', 'Editable');
 CALL project_group_models('UncommonKnowledge', 'Admins', 'Project_Admins', 'Admin');
 
@@ -94,6 +98,7 @@ CALL project_group_models('LOYL', 'Observers', 'Project_Posters', 'Postable');
 CALL project_group_models('LOYL', 'Learners', 'Project_Posters', 'Postable');
 CALL project_group_models('LOYL', 'Peers', 'Project_Posters', 'Postable');
 CALL project_group_models('LOYL', 'Admins', 'Project_Admins', 'Admin');
+-- CALL project_group_category_models__('LOYL', 'Learners', 'Learner', 'Project_Editors', 'Editable');
 CALL project_group_category_models('LOYL', 'Learners', 'Learner', 'Project_Editors', 'Editable');
 CALL project_group_category_models('LOYL', 'Peers', 'Peer', 'Project_Editors', 'Editable');
 
@@ -105,9 +110,21 @@ CALL project_group_category_models('LOYL', 'Peers', 'Peer', 'Project_Editors', '
 -- Do we really want all registered users to be able to Post??
 -- We could allow them to read and create RPTUG observers
 CALL project_group_models('RPTUG', 'Registered!', 'Project_Posters', 'Postable');
+CALL project_group_models('RPTUG', 'Observers', 'Project_Posters', 'Postable');
 CALL project_group_models('RPTUG', 'Associates', 'Project_Posters', 'Postable');
 CALL project_group_models('RPTUG', 'Partners', 'Project_Editors', 'Editable');
 CALL project_group_models('RPTUG', 'Admins', 'Project_Admins', 'Admin');
+-- CALL project_group_category_models__('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
+CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
+
+-- ** Project LTHL
+
+CALL project_group_models('LTHL', 'Associates', 'Project_Posters', 'Postable');
+CALL project_group_models('LTHL', 'Partners', 'Project_Editors', 'Editable');
+CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
+CALL project_group_category_models('LTHL', 'Associates', 'Associate', 'Project_Editors', 'Editable');
+
+
 CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
 
 -- ** Project DesignSpace

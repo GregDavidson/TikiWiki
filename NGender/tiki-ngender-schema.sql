@@ -13,6 +13,19 @@
 -- Stewards to see nearly all Tiki Categories.
 -- See let_stewards_view_categories() for the details!
 
+-- Parent of all User Categories
+SET @USER_CATEGORY_PATH = 'User';
+SET @USER_CATEGORY_PATTERN = CONCAT(@USER_CATEGORY_PATH, '::%');
+SET @USER_CATEGORY = category_of_path(@USER_CATEGORY_PATH);
+-- Parent of all Model Categories
+SET @MODEL_CATEGORY_PATH = 'User::Test';
+SET @MODEL_CATEGORY_PATTERN = CONCAT(@MODEL_CATEGORY_PATH, '::%');
+SET @MODEL_CATEGORY = category_of_path(@MODEL_CATEGORY_PATH);
+-- Parent of Project Categories not under a single User
+SET @PROJECT_CATEGORY_PATH = 'Project';
+SET @PROJECT_CATEGORY_PATTERN = CONCAT(@PROJECT_CATEGORY_PATH, '::%');
+SET @PROJECT_CATEGORY = category_of_path(@PROJECT_CATEGORY_PATH);
+
 -- #+BEGIN_SRC sql
 DROP TABLE IF EXISTS `nonleaf_steward_categories`;
 CREATE TABLE `nonleaf_steward_categories` (
@@ -32,7 +45,7 @@ COMMENT 'do not give Stewards tiki_p_view_category permission on these categorie
 -- #+BEGIN_SRC sql
 INSERT INTO non_steward_categories(category_)
 SELECT categId FROM tiki_categories
-WHERE parentId = category_of_path('User::Test');
+WHERE parentId = @MODEL_CATEGORY;
 -- #+END_SRC
 
 -- We need a convenient way to garbage collect Groups and Categories
@@ -259,90 +272,42 @@ CALL assert_true( 'inferred_group_name(\'LOYL\', \'\') = \'Project_LOYL\'' );
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `with_parent_category`;
-DELIMITER //
-CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `with_parent_category`(parent_category TEXT, category TEXT)
-RETURNS TEXT DETERMINISTIC
-	COMMENT 'returns Project:: + parent_category + category except where redundant or category is already a path'
-BEGIN
-	DECLARE parent_ TEXT DEFAULT COALESCE(parent_category, '');
-	IF parent_ NOT LIKE 'Project::%' THEN
-		SET parent_ = CONCAT('Project::', parent_);
-	END IF;
-	IF category LIKE '%::%' THEN
-		RETURN category;
-	END IF;
-	IF parent_category = category THEN
-		RETURN parent_;
-	END IF;
-	RETURN CONCAT(parent_, '::', category);
-END//
-DELIMITER ;
--- #+END_SRC
-
-CALL assert_true('with_parent_category(\'Project::NGender\', \'Admin\') = \'Project::NGender::Admin\'');
-CALL assert_true('with_parent_category(\'NGender\', \'Admin\') = \'Project::NGender::Admin\'');
-CALL assert_true('with_parent_category(\'NGender\', \'Public::Admin\') = \'Public::Admin\'');
-CALL assert_true('with_parent_category(\'NGender\', \'NGender\') = \'Project::NGender\'');
-
--- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `project_category_parent`;
-DELIMITER //
-CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `project_category_parent`() READS SQL DATA
-RETURNS INT	DETERMINISTIC
-	COMMENT 'returns id of parent of project categories'
-BEGIN
-	RETURN category_of_path('Project');
-END//
-DELIMITER ;
--- #+END_SRC
-
--- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `model_category_parent`;
-DELIMITER //
-CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `model_category_parent`() READS SQL DATA
-RETURNS INT	DETERMINISTIC
-	COMMENT 'returns id of parent of model categories'
-BEGIN
-	RETURN category_of_path('User::Test');
-END//
-DELIMITER ;
--- #+END_SRC
-
--- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `model_category`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `model_category`(model_name TEXT) READS SQL DATA
-RETURNS INT	DETERMINISTIC
+FUNCTION `model_category`(model_name TEXT) RETURNS INT
+READS SQL DATA DETERMINISTIC
 	COMMENT 'returns category_id_of_model adding parent category if none'
 BEGIN
 	IF model_name LIKE '%::%' THEN
 	   RETURN category_of_path(model_name);
 	END IF;
-	RETURN category_named_parent(model_name, model_category_parent());
+	RETURN category_named_parent(model_name, @MODEL_CATEGORY);
 END//
 DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `project_category`;
+DROP FUNCTION IF EXISTS `inferred_category_path`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `project_category`(project_name TEXT) READS SQL DATA
-RETURNS INT	DETERMINISTIC
-	COMMENT 'returns category_id_of_project adding parent category if none'
+FUNCTION `inferred_category_path`(cat_name TEXT, cat_parent_path TEXT) RETURNS TEXT
+READS SQL DATA DETERMINISTIC
+	COMMENT 'returns inferred category path by adding parent category if none'
 BEGIN
-	IF project_name LIKE '%::%' THEN
-	   RETURN category_of_path(project_name);
+	DECLARE name_ TEXT DEFAULT TRIM(trailing '!' FROM cat_name);
+	IF name_ != cat_name OR name_ LIKE '%::%' THEN
+	   RETURN name_;
 	END IF;
-	RETURN category_named_parent(project_name, project_category_parent());
+	IF name_ = cat_parent_path OR cat_parent_path LIKE CONCAT('%::', name_) THEN
+	   RETURN cat_parent_path;
+	END IF;
+	RETURN CONCAT(cat_parent_path, '::', name_);
 END//
 DELIMITER ;
 -- #+END_SRC
+
+-- Need tests!!
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `inferred_cat_path`;
@@ -350,18 +315,18 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `inferred_cat_path`(project_category TEXT, category TEXT, model_name TEXT)
 RETURNS TEXT	DETERMINISTIC
-	COMMENT 'returns project_category + :: + category + _ + model_name except where contraindicated'
+	COMMENT 'returns project_category + :: + category + _ + model_name, except where contraindicated'
 BEGIN
-	RETURN with_parent_category(project_category, nice_concat(category, model_name));
+	RETURN inferred_category_path(nice_concat(category, model_name), project_category);
 END//
 DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Observer\', \'Readable\') = \'Project::LOYL::Observer_Readable\'' );
-CALL assert_true( 'inferred_cat_path(\'LOYL\', \'ObserverCanSee!\', \'Readable\') = \'Project::LOYL::ObserverCanSee\'' );
-CALL assert_true( 'inferred_cat_path(\'LOYL\', \'Public::ObserverCanSee!\', \'Readable\') = \'Public::ObserverCanSee\'' );
-CALL assert_true( 'inferred_cat_path(\'NGender\', \'NGender!\', \'Editable\') = \'Project::NGender\'' );
+CALL assert_true( 'inferred_cat_path(\'Project::LOYL\', \'Observer\', \'Readable\') = \'Project::LOYL::Observer_Readable\'' );
+CALL assert_true( 'inferred_cat_path(\'Project::LOYL\', \'ObserverCanSee!\', \'Readable\') = \'Project::LOYL::ObserverCanSee\'' );
+CALL assert_true( 'inferred_cat_path(\'Project::LOYL\', \'Public::ObserverCanSee!\', \'Readable\') = \'Public::ObserverCanSee\'' );
+CALL assert_true( 'inferred_cat_path(\'Project::NGender\', \'NGender!\', \'Editable\') = \'Project::NGender\'' );
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
@@ -369,18 +334,20 @@ DROP PROCEDURE IF EXISTS `project_group_category_models`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `project_group_category_models`(
-	project TEXT, grp_name TEXT, cat_name TEXT, model_grp_name TEXT, model_cat_name TEXT
+	project_name TEXT, grp_name TEXT, cat_name TEXT, model_grp_name TEXT, model_cat_name TEXT
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure row of table group_category_models; all args passed as names, not ids; project is context for cat_name' 
 BEGIN
-	DECLARE project_category INT DEFAULT category_of_path(project);
-	DECLARE maybe_project TEXT DEFAULT COALESCE( project, '' );
-	DECLARE project_group_name TEXT DEFAULT inferred_group_name(maybe_project, grp_name);
-	DECLARE cat_path TEXT DEFAULT inferred_cat_path(maybe_project, cat_name, model_cat_name);
-	DECLARE comment_ TEXT DEFAULT COALESCE(concat('for ', maybe_project), '');
+	DECLARE comment_ TEXT DEFAULT concat('for ', project_name);
+	DECLARE project_path TEXT DEFAULT inferred_category_path(project_name, @PROJECT_CATEGORY_PATH);
+	DECLARE project_ INT DEFAULT ensure_categorypath_comment(project_path, comment_);
+	DECLARE project_group_name TEXT DEFAULT inferred_group_name(project_path, grp_name);
+	DECLARE cat_path TEXT DEFAULT inferred_cat_path(project_path, cat_name, model_cat_name);
 	DECLARE grp_ INT DEFAULT ensure_groupname_comment(project_group_name, comment_);
 	DECLARE cat_ INT DEFAULT ensure_categorypath_comment(cat_path, comment_);
-	CALL add_group_category_models(project_category, grp_, cat_, model_grp, model_category(model_cat));
+	CALL add_group_category_models(
+		project_, grp_, cat_, group_named(model_grp_name), model_category(model_cat_name)
+	);
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -390,19 +357,16 @@ DROP PROCEDURE IF EXISTS `project_group_category_models__`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `project_group_category_models__`(
-	project TEXT, grp_name TEXT, cat_name TEXT, model_grp_name TEXT, model_cat_name TEXT
+	project_name TEXT, grp_name TEXT, cat_name TEXT, model_grp_name TEXT, model_cat_name TEXT
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'ensure row of table group_category_models; all args passed as names, not ids; project is context for cat_name'
 BEGIN
-	DECLARE model_cat_parent TEXT DEFAULT 'User::Test';
-	DECLARE model_cat_path TEXT DEFAULT concat( model_cat_parent, '::', model_cat_name );
-	DECLARE maybe_project TEXT DEFAULT COALESCE( project, '' );
-	DECLARE project_group_name TEXT DEFAULT inferred_group_name(maybe_project, grp_name);
-	DECLARE cat_path TEXT DEFAULT inferred_cat_path(maybe_project, cat_name, model_cat_name);
-	DECLARE comment_ TEXT DEFAULT COALESCE(concat('for ', maybe_project), '');
-	DECLARE model_grp INT DEFAULT group_named(model_grp_name);
-	DECLARE model_cat INT DEFAULT category_of_path(model_cat_path);
-	SELECT project_group_name, cat_path, group_name(model_grp), category_path(model_cat);
+	DECLARE comment_ TEXT DEFAULT concat('for ', project_name);
+	DECLARE project_path TEXT DEFAULT inferred_category_path(project_name, @PROJECT_CATEGORY_PATH);
+	DECLARE project_group_name TEXT DEFAULT inferred_group_name(project_path, grp_name);
+	DECLARE cat_path TEXT DEFAULT inferred_cat_path(project_path, cat_name, model_cat_name);
+	SELECT project_path, project_group_name, cat_path, comment_,
+		model_grp_name, CONCAT(@MODEL_CATEGORY_PATH, '::', model_cat_name) AS model_cat;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -416,7 +380,9 @@ PROCEDURE `project_group_models`(
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'call project_group_category_models with the category name the same as the project name'
 BEGIN
-	CALL project_group_category_models(concat('project::', project), grp_name, concat(project, '!'), model_grp_name, model_cat_name);
+	CALL project_group_category_models(
+		project,grp_name, CONCAT(project, '!'), model_grp_name, model_cat_name
+	);
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -430,7 +396,9 @@ PROCEDURE `project_group_models__`(
 ) READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'call project_group_category_models with the category name the same as the project name'
 BEGIN
-	CALL project_group_category_models__(concat('project::', project), grp_name, concat(project, '!'), model_grp_name, model_cat_name);
+	CALL project_group_category_models__(
+		project,grp_name, CONCAT(project, '!'), model_grp_name, model_cat_name
+	);
 END//
 DELIMITER ;
 -- #+END_SRC
