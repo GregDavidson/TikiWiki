@@ -13,23 +13,127 @@
 -- Stewards to see nearly all Tiki Categories.
 -- See let_stewards_view_categories() for the details!
 
--- Parent of all User Categories
-SET @USER_CATEGORY_PATH = 'User';
-SET @USER_CATEGORY_PATTERN = CONCAT(@USER_CATEGORY_PATH, '::%');
-SET @USER_CATEGORY = category_of_path(@USER_CATEGORY_PATH);
--- Parent of all Model Categories
-SET @MODEL_CATEGORY_PATH = 'User::Test';
-SET @MODEL_CATEGORY_PATTERN = CONCAT(@MODEL_CATEGORY_PATH, '::%');
-SET @MODEL_CATEGORY = category_of_path(@MODEL_CATEGORY_PATH);
--- Parent of Project Categories not under a single User
-SET @PROJECT_CATEGORY_PATH = 'Project';
-SET @PROJECT_CATEGORY_PATTERN = CONCAT(@PROJECT_CATEGORY_PATH, '::%');
-SET @PROJECT_CATEGORY = category_of_path(@PROJECT_CATEGORY_PATH);
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `USER_CATEGORY_PATH`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `USER_CATEGORY_PATH`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of all User Categories'
+BEGIN
+RETURN 'User';
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `USER_CATEGORY_PATTERN`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `USER_CATEGORY_PATTERN`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of all User Categories'
+BEGIN
+RETURN CONCAT(USER_CATEGORY_PATH(), '::%');
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `USER_CATEGORY`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `USER_CATEGORY`()
+RETURNS INTEGER	DETERMINISTIC
+COMMENT 'Parent of all User Categories'
+BEGIN
+RETURN category_of_path(USER_CATEGORY_PATH());
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `MODEL_CATEGORY_PATH`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `MODEL_CATEGORY_PATH`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of all Model Categories'
+BEGIN
+RETURN 'User::Test';
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `MODEL_CATEGORY_PATTERN`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `MODEL_CATEGORY_PATTERN`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of all Model Categories'
+BEGIN
+RETURN CONCAT(MODEL_CATEGORY_PATH(), '::%');
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `MODEL_CATEGORY`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `MODEL_CATEGORY`()
+RETURNS INTEGER	DETERMINISTIC
+COMMENT 'Parent of all Model Categories'
+BEGIN
+RETURN category_of_path(MODEL_CATEGORY_PATH());
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `PROJECT_CATEGORY_PATH`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `PROJECT_CATEGORY_PATH`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of Project Categories not under a single User'
+BEGIN
+RETURN 'Project';
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `PROJECT_CATEGORY_PATTERN`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `PROJECT_CATEGORY_PATTERN`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of Project Categories not under a single User'
+BEGIN
+RETURN CONCAT(PROJECT_CATEGORY_PATH(), '::%');
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `PROJECT_CATEGORY`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `PROJECT_CATEGORY`()
+RETURNS INTEGER	DETERMINISTIC
+COMMENT 'Parent of Project Categories not under a single User'
+BEGIN
+RETURN category_of_path(PROJECT_CATEGORY_PATH());
+END//
+DELIMITER ;
+-- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP TABLE IF EXISTS `nonleaf_steward_categories`;
 CREATE TABLE `nonleaf_steward_categories` (
-  `category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
+`category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
 ) ENGINE=InnoDB
 COMMENT 'always give Stewards tiki_p_view_category permission on these categories';
 -- #+END_SRC
@@ -37,7 +141,7 @@ COMMENT 'always give Stewards tiki_p_view_category permission on these categorie
 -- #+BEGIN_SRC sql
 DROP TABLE IF EXISTS `non_steward_categories`;
 CREATE TABLE `non_steward_categories` (
-  `category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
+`category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
 ) ENGINE=InnoDB
 COMMENT 'do not give Stewards tiki_p_view_category permission on these categories';
 -- #+END_SRC
@@ -45,7 +149,7 @@ COMMENT 'do not give Stewards tiki_p_view_category permission on these categorie
 -- #+BEGIN_SRC sql
 INSERT INTO non_steward_categories(category_)
 SELECT categId FROM tiki_categories
-WHERE parentId = @MODEL_CATEGORY;
+WHERE parentId = MODEL_CATEGORY();
 -- #+END_SRC
 
 -- We need a convenient way to garbage collect Groups and Categories
@@ -58,9 +162,9 @@ WHERE parentId = @MODEL_CATEGORY;
 
 -- #+BEGIN_SRC sql
 CREATE TABLE IF NOT EXISTS `old_groups_and_categories` (
-  `group_` int(11) NOT NULL REFERENCES users_groups(id),
-  `category_` int(12) NOT NULL REFERENCES tiki_categories(categId),
-  PRIMARY KEY `gc` (`group_`, `category_`)
+`group_` int(11) NOT NULL REFERENCES users_groups(id),
+`category_` int(12) NOT NULL REFERENCES tiki_categories(categId),
+PRIMARY KEY `gc` (`group_`, `category_`)
 ) ENGINE=InnoDB COMMENT 'accumulates groups and categories we may have created; after rebuilding group_category_models any occurring ONLY here should be removed from here AND from the Tiki';
 -- #+END_SRC
 
@@ -71,12 +175,12 @@ CREATE TABLE IF NOT EXISTS `old_groups_and_categories` (
 -- by calling establish_group_category_models().
 -- DROP TABLE IF EXISTS `group_category_models`;
 CREATE TABLE IF NOT EXISTS `group_category_models` (
-  `project_` int(12) NOT NULL REFERENCES tiki_categories(categId),
-  `group_` int(11) NOT NULL REFERENCES users_groups(id),
-  `category_` int(12) NOT NULL REFERENCES tiki_categories(categId),
-  `group_model` int(11) NOT NULL REFERENCES users_groups(id),
-  `category_model` int(12) NOT NULL REFERENCES tiki_categories(categId),
-  PRIMARY KEY `gc` (`group_`, `category_`)
+`project_` int(12) NOT NULL REFERENCES tiki_categories(categId),
+`group_` int(11) NOT NULL REFERENCES users_groups(id),
+`category_` int(12) NOT NULL REFERENCES tiki_categories(categId),
+`group_model` int(11) NOT NULL REFERENCES users_groups(id),
+`category_model` int(12) NOT NULL REFERENCES tiki_categories(categId),
+PRIMARY KEY `gc` (`group_`, `category_`)
 ) ENGINE=InnoDB COMMENT 'the permissions of group_ on category_ should be the same as those on group_model on category_model and can be made so using copy_perms_grp_cat_grp_cat()';
 -- Field comments:
 -- project_: kas
@@ -96,43 +200,42 @@ DELETE FROM group_category_models;
 DROP VIEW group_category_models_view;
 CREATE VIEW group_category_models_view AS
 SELECT	category_path(project_) as project,
-				group_name(group_) as target_group, category_path(category_) as target_category,
-				group_name(group_model) as model_group, category_path(category_model) as model_category
+		group_name(group_) as target_group, category_path(category_) as target_category,
+		group_name(group_model) as model_group, category_path(category_model) as model_category
 FROM group_category_models ORDER BY project, target_group, target_Category;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 -- Run this after adding any Categories to the Tables above!
+-- Group Stewards grants view permission to categories in the target column of group_category_models; where the Project column is a child of Category Project
+-- TODO:::
+-- The default group of each Steward grants view permission to categories where the Project column is their default category
 SET @CATS_SEEN = 0;
 DROP PROCEDURE IF EXISTS `let_stewards_view_categories`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `let_stewards_view_categories`()
-  READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'establish group/category permissions according to the models in table group_category_models'
+READS SQL DATA MODIFIES SQL DATA
+COMMENT 'establish group/category permissions according to the models in table group_category_models'
 BEGIN
-	 DECLARE groupname_ int DEFAULT group_named('Stewards');
-	 DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
- 	 DECLARE category_ int;
- 	 DECLARE done_ int DEFAULT 0;
- 	 DEClARE cursor_ CURSOR FOR 
-	  SELECT categId FROM tiki_categories
-		WHERE (
-			categId NOT IN (SELECT category_ FROM non_steward_categories)
-			AND categId NOT IN (SELECT parentId FROM tiki_categories)
-		) OR categId IN (SELECT category_ FROM nonleaf_steward_categories)
-		 OR categId IN (SELECT category_ FROM group_category_models);
- 	 DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
-	 OPEN cursor_;
-	 foo: LOOP
-		SET @CATS_SEEN = @CATS_SEEN + 1;
-		 FETCH cursor_ INTO category_;
-		 IF done_ THEN LEAVE foo; END IF;
-		 INSERT IGNORE
-		 INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
-		 VALUES (groupname_, permname_, 'category', MD5(CONCAT('category', category_)));
-	 END LOOP;
-	 CLOSE cursor_;
+DECLARE groupname_ int DEFAULT group_named('Stewards');
+DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
+DECLARE category_ int;
+DECLARE done_ int DEFAULT 0;
+DECLARE cursor_ CURSOR FOR 
+SELECT DISTINCT category_ FROM group_category_models
+WHERE category_parent( project_ ) = project_category();
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+OPEN cursor_;
+foo: LOOP
+SET @CATS_SEEN = @CATS_SEEN + 1;
+		FETCH cursor_ INTO category_;
+		IF done_ THEN LEAVE foo; END IF;
+		INSERT IGNORE
+		INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
+		VALUES (groupname_, permname_, 'category', MD5(CONCAT('category', category_)));
+END LOOP;
+CLOSE cursor_;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -272,17 +375,17 @@ CALL assert_true( 'inferred_group_name(\'LOYL\', \'\') = \'Project_LOYL\'' );
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `model_category`;
+DROP FUNCTION IF EXISTS `get_model_category`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `model_category`(model_name TEXT) RETURNS INT
+FUNCTION `get_model_category`(model_name TEXT) RETURNS INT
 READS SQL DATA DETERMINISTIC
 	COMMENT 'returns category_id_of_model adding parent category if none'
 BEGIN
 	IF model_name LIKE '%::%' THEN
 	   RETURN category_of_path(model_name);
 	END IF;
-	RETURN category_named_parent(model_name, @MODEL_CATEGORY);
+	RETURN category_named_parent(model_name, MODEL_CATEGORY());
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -339,14 +442,14 @@ PROCEDURE `project_group_category_models`(
 	COMMENT 'ensure row of table group_category_models; all args passed as names, not ids; project is context for cat_name' 
 BEGIN
 	DECLARE comment_ TEXT DEFAULT concat('for ', project_name);
-	DECLARE project_path TEXT DEFAULT inferred_category_path(project_name, @PROJECT_CATEGORY_PATH);
+	DECLARE project_path TEXT DEFAULT inferred_category_path(project_name, PROJECT_CATEGORY_PATH());
 	DECLARE project_ INT DEFAULT ensure_categorypath_comment(project_path, comment_);
 	DECLARE project_group_name TEXT DEFAULT inferred_group_name(project_path, grp_name);
 	DECLARE cat_path TEXT DEFAULT inferred_cat_path(project_path, cat_name, model_cat_name);
 	DECLARE grp_ INT DEFAULT ensure_groupname_comment(project_group_name, comment_);
 	DECLARE cat_ INT DEFAULT ensure_categorypath_comment(cat_path, comment_);
 	CALL add_group_category_models(
-		project_, grp_, cat_, group_named(model_grp_name), model_category(model_cat_name)
+		project_, grp_, cat_, group_named(model_grp_name), get_model_category(model_cat_name)
 	);
 END//
 DELIMITER ;
@@ -362,11 +465,11 @@ PROCEDURE `project_group_category_models__`(
 	COMMENT 'ensure row of table group_category_models; all args passed as names, not ids; project is context for cat_name'
 BEGIN
 	DECLARE comment_ TEXT DEFAULT concat('for ', project_name);
-	DECLARE project_path TEXT DEFAULT inferred_category_path(project_name, @PROJECT_CATEGORY_PATH);
+	DECLARE project_path TEXT DEFAULT inferred_category_path(project_name, PROJECT_CATEGORY_PATH());
 	DECLARE project_group_name TEXT DEFAULT inferred_group_name(project_path, grp_name);
 	DECLARE cat_path TEXT DEFAULT inferred_cat_path(project_path, cat_name, model_cat_name);
 	SELECT project_path, project_group_name, cat_path, comment_,
-		model_grp_name, CONCAT(@MODEL_CATEGORY_PATH, '::', model_cat_name) AS model_cat;
+		model_grp_name, CONCAT(MODEL_CATEGORY_PATH(), '::', model_cat_name) AS model_cat;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -402,6 +505,7 @@ BEGIN
 END//
 DELIMITER ;
 -- #+END_SRC
+-- need unit test code here!!
 
 -- ** Various procedures designed to automate common tasks
 

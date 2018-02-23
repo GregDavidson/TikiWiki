@@ -46,6 +46,7 @@ CALL project_group_category_models('RegisteredReadable', 'Registered!', 'Registe
 
 -- CALL project_group_models__('NGender', 'Partners', 'Project_Editors', 'Editable');
 -- CALL project_group_category_models__('NGender', 'Partners', 'NGender!', 'Project_Editors', 'Editable');
+CALL project_group_models('NGender', 'Observers', 'Project_Posters', 'Postable');
 CALL project_group_models('NGender', 'Partners', 'Project_Editors', 'Editable');
 CALL project_group_models('NGender', 'Admins', 'Project_Admins', 'Admin');
 
@@ -105,7 +106,7 @@ CALL project_group_category_models('LOYL', 'Peers', 'Peer', 'Project_Editors', '
 -- ** Project RPTUG
 
 -- Registered -> RPTUG_Associates -> RPTUG_Partners and RPTUG_Admins
--- Most PRTUG pages will be explicitly marked with category public
+-- Most RPTUG pages will be explicitly marked with category public
 
 -- Do we really want all registered users to be able to Post??
 -- We could allow them to read and create RPTUG observers
@@ -115,16 +116,6 @@ CALL project_group_models('RPTUG', 'Associates', 'Project_Posters', 'Postable');
 CALL project_group_models('RPTUG', 'Partners', 'Project_Editors', 'Editable');
 CALL project_group_models('RPTUG', 'Admins', 'Project_Admins', 'Admin');
 -- CALL project_group_category_models__('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
-CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
-
--- ** Project LTHL
-
-CALL project_group_models('LTHL', 'Associates', 'Project_Posters', 'Postable');
-CALL project_group_models('LTHL', 'Partners', 'Project_Editors', 'Editable');
-CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
-CALL project_group_category_models('LTHL', 'Associates', 'Associate', 'Project_Editors', 'Editable');
-
-
 CALL project_group_category_models('RPTUG', 'Associates', 'Associate', 'Project_Editors', 'Editable');
 
 -- ** Project DesignSpace
@@ -144,6 +135,18 @@ CALL project_group_models('LTHL', 'Observers', 'Project_Posters', 'Postable');
 CALL project_group_models('LTHL', 'Partners', 'Project_Editors', 'Editable');
 CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
 
+-- ** Project ScenicHouse
+
+-- ScenicHouse_Observers -> ScenicHouse_Partners and ScenicHouse_Admins
+
+-- CALL project_group_category_models__('ScenicHouse', 'Observers', 'ScenicHouse!', 'Project_Posters', 'Postable');
+CALL project_group_models__('ScenicHouse', 'Observers', 'Project_Posters', 'Postable');
+
+CALL project_group_models('ScenicHouse', 'Observers', 'Project_Posters', 'Postable');
+
+CALL project_group_models('ScenicHouse', 'Partners', 'Project_Editors', 'Editable');
+CALL project_group_models('ScenicHouse', 'Admins', 'Project_Admins', 'Admin');
+
 -- ** Personal Observers
 
 -- Some folks may want to empower more than one other to be able to
@@ -154,7 +157,7 @@ CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
 -- CALL project_group_category_models__('User::Greg', 'User_Greg_RFC!', 'User::Greg::RFC', 'Project_Posters', 'Postable');
 CALL project_group_category_models('User::Greg', 'User_Greg_RFC!', 'User::Greg::RFC', 'Project_Posters', 'Postable');
 
--- * Instructions and MIscellaneous
+-- * Instructions and Miscellaneous
 
 -- -- SELECT * FROM group_category_models_view;
 
@@ -177,24 +180,47 @@ CALL project_group_category_models('User::Greg', 'User_Greg_RFC!', 'User::Greg::
 -- Pair up your the Group/Category pairs for your projects with their models
 -- using project_group_category_models as above.
 
--- SELECT * FROM group_category_models_view ORDER BY target_category, target_group;
+-- SELECT * FROM group_category_models_view
 
 -- -- CALL establish_group_category_models();
 
 -- You can also do this manually through the Category features:
 -- -- CALL feature_ngender_stewards(true);
 
--- After manual work, these may help:
+-- ** Possible Cleanup of Obsolete Groups and Categories
+
+-- If you've been changing your group and category names and now
+-- there are a bunch of wrong ones in the database, you can get
+-- rid of the wrong ones because they should ALL (wrong and right)
+-- be in -- TABLE old_groups_and_categories
+-- (1) check that this is so!
+-- (2) double-check that what's in group_category_models is correct and complete
+-- (3) delete all groups and categories from the Tiki
+--     that are in old_groups_and_categories and are NOT in group_category_models
+
+-- ** Setting up your model Groups and Categories at the Very Beginning
+
+-- You can establish all of your Model_Group <--> Model_Category permissions
+-- by hand using the Tiki Administrative GUI
+
+-- This can be a lot of work!
+
+-- If you're wanting something similar to the models above, where, for example,
+-- the permissions of the Editable Models include the permissions of the Postable Models
+-- and the permissions of the Postable Models include the permissions of the Readable Models
+-- here's a way to do less work:
+
+-- (0) Create your Model Groups and Categories -- see code above for how!
+-- (1) Manually establish the desired permissions in your Readable Model
+-- (2) Run this:
 -- CALL copy_perms_grp_cat_grp_cat(group_named('Project_Readers'), category_of_path('User::Test::Readable'),group_named('Project_Posters'), category_of_path('User::Test::Postable'));
+-- (3)  Manually establish the additional permissions in your Postable Model
+-- (4) Run This:
 -- CALL copy_perms_grp_cat_grp_cat(group_named('Project_Posters'), category_of_path('User::Test::Postable'), group_named('Project_Editors'), category_of_path('User::Test::Editable'));
 
+-- (5) Display the list of permissions you've established:
 -- CALL perms_grp_cat(group_named('Project_Readers'), category_of_path('User::Test::Readable')); -- 14 rows
 -- CALL perms_grp_cat(group_named('Project_Posters'), category_of_path('User::Test::Postable')); -- 14 rows
 -- CALL perms_grp_cat(group_named('Project_Editors'), category_of_path('User::Test::Editable'));; -- 14 rows
 -- CALL perms_grp_cat(group_named('Project_Admins'), category_of_path('User::Test::Admin')); -- 70 rows
-
--- ** Cleanup Obsolete Groups and Categories
-
--- After everything current is in group_category_models
--- delete all groups and categories from the Tiki and from old_groups_and_categories
--- that are in old_groups_and_categories and are NOT in group_category_models
+-- Note that we simply record the number of rows here, but you want to look at the data
