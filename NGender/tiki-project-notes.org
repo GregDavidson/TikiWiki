@@ -9,7 +9,8 @@
 
 ** Status
 
-*** Need to make User::<USER>::<EVERYTHING> Private
+*** Issues
+**** Need to make User::<USER>::<EVERYTHING> Private
 
 Categories for user private projects living under their category
 should be private.  The Categories which we want to make available
@@ -19,311 +20,15 @@ to Stewards should be:
 - Anything else?
 - Do we still need the two tables?
 
+**** Bug!
 [https://ngender.org/tiki-index.php?page=Design+Space]
 - won't let me create the new pages!
 
+**** Emacs MySQL Helper Help
 Create emacs commands for
 - quoting & unquoting text
 - turning a CALL assert ... into a suitable SELECT
 - see ~/.emacs.d/jgd/jgd-sql-quotes.el
-
-*** Changes to Tiki Conventions
-
-Changed HomePage to Home since that's what the menu calls it.
-
-*** Moving to Project_ and Project:: top levels
-
-- change Categories ::ObserverReadable
-- to ::Observer_Readable
-and so forth!
-
-Change the code in schema & data to correspond to new naming system.
-
-
-*** Can we simplify permissions for more exalted groups?
-
-Review how Steward Project permissions work with someone
-- If I have something associated with project Foo
-	- Why can't I have FooPartners able to do anything with Foo
-	- FooAssociates && Foo Observers always able to Post
-	- That should cut down what I need to set up explicitly
-
-How can we make it simple so that
-- Observers need specific categories for Readable, Postable, Editable
-- Associates should be able to Post if they can Read
-- Partners should be able to Read, Post, Write anything in the general category
-- And remember there may be other groups, e.g. Admins, Interns, Learners, etc.
-	- which will want to be treated as carefully as observers!
-
-What's the easiest way to make some pages Public Readable?
-- Right now, I'm preferring to be explicit about that!
-
-*** New Idea
-
-In adding the let_stewards_view_categories
-permissions-giving, exclude categories which are not leaves
-unless there's an explicit exception (which will require a
-new table for such) as well as the non_steward_categories
-list.  Make sure the non_steward_categories list contains
-the meta-categories under User::Test --> which really should
-be renamed, darnit!  Maybe User::Meta?  Would it be
-worthwhile to have let_stewards_view_categories exclude all
-descendants of non_steward_categories?  Then the rules wouldx
-be:
-
-All categories
-- set minus (proper or improper) descendants of non_steward_categories
-- set minus non leaf categories, i.e. categories with descendants
-- set union steward_ok_categories
-
-*** Issues
-
-*** Bug in project_group_category_models
-
-When I first tried to execute the 7 commands starting with:
-#+BEGIN_SRC sql
-CALL project_group_category_models('RPTUG', ...
-#+END_SRC
-I got 6 error messages:
-#+BEGIN_SRC
-MariaDB [tiki]> MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
-MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
-MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
-MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
-MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
-MariaDB [tiki]> ERROR 1643 (02234): category_named_parent: RPTUG parent 0 not found!
-MariaDB [tiki]> Query OK, 1 row affected (0.14 sec)
-#+END_SRC
-Those error messages went away after I did:
-#+BEGIN_SRC sql
-select ensure_categorypath_comment('RPTUG::ObserverReadable', 'for RPTUG');
-#+END_SRC
-
-==> see if can replicate with project_group_category_models('DesignSpace', ...);
-
-This ran suspiciously quickly afterwards:
-#+BEGIN_SRC sql
-call let_stewards_view_categories;
-#+END_SRC
-MariaDB [tiki]> Query OK, 0 rows affected (0.01 sec)
-
-==> check if the associations got made!
-
-**** Bug in rebuild search index
-
-https://ngender.org/tiki-ajax_services.php?controller=search&action=rebuild
-
-#+BEGIN_SRC
-( ! ) Fatal error: Uncaught Error: Call to undefined function mb_detect_encoding() in /WebPages/ngender.tiki.wiki/public/lib/encoding/lib-encoding.php on line 56
-( ! ) Error: Call to undefined function mb_detect_encoding() in /WebPages/ngender.tiki.wiki/public/lib/encoding/lib-encoding.php on line 56
-Call Stack
-#	Time	Memory	Function	Location
-1	0.0011	429120	{main}( )	.../tiki-ajax_services.php:0
-2	0.6517	13375232	Services_Broker->process( )	.../tiki-ajax_services.php:51
-3	0.6517	13375232	Services_Broker->attemptProcess( )	.../Broker.php:28
-4	0.6519	13400696	Services_Search_Controller->action_rebuild( )	.../Broker.php:107
-5	0.6533	13585728	UnifiedSearchLib->rebuild( )	.../Controller.php:36
-6	0.6852	16943864	TikiLib->allocate_extra( )	.../searchlib-unified.php:237
-7	0.6852	16943976	UnifiedSearchLib->{closure:/WebPages/ngender.tiki.wiki/public/lib/search/searchlib-unified.php:235-237}( )	.../tikilib.php:169
-8	0.6852	16943976	Search_Indexer->rebuild( )	.../searchlib-unified.php:236
-9	4.1957	22472240	Search_Indexer->addDocument( )	.../Indexer.php:72
-10	4.1958	22472240	Search_Indexer->getDocuments( )	.../Indexer.php:98
-11	4.1958	22472656	Search_ContentSource_SheetSource->getDocument( )	.../Indexer.php:124
-12	4.3822	24621176	TikiSheet->export( )	.../SheetSource.php:52
-13	4.3822	24621200	TikiSheetCSVHandler->_save( )	.../grid.php:325
-14	4.3844	24658904	Encoding->convert_encoding( )	.../grid.php:992
-15	4.3845	24659288	Encoding->detect_encoding( )	.../lib-encoding.php:65
-#+END_SRC
-
-**** Bug in Search:Control Panels
-
-https://ngender.org/tiki-admin.php?page=search
-
-#+BEGIN_SRC
-( ! ) Notice: Undefined offset: 2 in /WebPages/ngender.tiki.wiki/public/tiki-admin.php on line 172
-Call Stack
-#	Time	Memory	Function	Location
-1	0.0194	520848	{main}( )	.../tiki-admin.php:0
-2	0.0218	657208	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup.php' )	.../tiki-admin.php:14
-3	0.0393	2359424	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup_base.php' )	.../tiki-setup.php:49
-4	0.1499	7462344	require_once( '/WebPages/ngender.tiki.wiki/public/lib/setup/prefs.php' )	.../tiki-setup_base.php:239
-5	0.1499	7462368	initialize_prefs( )	.../prefs.php:35
-6	0.1499	7462416	get_default_prefs( )	.../prefs.php:349
-7	0.1512	7615128	PreferencesLib->getDefaults( )	.../prefs.php:50
-8	0.2035	10654832	PreferencesLib->getFileData( )	.../prefslib.php:819
-9	0.2035	10654832	PreferencesLib->realLoad( )	.../prefslib.php:434
-10	0.2036	10667024	prefs_pass_list( )	.../prefslib.php:462
-11	0.2037	10668152	genIndexedBlacks( )	.../pass.php:27
-12	0.2037	10671104	readableBlackName( )	.../tiki-admin.php:154
-
-( ! ) Notice: Undefined offset: 3 in /WebPages/ngender.tiki.wiki/public/tiki-admin.php on line 173
-Call Stack
-#	Time	Memory	Function	Location
-1	0.0194	520848	{main}( )	.../tiki-admin.php:0
-2	0.0218	657208	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup.php' )	.../tiki-admin.php:14
-3	0.0393	2359424	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup_base.php' )	.../tiki-setup.php:49
-4	0.1499	7462344	require_once( '/WebPages/ngender.tiki.wiki/public/lib/setup/prefs.php' )	.../tiki-setup_base.php:239
-5	0.1499	7462368	initialize_prefs( )	.../prefs.php:35
-6	0.1499	7462416	get_default_prefs( )	.../prefs.php:349
-7	0.1512	7615128	PreferencesLib->getDefaults( )	.../prefs.php:50
-8	0.2035	10654832	PreferencesLib->getFileData( )	.../prefslib.php:819
-9	0.2035	10654832	PreferencesLib->realLoad( )	.../prefslib.php:434
-10	0.2036	10667024	prefs_pass_list( )	.../prefslib.php:462
-11	0.2037	10668152	genIndexedBlacks( )	.../pass.php:27
-12	0.2037	10671104	readableBlackName( )	.../tiki-admin.php:154
-
-( ! ) Notice: Undefined offset: 4 in /WebPages/ngender.tiki.wiki/public/tiki-admin.php on line 174
-Call Stack
-#	Time	Memory	Function	Location
-1	0.0194	520848	{main}( )	.../tiki-admin.php:0
-2	0.0218	657208	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup.php' )	.../tiki-admin.php:14
-3	0.0393	2359424	require_once( '/WebPages/ngender.tiki.wiki/public/tiki-setup_base.php' )	.../tiki-setup.php:49
-4	0.1499	7462344	require_once( '/WebPages/ngender.tiki.wiki/public/lib/setup/prefs.php' )	.../tiki-setup_base.php:239
-5	0.1499	7462368	initialize_prefs( )	.../prefs.php:35
-6	0.1499	7462416	get_default_prefs( )	.../prefs.php:349
-7	0.1512	7615128	PreferencesLib->getDefaults( )	.../prefs.php:50
-8	0.2035	10654832	PreferencesLib->getFileData( )	.../prefslib.php:819
-9	0.2035	10654832	PreferencesLib->realLoad( )	.../prefslib.php:434
-10	0.2036	10667024	prefs_pass_list( )	.../prefslib.php:462
-11	0.2037	10668152	genIndexedBlacks( )	.../pass.php:27
-12	0.2037	10671104	readableBlackName( )	.../tiki-admin.php:154
-#+END_SRC
-
-**** let_stewards_view_categories is broken
-
-It's running 0 times instead of 78 times.
-
-tiki_p_view_categories is NOT getting in there!
-
-**** copy_perms_grp_cat_grp_cat looks broken!
-
-After getting unexpected data from:
-
-#+BEGIN_SRC sql
-SELECT count(permName), ug.groupName AS `groupName`
-FROM users_objectpermissions uop, group_category_models gcm, users_groups ug
-WHERE uop.groupName = ug.groupName AND gcm.group_model = ug.id
-GROUP BY `groupName` ORDER BY `groupName`;
-#+END_SRC
-
-and getting
-
-+-----------------+-----------------+
-| count(permName) | groupName       |
-+-----------------+-----------------+
-|             350 | Project_Admins  |
-+-----------------+-----------------+
-|             352 | Project_Editors |
-+-----------------+-----------------+
-|             110 | Project_Posters |
-+-----------------+-----------------+
-|             112 | Project_Readers |
-+-----------------+-----------------+
-
-I did
-
-#+BEGIN_SRC sql
-CALL copy_perms_grp_cat_grp_cat(
-	group_named('Project_Readers'), category_of_path('User::Test::Readable'),
-	group_named('Project_Posters'), category_of_path('User::Test::Postable')
-);
-CALL copy_perms_grp_cat_grp_cat(
-	group_named('Project_Posters'), category_of_path('User::Test::Postable'),
-	group_named('Project_Editors'), category_of_path('User::Test::Editable')
-);
-#+END_SRC
-
-only to get
-
-+-----------------+-----------------+
-| count(permName) | groupName       |
-+-----------------+-----------------+
-|             350 | Project_Admins  |
-+-----------------+-----------------+
-|             112 | Project_Editors |
-+-----------------+-----------------+
-|              70 | Project_Posters |
-+-----------------+-----------------+
-|             112 | Project_Readers |
-+-----------------+-----------------+
-
-where permission counts have gone down!
-
-More evidence that something is rotten in Denmark:
-
-#+BEGIN_SRC sql
-CALL perms_grp_cat(group_named('Project_Readers'), category_of_path('User::Test::Readable')); -- 14 rows
-CALL perms_grp_cat(group_named('Project_Posters'), category_of_path('User::Test::Postable')); -- 14 rows
-CALL perms_grp_cat(group_named('Project_Editors'), category_of_path('User::Test::Editable'));; -- 14 rows
-CALL perms_grp_cat(group_named('Project_Admins'), category_of_path('User::Test::Admin')); -- 70 rows
-#+END_SRC
-
-
-**** Image Uploads not working
-
-An attempt to upload an image to a blog post
-gave the error "Server does not support image manipulation".
-
-**** Forums broken with data lost!
-
-I have 10 or 11 forums but
-(1) the GUI shows only 1 forum named admin
-(2) table tiki_forms lists 10 forums, none named admin
-(3) the posts to forum 9: C By Example Forum are all missing!
-
-**** empty page versions are being inserted
-
-When I was showing things to Kim last night (2017-6-6), a
-couple of SkillsBank pages were mysteriously replaced by new
-empty contents.  Rolling back fixed the problem.
-
-OK, this just happened!  I went to edit a page to add
-category SkillsBank
-- https://ngender.org/tiki-editpage.php?page=Projects%3A+Business+Consulting
-and when I went to edit it, it was empty!  I had to roll it
-back.  Interestingly: I went ahead and added SkillsBank to
-the bad version and when I did the rollback, it was still
-there, so apparently category changes are not subject to
-rollback.
-
-It's looking like I'm failing to fetch the old content to
-initialize the data!  But only sometimes.  I'm not seeing a
-pattern.
-
-Note: Do not try to delete current page version.  Instead,
-roll back to the most recent version, check that it worked,
-and then if desired delete the (now) previous version.
-
-**** Categories not always being displayed
-
-I also was just looking at 
-https://ngender.org/tiki-index.php?page=The+Skills+Bank
-and it wasn't showing any categories, even after refreshing.
-After going in to edit and seeing that there were four
-categories.  After I confirmed the edit, they show!
-
-I suspect that many of the intended category permissions are not yet correct.
-
-I know that many pages do not yet have the right categories.
-
-**** Excessive permissions for some users
-
-Some users still have too many permissions, e.g. Editor, in
-order to allow them to function while the permissions are
-not yet quite right.
-
-**** Testing and Test-Strategies needed
-Stewards functionality for Wiki pages seems to work.
-- How can we test it better?
-- How can we make it less kludgy?
-- Can removing the kludginess help make scope > Wiki pages?
-
-How to test that
-	- CALL establish_group_category_models();
-actually did its job?
-
-I need some SQL code to test that all pages are associated
-with at least one of the categories allowing editing!
 
 *** Questions
 
@@ -495,11 +200,8 @@ Really should be fixed in Perms.php Perms::get()
 - code folding
 - sql literal (un)quoting
 *** Keith's Environment (save the planet!)
-- jgd-sql-connect
-  - says can't find mysql
-  - and it's right there!
-  - (assuming we know where there is)
-- let's learn emacs edebug
+- Set up phpmyadmin for Keith
+
 *** Home vs. HomePage
 Keith tried renaming HomePage to Home
 to be consistent with the Menu.  Alas,
@@ -1195,13 +897,13 @@ ON DUPLICATE KEY UPDATE
 
 See:
 - [[file:/Tiki/db/tiki_innodb.sql]]
-- [[file:/Tiki/NGender/Tiki/db/tiki_convert_myisam_to_innodb.sql]]
+- [[file:/Tiki/db/tiki_convert_myisam_to_innodb.sql]]
 
 ** Procedure and Function Experiments 
 
 *** User Default Group and Default Category
 
-[[file:tiki-project.sql][tiki-project.sql]]
+[[file:tiki-ngender.sql]]
 	 
 *** Object In Category
 
