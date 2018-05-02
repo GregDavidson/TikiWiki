@@ -141,9 +141,7 @@ CALL project_group_models('LTHL', 'Admins', 'Project_Admins', 'Admin');
 
 -- CALL project_group_category_models__('ScenicHouse', 'Observers', 'ScenicHouse!', 'Project_Posters', 'Postable');
 CALL project_group_models__('ScenicHouse', 'Observers', 'Project_Posters', 'Postable');
-
 CALL project_group_models('ScenicHouse', 'Observers', 'Project_Posters', 'Postable');
-
 CALL project_group_models('ScenicHouse', 'Partners', 'Project_Editors', 'Editable');
 CALL project_group_models('ScenicHouse', 'Admins', 'Project_Admins', 'Admin');
 
