@@ -180,7 +180,8 @@ where table_schema = 'tiki' and table_name like '%forum%';
 What is TABLE `tiki_user_postings`?
 
 *** Infelicities
-**** Wiki Page Category Paths not necessarily links
+**** DONE Wiki Page Category Paths not necessarily links
+		 CLOSED: [2018-04-18 Wed 16:05]
 
 Some categories show up associated with a Web Page as text
 rather than a link.  This is because the user lacks
@@ -197,7 +198,6 @@ Really should be fixed in Perms.php Perms::get()
 
 ** Little Tasks
 *** Little emacs niceties
-- code folding
 - sql literal (un)quoting
 *** Keith's Environment (save the planet!)
 - Set up phpmyadmin for Keith
