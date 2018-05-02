@@ -1,9 +1,12 @@
--- SQL Code for NGender Tiki Wiki Contributions
+-- * NGender Tiki Schema and Support Code for Projects & Stewards
 -- License: Same as regular Tiki Wiki (tiki.org) License
--- Author: J. Greg Davidson, 2017
+-- Authors:
+-- jgd = J. Greg Davidson: 2017, 2018
+-- kas = Keith Allen Shillington: 2018
 
 -- Support for wrangling Tiki Category permissions
--- Depends on tiki-ngender.sql but NOT on feature_ngender_stewards
+-- Depends on tiki-ngender.sql
+-- Complements php code implementing feature_ngender_stewards
 -- Not dependent on specific NGender Categories, though!
 
 -- Really, we only need to make sure that Stewards see
@@ -13,12 +16,31 @@
 -- Stewards to see nearly all Tiki Categories.
 -- See let_stewards_view_categories() for the details!
 
+-- ** Group, Category, Models: Plumbing
+
+-- Plumbing, in the language of the Linux Kernel Developers,
+-- refers to the underlying mechanisms making desired
+-- functionality possible.  Bare plumbing is not always
+-- comfortable for direct use by users, so see below for
+-- Porcelain!
+
+-- *** Conventions
+
+-- These functions can be replaced with mysql/mariadb global
+-- variables as soon as all platforms using this code
+-- support the very recent ability to restore global
+-- variables.
+
+-- Stewards should be able to see all top-level user
+-- categories plus the category tree under their own
+-- category.
+
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `USER_CATEGORY_PATH`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `USER_CATEGORY_PATH`()
-RETURNS TEXT	DETERMINISTIC
+RETURNS TEXT DETERMINISTIC
 COMMENT 'Parent of all User Categories'
 BEGIN
 RETURN 'User';
@@ -31,7 +53,7 @@ DROP FUNCTION IF EXISTS `USER_CATEGORY_PATTERN`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `USER_CATEGORY_PATTERN`()
-RETURNS TEXT	DETERMINISTIC
+RETURNS TEXT DETERMINISTIC
 COMMENT 'Parent of all User Categories'
 BEGIN
 RETURN CONCAT(USER_CATEGORY_PATH(), '::%');
@@ -41,9 +63,10 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `USER_CATEGORY`;
+DROP FUNCTION IF EXISTS `USER_CATEGORY_ID`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `USER_CATEGORY`()
+FUNCTION `USER_CATEGORY_ID`()
 RETURNS INTEGER	DETERMINISTIC
 COMMENT 'Parent of all User Categories'
 BEGIN
@@ -52,44 +75,8 @@ END//
 DELIMITER ;
 -- #+END_SRC
 
--- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `MODEL_CATEGORY_PATH`;
-DELIMITER //
-CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `MODEL_CATEGORY_PATH`()
-RETURNS TEXT	DETERMINISTIC
-COMMENT 'Parent of all Model Categories'
-BEGIN
-RETURN 'User::Test';
-END//
-DELIMITER ;
--- #+END_SRC
-
--- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `MODEL_CATEGORY_PATTERN`;
-DELIMITER //
-CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `MODEL_CATEGORY_PATTERN`()
-RETURNS TEXT	DETERMINISTIC
-COMMENT 'Parent of all Model Categories'
-BEGIN
-RETURN CONCAT(MODEL_CATEGORY_PATH(), '::%');
-END//
-DELIMITER ;
--- #+END_SRC
-
--- #+BEGIN_SRC sql
-DROP FUNCTION IF EXISTS `MODEL_CATEGORY`;
-DELIMITER //
-CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `MODEL_CATEGORY`()
-RETURNS INTEGER	DETERMINISTIC
-COMMENT 'Parent of all Model Categories'
-BEGIN
-RETURN category_of_path(MODEL_CATEGORY_PATH());
-END//
-DELIMITER ;
--- #+END_SRC
+-- Stewards should be able to see all categories under
+-- Category Project.
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `PROJECT_CATEGORY_PATH`;
@@ -119,9 +106,10 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `PROJECT_CATEGORY`;
+DROP FUNCTION IF EXISTS `PROJECT_CATEGORY_ID`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `PROJECT_CATEGORY`()
+FUNCTION `PROJECT_CATEGORY_ID`()
 RETURNS INTEGER	DETERMINISTIC
 COMMENT 'Parent of Project Categories not under a single User'
 BEGIN
@@ -130,30 +118,98 @@ END//
 DELIMITER ;
 -- #+END_SRC
 
+-- Stewards should be able to see all categories under
+-- Category Type.
+
 -- #+BEGIN_SRC sql
-DROP TABLE IF EXISTS `nonleaf_steward_categories`;
-CREATE TABLE `nonleaf_steward_categories` (
-`category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
-) ENGINE=InnoDB
-COMMENT 'always give Stewards tiki_p_view_category permission on these categories';
+DROP FUNCTION IF EXISTS `TYPE_CATEGORY_PATH`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `TYPE_CATEGORY_PATH`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of Type Categories not under a single User'
+BEGIN
+RETURN 'Type';
+END//
+DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-DROP TABLE IF EXISTS `non_steward_categories`;
-CREATE TABLE `non_steward_categories` (
-`category_` int(12) PRIMARY KEY REFERENCES tiki_categories(categId)
-) ENGINE=InnoDB
-COMMENT 'do not give Stewards tiki_p_view_category permission on these categories';
+DROP FUNCTION IF EXISTS `TYPE_CATEGORY_PATTERN`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `TYPE_CATEGORY_PATTERN`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of Type Categories not under a single User'
+BEGIN
+RETURN CONCAT(TYPE_CATEGORY_PATH(), '::%');
+END//
+DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-INSERT INTO non_steward_categories(category_)
-SELECT categId FROM tiki_categories
-WHERE parentId = MODEL_CATEGORY();
+DROP FUNCTION IF EXISTS `TYPE_CATEGORY`;
+DROP FUNCTION IF EXISTS `TYPE_CATEGORY_ID`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `TYPE_CATEGORY_ID`()
+RETURNS INTEGER	DETERMINISTIC
+COMMENT 'Parent of Type Categories not under a single User'
+BEGIN
+RETURN category_of_path(TYPE_CATEGORY_PATH());
+END//
+DELIMITER ;
 -- #+END_SRC
+
+-- Stewards should NOT be able to see any Model Categories!
+-- These categories are only to be used to store permissions
+-- to use in building new projects.
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `MODEL_CATEGORY_PATH`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `MODEL_CATEGORY_PATH`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of all Model Categories'
+BEGIN
+RETURN 'User::Test';
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `MODEL_CATEGORY_PATTERN`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `MODEL_CATEGORY_PATTERN`()
+RETURNS TEXT	DETERMINISTIC
+COMMENT 'Parent of all Model Categories'
+BEGIN
+RETURN CONCAT(MODEL_CATEGORY_PATH(), '::%');
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+DROP FUNCTION IF EXISTS `MODEL_CATEGORY`;
+DROP FUNCTION IF EXISTS `MODEL_CATEGORY_ID`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+FUNCTION `MODEL_CATEGORY_ID`()
+RETURNS INTEGER	DETERMINISTIC
+COMMENT 'Parent of all Model Categories'
+BEGIN
+RETURN category_of_path(MODEL_CATEGORY_PATH());
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- *** Tracking Groups and Categories of the Past
 
 -- We need a convenient way to garbage collect Groups and Categories
--- that were created once upon a time and which are no longer wanted.
+-- that were created once upon a time so that we can check them against
+-- the categories which are current and delete the others!
 -- Right now we can do this manually by
 -- (1) Making sure old_groups_and_categories has all of them
 -- (2) Dropping all rows from group_category_models
@@ -165,8 +221,10 @@ CREATE TABLE IF NOT EXISTS `old_groups_and_categories` (
 `group_` int(11) NOT NULL REFERENCES users_groups(id),
 `category_` int(12) NOT NULL REFERENCES tiki_categories(categId),
 PRIMARY KEY `gc` (`group_`, `category_`)
-) ENGINE=InnoDB COMMENT 'accumulates groups and categories we may have created; after rebuilding group_category_models any occurring ONLY here should be removed from here AND from the Tiki';
+) ENGINE=InnoDB COMMENT 'accumulates groups and categories we may have created; after rebuilding group_category_models any groups and categories occurring ONLY here should be removed from here AND from the Tiki';
 -- #+END_SRC
+
+-- *** TABLE group_category_models
 
 -- #+BEGIN_SRC sql
 -- Use the Convenience Procedures later in this file to grow this Table!
@@ -183,10 +241,13 @@ CREATE TABLE IF NOT EXISTS `group_category_models` (
 PRIMARY KEY `gc` (`group_`, `category_`)
 ) ENGINE=InnoDB COMMENT 'the permissions of group_ on category_ should be the same as those on group_model on category_model and can be made so using copy_perms_grp_cat_grp_cat()';
 -- Field comments:
--- project_: kas
--- category_:  -- either = to project_ or a child of project_ - enforce!!
--- PRIMARY KEY `gc`:  -- should we include project_ ??
+-- project_: a category associated with a project as a whole
+-- group_: a group representing a role in the project
+-- category_: same as project_ or a child thereof -- enforce!!
+-- group_model, category_model: copy permissions from these
 -- #+END_SRC
+
+-- *** old_group_category_models += group_category_models, then clear group_category_models
 
 -- #+BEGIN_SRC sql
 INSERT IGNORE INTO old_groups_and_categories(group_, category_)
@@ -196,49 +257,180 @@ DELETE FROM group_category_models;
 -- FROM old_groups_and_categories;
 -- #+END_SRC
 
+-- *** VIEW group_category_models_view
+
 -- #+BEGIN_SRC sql
 DROP VIEW group_category_models_view;
 CREATE VIEW group_category_models_view AS
 SELECT	category_path(project_) as project,
-		group_name(group_) as target_group, category_path(category_) as target_category,
-		group_name(group_model) as model_group, category_path(category_model) as model_category
+	group_name(group_) as target_group, category_path(category_) as target_category,
+	group_name(group_model) as model_group, category_path(category_model) as model_category
 FROM group_category_models ORDER BY project, target_group, target_Category;
 -- #+END_SRC
 
+-- *** Associated Plumbing Functions
+
+-- **** PROCEDURE let_stewards_view_categories and delegates
+
 -- #+BEGIN_SRC sql
--- Run this after adding any Categories to the Tables above!
--- Group Stewards grants view permission to categories in the target column of group_category_models; where the Project column is a child of Category Project
--- TODO:::
--- The default group of each Steward grants view permission to categories where the Project column is their default category
-SET @CATS_SEEN = 0;
-DROP PROCEDURE IF EXISTS `let_stewards_view_categories`;
+-- Grant Stewards view permission to categories in the category_ column of group_category_models
+DROP PROCEDURE IF EXISTS `let_stewards_view_project_categories`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `let_stewards_view_categories`()
+PROCEDURE `let_stewards_view_project_categories`()
 READS SQL DATA MODIFIES SQL DATA
-COMMENT 'establish group/category permissions according to the models in table group_category_models'
+COMMENT 'Grant Stewards view permission to the categories in group_category_models.category_'
 BEGIN
 DECLARE groupname_ int DEFAULT group_named('Stewards');
 DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
 DECLARE category_ int;
 DECLARE done_ int DEFAULT 0;
 DECLARE cursor_ CURSOR FOR 
-SELECT DISTINCT category_ FROM group_category_models
-WHERE category_parent( project_ ) = project_category();
+SELECT DISTINCT category_ FROM group_category_models;
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
 OPEN cursor_;
 foo: LOOP
-SET @CATS_SEEN = @CATS_SEEN + 1;
-		FETCH cursor_ INTO category_;
-		IF done_ THEN LEAVE foo; END IF;
-		INSERT IGNORE
-		INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
-		VALUES (groupname_, permname_, 'category', MD5(CONCAT('category', category_)));
+	FETCH cursor_ INTO category_;
+	IF done_ THEN LEAVE foo; END IF;
+	INSERT IGNORE
+	INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
+	VALUES (groupname_, permname_, 'category', MD5(CONCAT('category', category_)));
 END LOOP;
 CLOSE cursor_;
 END//
 DELIMITER ;
 -- #+END_SRC
+
+-- #+BEGIN_SRC sql
+-- Grant Stewards view permission to top-level categories under Category User except for 'User::Test'
+DROP PROCEDURE IF EXISTS `let_stewards_view_user_categories`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `let_stewards_view_user_categories`()
+READS SQL DATA MODIFIES SQL DATA
+COMMENT 'Grant Stewards view permission to non-model child categories of User'
+BEGIN
+DECLARE groupname_ int DEFAULT group_named('Stewards');
+DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
+DECLARE parent_ int = USER_CATEGORY_ID();
+DECLARE model_ int = MODEL_CATEGORY_ID();
+DECLARE category_ int;
+DECLARE done_ int DEFAULT 0;
+DECLARE cursor_ CURSOR FOR 
+SELECT DISTINCT categId_ FROM tiki_categories
+WHERE parentId = parent_ AND categId != model_;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+OPEN cursor_;
+foo: LOOP
+	FETCH cursor_ INTO category_;
+	IF done_ THEN LEAVE foo; END IF;
+	INSERT IGNORE
+	INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
+	VALUES (groupname_, permname_, 'category', MD5(CONCAT('category', category_)));
+END LOOP;
+CLOSE cursor_;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+-- Grant members of group view permission on categories under given category
+DROP PROCEDURE IF EXISTS `let_group_view_descendant_categories`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `let_group_view_descendant_categories`(group_id INT, root_cat_id INT)
+READS SQL DATA MODIFIES SQL DATA
+COMMENT 'Grant members of group view permission on categories under given category'
+BEGIN
+DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
+DECLARE category_ int;
+DECLARE done_ int DEFAULT 0;
+DECLARE cursor_ CURSOR FOR 
+WITH RECURSIVE cats AS (
+	SELECT root_cat_id AS id
+	UNION ALL
+	SELECT categId AS id
+	FROM tiki_categories, cats
+	WHERE parentId = cats.id
+) SELECT id FROM cats WHERE id != root_cat_id;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+OPEN cursor_;
+foo: LOOP
+	FETCH cursor_ INTO category_;
+	IF done_ THEN LEAVE foo; END IF;
+	INSERT IGNORE
+	INTO users_objectpermissions(`groupName`,`permName`, `objectType`,`objectId`)
+	VALUES (group_id, permname_, 'category', MD5(CONCAT('category', category_)));
+END LOOP;
+CLOSE cursor_;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+-- Grant Stewards view permission to all categories under Category Type
+DROP PROCEDURE IF EXISTS `let_stewards_view_type_categories`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `let_stewards_view_type_categories`()
+READS SQL DATA MODIFIES SQL DATA
+COMMENT 'Grant Stewards view permission to all categories under Category Type'
+BEGIN
+  CALL let_group_view_descendant_categories(
+    group_named('Stewards'), TYPE_CATEGORY_ID()
+  );
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+-- Grant Stewards view permission on categories under their default category
+-- replace with simple loop calling function above!!
+DROP PROCEDURE IF EXISTS `let_stewards_view_their_own_categories`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `let_stewards_view_their_own_categories`()
+READS SQL DATA MODIFIES SQL DATA
+COMMENT 'Grant Stewards view permission to all categories under Category Type'
+BEGIN
+ DECLARE user_id int;
+ DECLARE done_ int DEFAULT 0;
+ DECLARE cursor_ CURSOR FOR 
+   SELECT userId FROM users_usergroups
+   WHERE groupName = group_named('Stewards');
+ DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
+ OPEN cursor_;
+ foo: LOOP
+   FETCH cursor_ INTO user_id;
+   IF done_ THEN LEAVE foo; END IF;
+   CALL let_group_view_descendant_categories(
+     user_default_group(user_id), user_default_category(user_id)
+   );
+ END LOOP;
+ CLOSE cursor_;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+-- Run this after adding/deleting Categories Stewards should be able to see and use
+-- The policy for which Categories Stewards can view view is in the routines this routine calls!
+DROP PROCEDURE IF EXISTS `let_stewards_view_categories`;
+DELIMITER //
+CREATE DEFINER=`phpmyadmin`@`localhost`
+PROCEDURE `let_stewards_view_categories`()
+READS SQL DATA MODIFIES SQL DATA
+COMMENT 'Run this after adding/deleting Categories Stewards should be able to see and use'
+BEGIN
+	CALL let_stewards_view_user_categories;
+	CALL let_stewards_view_type_categories;
+	CALL let_stewards_view_project_categories;
+	CALL let_stewards_view_their_own_categories;
+END//
+DELIMITER ;
+-- #+END_SRC
+
+-- *** group_category_models service routines
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `establish_group_category_models`;
@@ -248,21 +440,20 @@ PROCEDURE `establish_group_category_models`()
   READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'establish group/category permissions according to the models in table group_category_models'
 BEGIN
-	 DECLARE group_ int;
- 	 DECLARE category_ int;
- 	 DECLARE group_model int;
- 	 DECLARE category_model int;
+	 DECLARE group_id int;
+ 	 DECLARE category_id int;
+ 	 DECLARE group_model_id int;
+ 	 DECLARE category_model_id int;
  	 DECLARE done_ int DEFAULT 0;
  	 DEClARE cursor_ CURSOR FOR 
 	  SELECT group_, category_, group_model, category_model	FROM group_category_models;
  	 DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
 	 OPEN cursor_;
-	 WHILE NOT done_ DO
-		 FETCH cursor_ INTO group_, category_, group_model, category_model;
-		 IF NOT done_ THEN
-		 		CALL copy_perms_grp_cat_grp_cat(group_model, category_model, group_, category_);
-		 END IF;
-	 END WHILE;
+	 foo: LOOP
+		 FETCH cursor_ INTO group_id, category_id, group_model_id, category_model_id;
+		 IF done_ THEN LEAVE foo; END IF;
+		 CALL copy_perms_grp_cat_grp_cat(group_model_id, category_model_id, group_id, category_id);
+	 END LOOP;
 	 CLOSE cursor_;
 END//
 DELIMITER ;
@@ -282,6 +473,10 @@ BEGIN
 END//
 DELIMITER ;
 -- #+END_SRC
+
+-- ** Porcelain
+
+-- *** Preparing for Porcelain
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `nice_concat`;
@@ -385,7 +580,7 @@ BEGIN
 	IF model_name LIKE '%::%' THEN
 	   RETURN category_of_path(model_name);
 	END IF;
-	RETURN category_named_parent(model_name, MODEL_CATEGORY());
+	RETURN category_named_parent(model_name, MODEL_CATEGORY_ID());
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -431,6 +626,8 @@ CALL assert_true( 'inferred_cat_path(\'Project::LOYL\', \'ObserverCanSee!\', \'R
 CALL assert_true( 'inferred_cat_path(\'Project::LOYL\', \'Public::ObserverCanSee!\', \'Readable\') = \'Public::ObserverCanSee\'' );
 CALL assert_true( 'inferred_cat_path(\'Project::NGender\', \'NGender!\', \'Editable\') = \'Project::NGender\'' );
 -- #+END_SRC
+
+-- *** Behold: Porcelain!
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `project_group_category_models`;
@@ -507,7 +704,7 @@ DELIMITER ;
 -- #+END_SRC
 -- need unit test code here!!
 
--- ** Various procedures designed to automate common tasks
+-- ** Cleanup and Misc
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `add_category_if_category`;
