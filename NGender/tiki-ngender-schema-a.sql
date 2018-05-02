@@ -1,10 +1,12 @@
--- SQL Code for NGender Tiki Wiki Contributions
+-- * SQL Code for NGender Tiki Wiki Contributions
 -- License: Same as regular Tiki Wiki (tiki.org) License
 -- Author: J. Greg Davidson, 2017
 
 -- Support for wrangling Tiki Category permissions
 -- Depends on tiki-ngender.sql but NOT on feature_ngender_stewards
 -- Not dependent on specific NGender Categories, though!
+
+-- ** Group, Category, Models: Plumbing
 
 -- #+BEGIN_SRC sql
 DROP TABLE IF EXISTS `nonleaf_steward_categories`;
@@ -118,6 +120,8 @@ BEGIN
 END//
 DELIMITER ;
 -- #+END_SRC
+
+-- ** Group, Category, Models: Porcelain
 
 -- #+BEGIN_SRC sql
 -- Infer no prefix if name ends with exclamation point - but remove exclamation point!
