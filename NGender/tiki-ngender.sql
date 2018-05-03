@@ -67,6 +67,11 @@ END//
 DELIMITER ;
 -- #+END_SRC
 
+-- Our error routines will be raising exceptions
+-- MYSQL SIGNAL numbers starting with 02 mean either
+--   an exception or not found condition - differentiated by MYSQL_ERRNO
+--   the rest of the number must remain unique within our software
+--   We use 02234 to signal a testing framework error!!
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `test_failed`;
 DELIMITER //
@@ -80,7 +85,7 @@ BEGIN
 		 SET msg_ = CONCAT(msg_, ': ', message_);
 	END IF;
 	SET msg_ = CONCAT(msg_, '!');
-	SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_;
+	SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = ER_SIGNAL_EXCEPTION;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -92,11 +97,10 @@ CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true_`(value_ INT, expression_ TEXT, message_ TEXT)
 	COMMENT 'Signal error if value_ is zero'
 BEGIN
-	DECLARE msg_ TEXT;
-	IF value_ != 0 THEN
-		CALL test_passed(expression_, message_);
-	ELSE
+	IF value_ = 0 THEN
 		CALL test_failed(expression_, message_);
+	ELSE
+		CALL test_passed(expression_, message_);
 	END IF;
 END//
 DELIMITER ;
@@ -142,11 +146,11 @@ DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_fail_msg`(expression_ TEXT, message_ TEXT)
   READS SQL DATA MODIFIES SQL DATA
-	COMMENT 'Unit Test: Complain if expression evaluates to non-zero value'
+	COMMENT 'Unit Test: Complain unless expression throws exception; or evaluates to a truthy value (non zero)'
 BEGIN
 	DECLARE msg_ TEXT;
   DECLARE sql_ TEXT DEFAULT CONCAT(
-	  'CALL chuck_int_(', expression_, 'IS NOT NULL)'
+	  'SELECT COALESCE(', expression_, ', 13) INTO @testval'
 	);
 	DECLARE assert_failure CONDITION FOR SQLSTATE '02234';
   DECLARE EXIT HANDLER FOR assert_failure
@@ -157,14 +161,16 @@ BEGIN
 	SET @sql_ = sql_;
 	PREPARE stmt_ FROM @sql_;
   EXECUTE stmt_;
-	SET @TESTS_FAILED = @TESTS_FAILED + 1;
-	SET msg_ = CONCAT('Assert ', expression_, ' failed to fail');
-	IF message_ != '' THEN
-		 SET msg_ = CONCAT(msg_, ': ', message_);
-	END IF;
-	SET msg_ = CONCAT(msg_, '!');
-	SIGNAL SQLSTATE '45001'	SET MESSAGE_TEXT = msg_;
   DEALLOCATE PREPARE stmt_;
+	IF @testval !=0 THEN 
+		SET @TESTS_FAILED = @TESTS_FAILED + 1;
+		SET msg_ = CONCAT('Assert ', expression_, ' returned ', @testval);
+		IF message_ != '' THEN
+				SET msg_ = CONCAT(msg_, ': ', message_);
+		END IF;
+		SET msg_ = CONCAT(msg_, '!');
+		SIGNAL SQLSTATE '45001'	SET MESSAGE_TEXT = msg_;
+  END IF;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -192,7 +198,7 @@ FUNCTION `signal_no_text`(msg_ TEXT)
 	RETURNS TEXT
 	COMMENT 'Raise exception with message where a string is required'
 BEGIN
-		SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_;
+		SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = ER_SIGNAL_EXCEPTION;
 		RETURN '';										-- will never happen!
 END//
 DELIMITER ;
@@ -206,7 +212,7 @@ FUNCTION `signal_no_int`(msg_ TEXT)
 	RETURNS INT
 	COMMENT 'Raise exception with message where an integer is required'
 BEGIN
-		SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_;
+		SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = ER_SIGNAL_EXCEPTION;
 		RETURN 0;										-- will never happen!
 END//
 DELIMITER ;
@@ -747,7 +753,6 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 
--- this first one fails!! - do we care?? - fix or replace!!
 CALL assert_fail('group_default_category( group_named(\'Registered\') )');
 
 CALL assert_true('group_default_category( group_named(\'User_Greg\') ) =
@@ -771,7 +776,6 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 
--- this first one fails!! - do we care?? - fix or replace!!
 CALL assert_fail('groupname_default_category( \'Registered\' )');
 
 CALL assert_true('groupname_default_category( \'User_Greg\' ) =
@@ -799,7 +803,6 @@ DELIMITER ;
 -- Find a stable test user without a default group for next line!!!
 -- SELECT user_default_groupname( user_named('sad_user') ) = '';
 
--- this first one fails!! - do we care?? - fix or replace!!
 CALL assert_fail('user_default_groupname( 0 )');
 
 CALL assert_true('user_default_groupname( user_named(\'Greg\') ) = \'User_Greg\'');
@@ -821,7 +824,7 @@ DELIMITER ;
 -- #+BEGIN_SRC sql
 -- Find a stable test user without a default group for next line!!!
 -- SELECT user_default_group( user_named('sad_user') ) = 0;
-CALL assert_fail('user_default_group( 0 )');
+CALL assert_true('user_default_group( 0 ) IS NULL');
 CALL assert_true('user_default_group( user_named(\'Greg\') ) = group_named(\'User_Greg\')');
 -- #+END_SRC
 
