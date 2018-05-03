@@ -200,7 +200,20 @@ Really should be fixed in Perms.php Perms::get()
 *** Little emacs niceties
 - sql literal (un)quoting
 *** Keith's Environment (save the planet!)
-- Set up phpmyadmin for Keith
+
+**** Set up phpmyadmin for Keith
+
+*** Keith doesn't have permissions!
+
+**** Keith's Emacs
+
+***** sql-buffer & sending code
+sql-buffer is correctly set to *SQL* but
+- the send commands are using the global value which is nil
+- set-variable is not setting the global value
+- sql-specific set command is not doing it
+- had to use setq from *scratch*
+- wtf???
 
 *** Home vs. HomePage
 Keith tried renaming HomePage to Home
