@@ -203,8 +203,6 @@ Really should be fixed in Perms.php Perms::get()
 
 **** Set up phpmyadmin for Keith
 
-*** Keith doesn't have permissions!
-
 **** Keith's Emacs
 
 ***** sql-buffer & sending code
@@ -220,7 +218,7 @@ Keith tried renaming HomePage to Home
 to be consistent with the Menu.  Alas,
 when I created a new user account and
 went to it to test it, it tried to go
-to HomePage and there was an error!
+
 
 I've named it back _and_ I'd like to
 have it be Home and not cause trouble!
