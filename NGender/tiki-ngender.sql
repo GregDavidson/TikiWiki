@@ -41,11 +41,28 @@
 
 -- ** Unit test procedures - do not call these routines in implemention code!
 
+-- #+BEGIN_SRC sql
+SET @TESTS_RUN = 0;
 SET @TESTS_PASSED = 0;
 SET @TESTS_FAILED = 0;
+-- #+END_SRC
+
+-- #+BEGIN_SRC sql
+-- to avoid collation clashes, prefer using these in tests
+SET @string_empty = '';
+SET @string_huh = 'Huh?';
+SET @string_user = 'User';
+SET @string_test = 'Test';
+SET @string_no_such_category = 'NoSuchCategory';
+SET @string_stewards = 'Stewards';
+SET @string_category_user_test = 'user::test';
+SET @string_group_user_greg = 'User_Greg';
+-- #+END_SRC
+
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `chuck_int_`;
+SELECT '* PROCEDURE chuck_int_';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `chuck_int_`(value_ INT)
@@ -57,11 +74,13 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `test_passed`;
+SELECT '* PROCEDURE test_passed';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `test_passed`(expression_ TEXT, message_ TEXT)
 	COMMENT 'Record passed test, args ignored and api allows for future logging option; see test_failed'
 BEGIN
+	SET @TESTS_RUN = @TESTS_RUN + 1;
 	SET @TESTS_PASSED = @TESTS_PASSED + 1;
 END//
 DELIMITER ;
@@ -74,24 +93,28 @@ DELIMITER ;
 --   We use 02234 to signal a testing framework error!!
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `test_failed`;
+SELECT '* PROCEDURE test_failed';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `test_failed`(expression_ TEXT, message_ TEXT)
 	COMMENT 'Record failed test, signal error with appropriate message'
 BEGIN
 	DECLARE msg_ TEXT DEFAULT CONCAT('Assert ', expression_, ' failed');
+	SET @TESTS_RUN = @TESTS_RUN + 1;
 	SET @TESTS_FAILED = @TESTS_FAILED + 1;
 	IF message_ != '' THEN
 		 SET msg_ = CONCAT(msg_, ': ', message_);
 	END IF;
 	SET msg_ = CONCAT(msg_, '!');
-	SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = ER_SIGNAL_EXCEPTION;
+	-- ER_SIGNAL_EXCEPTION = 1644;
+	SIGNAL SQLSTATE '02234'	SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = 1644;
 END//
 DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_true_`;
+SELECT '* PROCEDURE assert_true_';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true_`(value_ INT, expression_ TEXT, message_ TEXT)
@@ -108,6 +131,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_true_msg`;
+SELECT '* PROCEDURE assert_true_msg';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true_msg`(expression_ TEXT, message_ TEXT)
@@ -119,6 +143,14 @@ BEGIN
 			QUOTE(expression_), ', ',	QUOTE(message_),
 		')'
 	);
+	DECLARE assert_failure CONDITION FOR SQLSTATE '02234';
+  DECLARE EXIT HANDLER FOR assert_failure
+	BEGIN
+		SET @TESTS_RUN = @TESTS_RUN + 1;
+		SET @TESTS_FAILED = @TESTS_FAILED + 1;
+	  DEALLOCATE PREPARE stmt_;
+		RESIGNAL;
+	END;
 	SET @sql_ = sql_;
 	PREPARE stmt_ FROM @sql_;
   EXECUTE stmt_;
@@ -129,6 +161,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_true`;
+SELECT '* PROCEDURE assert_true';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_true`(expression_ TEXT)
@@ -142,6 +175,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_fail_msg`;
+SELECT '* PROCEDURE assert_fail_msg';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_fail_msg`(expression_ TEXT, message_ TEXT)
@@ -155,6 +189,7 @@ BEGIN
 	DECLARE assert_failure CONDITION FOR SQLSTATE '02234';
   DECLARE EXIT HANDLER FOR assert_failure
 	BEGIN
+		SET @TESTS_RUN = @TESTS_RUN + 1;
 		SET @TESTS_PASSED = @TESTS_PASSED + 1;
 	  DEALLOCATE PREPARE stmt_;
 	END;
@@ -163,6 +198,7 @@ BEGIN
   EXECUTE stmt_;
   DEALLOCATE PREPARE stmt_;
 	IF @testval !=0 THEN 
+		SET @TESTS_RUN = @TESTS_RUN + 1;
 		SET @TESTS_FAILED = @TESTS_FAILED + 1;
 		SET msg_ = CONCAT('Assert ', expression_, ' returned ', @testval);
 		IF message_ != '' THEN
@@ -177,6 +213,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_fail`;
+SELECT '* PROCEDURE assert_fail';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_fail`(expression_ TEXT)
@@ -192,28 +229,32 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `signal_no_text`;
+SELECT '* FUNCTION signal_no_text';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `signal_no_text`(msg_ TEXT)
 	RETURNS TEXT
 	COMMENT 'Raise exception with message where a string is required'
 BEGIN
-		SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = ER_SIGNAL_EXCEPTION;
-		RETURN '';										-- will never happen!
+	-- ER_SIGNAL_EXCEPTION = 1644;	
+	SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = 1644;
+	RETURN '';										-- will never happen!
 END//
 DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `signal_no_int`;
+SELECT '* FUNCTION signal_no_int';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `signal_no_int`(msg_ TEXT)
 	RETURNS INT
 	COMMENT 'Raise exception with message where an integer is required'
 BEGIN
-		SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = ER_SIGNAL_EXCEPTION;
-		RETURN 0;										-- will never happen!
+	-- ER_SIGNAL_EXCEPTION = 1644;
+	SIGNAL SQLSTATE '02234' SET MESSAGE_TEXT = msg_, MYSQL_ERRNO = 1644;
+	RETURN 0;										-- will never happen!
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -222,6 +263,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `split_str_delim_head_rest`;
+SELECT '* PROCEDURE split_str_delim_head_rest';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `split_str_delim_head_rest`(str_ TEXT, delim_ TEXT, OUT head_ TEXT, OUT rest_ TEXT)
@@ -256,6 +298,7 @@ CALL assert_true('@y = \'\'');
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `split_str_delim_tail_rest`;
+SELECT '* PROCEDURE split_str_delim_tail_rest';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `split_str_delim_tail_rest`(str_ TEXT, delim_ TEXT, OUT tail_ TEXT, OUT rest_ TEXT)
@@ -295,6 +338,7 @@ CALL assert_true('@y = \'\'');
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `user_named`;
+SELECT '* FUNCTION user_named';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_named`(username_ TEXT)
@@ -313,6 +357,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `user_name`;
+SELECT '* FUNCTION user_name';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_name`(user_ INT)
@@ -332,16 +377,17 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 -- If id 2 fails, pick a user id that exists on your system!
-CALL assert_true('user_name(2) != \'\'');
+CALL assert_true('user_name(2) != @string_empty');
 CALL assert_true('user_named(user_name(2)) = 2');
 CALL assert_fail('user_name(0)');
-CALL assert_fail('user_named(\'Huh?\')');
+CALL assert_fail('user_named(@string_huh)');
 -- #+END_SRC
 
 -- ** Group Names <-> Group IDs
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `group_id`;
+SELECT '* FUNCTION group_id';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `group_id`(group_ INT)
@@ -360,6 +406,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `try_group_named`;
+SELECT '* FUNCTION try_group_named';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `try_group_named`(groupname_ TEXT)
@@ -375,6 +422,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `group_named`;
+SELECT '* FUNCTION group_named';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `group_named`(groupname_ TEXT)
@@ -391,6 +439,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `group_name`;
+SELECT '* FUNCTION group_name';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `group_name`(group_ INT)
@@ -408,17 +457,19 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_true('group_named(\'Stewards\') != 0');
-CALL assert_true('group_name(group_named(\'Stewards\')) = \'Stewards\'');
-CALL assert_fail('group_name(0) <> \'\'');
-CALL assert_fail('group_named(\'\')');
-CALL assert_fail('group_named(\'Huh?\')');
+SET @string_stewards = 'Stewards';
+CALL assert_true('group_named(@string_stewards) != 0');
+CALL assert_true('group_name(group_named(@string_stewards)) = @string_stewards');
+CALL assert_fail('group_name(0) <> @string_empty');
+CALL assert_fail('group_named(@string_empty)');
+CALL assert_fail('group_named(@string_huh)');
 -- #+END_SRC
 
 -- ** Object Ids <-> Object IDs -- test for existence
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `object_id`;
+SELECT '* FUNCTION object_id';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `object_id`(object_ INT)
@@ -439,6 +490,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `category_id`;
+SELECT '* FUNCTION category_id';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_id`(category_ INT)
@@ -457,6 +509,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `try_category_named_parent`;
+SELECT '* FUNCTION try_category_named_parent';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `try_category_named_parent`(category_name TEXT, parent INT)
@@ -471,11 +524,12 @@ END//
 DELIMITER ;
 -- #+END_SRC
 
-CALL assert_true('try_category_named_parent(\'User\', 0) IS NOT NULL');
-CALL assert_true('try_category_named_parent(\'NoSuchCategory\', 0) IS NULL');
+CALL assert_true('try_category_named_parent(@string_user, 0) IS NOT NULL');
+CALL assert_true('try_category_named_parent(@string_no_such_category, 0) IS NULL');
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `category_named_parent`;
+SELECT '* FUNCTION category_named_parent';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_named_parent`(category_name TEXT, parent INT)
@@ -498,6 +552,7 @@ DELIMITER ;
 -- category names aren't necessarily unique
 -- see FUNCTION category_path()
 DROP FUNCTION IF EXISTS `category_name`;
+SELECT '* FUNCTION category_name';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_name`(category_ INT)
@@ -515,17 +570,18 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_fail('category_named_parent(\'huh?\', 0)');
-CALL assert_fail('category_named_parent(\'user\', 5)');
-CALL assert_true('category_named_parent(\'user\', 0)');
-CALL assert_true('category_named_parent(\'test\', category_named_parent(\'user\', 0) )');
-CALL assert_true('category_named_parent(\'steward\', category_named_parent(\'test\', category_named_parent(\'user\', 0) ) )');
-CALL assert_true('category_name( category_named_parent(\'user\', 0) ) = \'user\'');
+CALL assert_fail('category_named_parent(@string_huh, 0)');
+CALL assert_fail('category_named_parent(@string_user, 5)');
+CALL assert_true('category_named_parent(@string_user, 0)');
+CALL assert_true('category_named_parent(@string_test, category_named_parent(@string_user, 0) )');
+CALL assert_true('category_named_parent(\'steward\', category_named_parent(@string_test, category_named_parent(@string_user, 0) ) )');
+CALL assert_true('category_name( category_named_parent(@string_user, 0) ) = @string_user');
 CALL assert_fail('category_name( 0 )');
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `category_parent`;
+SELECT '* FUNCTION category_parent';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_parent`(category_ INT)
@@ -543,14 +599,15 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
-CALL assert_true('category_parent( category_named_parent(\'User\', 0) ) = 0');
+CALL assert_true('category_parent( category_named_parent(@string_user, 0) ) = 0');
 CALL assert_fail('category_parent( 0 )');
-CALL assert_true('category_named_parent(\'user\', 0) =
-category_parent( category_named_parent(\'test\', category_named_parent(\'user\', 0) ) )');
+CALL assert_true('category_named_parent(@string_user, 0) =
+category_parent( category_named_parent(@string_test, category_named_parent(@string_user, 0) ) )');
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `category_path`;
+SELECT '* FUNCTION category_path';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_path`(category_id INT)
@@ -570,13 +627,14 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 CALL assert_fail('category_path( 0 )');
-CALL assert_true('category_path( category_named_parent(\'user\', 0) ) = \'user\'');
-CALL assert_true('\'user::test\' =
-category_path(category_named_parent(\'test\', category_named_parent(\'user\',0)))');
+CALL assert_true('category_path( category_named_parent(@string_user, 0) ) = @string_user');
+CALL assert_true('@string_category_user_test =
+category_path(category_named_parent(@string_test, category_named_parent(@string_user,0)))');
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `category_of_path`;
+SELECT '* FUNCTION category_of_path';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `category_of_path`(path_ text)
@@ -585,11 +643,14 @@ COMMENT 'return category id given :: separated category path - or raise exceptio
 BEGIN
 	DECLARE parent_ INT DEFAULT 0;
 	DECLARE head_ TEXT;
-	WHILE pos_ != 0 DO
+		-- parent_ is id of root of path_
+	WHILE path_ != '' DO
+		-- parent_ is id of root of path_
 		CALL split_str_delim_head_rest(path_, '::', head_, path_);
 		SET parent_ = category_named_parent(head_, parent_);
+		-- parent_ is id of root of path_
 	END WHILE;
-	RETURN category_named_parent(path_, parent_);
+	RETURN parent_;
 END//
 DELIMITER ;
 -- #+END_SRC
@@ -599,15 +660,15 @@ SET @y = category_named_parent(@x, 0);
 CALL assert_true('category_of_path(@x) = @y');
 
 SET @x = 'User::Test';
-SET @y = category_named_parent(@x, 0);
 SET @z = category_named_parent('Test', @y);
 CALL assert_true('category_of_path(@x) = @z');
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `try_create_categoryname_parent_comment`;
+SELECT '* FUNCTION try_create_categoryname_parent_comment';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-FUNCTION `try_create_categoryname_parent_comment`(name__ TEXT, parent_ INT, comment_ TEXT)
+FUNCTION `try_create_categoryname_parent_comment`(name_ TEXT, parent_ INT, comment_ TEXT)
 	RETURNS INT
 	READS SQL DATA MODIFIES SQL DATA
 	COMMENT 'create category of name and parent and return its id; or NULL if it already exists'
@@ -621,6 +682,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `ensure_categorypath_comment`;
+SELECT '* FUNCTION ensure_categorypath_comment';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `ensure_categorypath_comment`(path_ TEXT, comment_ TEXT)
@@ -647,6 +709,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_categorypath_comment`;
+SELECT '* PROCEDURE assert_categorypath_comment';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_categorypath_comment`(path_ TEXT, comment_ TEXT)
@@ -669,9 +732,9 @@ SET @z = 'root of user default categories';
 SET @w = ensure_categorypath_comment(@x, @z);
 CALL assert_true('@y = @w');
 
-SET @x = category_of_path('User::Test');
+SET @x = category_of_path(@string_category_user_test);
 SET @y = 'root of test account default categories';
-CALL assert_true('@x =  ensure_categorypath_comment(\'User::Test\', @y)');
+CALL assert_true('@x =  ensure_categorypath_comment(@string_category_user_test, @y)');
 
 -- ** add test/add/drop category <-> object associations
 
@@ -683,9 +746,10 @@ CALL assert_true('@x =  ensure_categorypath_comment(\'User::Test\', @y)');
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `has_object_category`;
+SELECT '* FUNCTION has_object_category';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
-PROCEDURE `has_object_category`(obj_ int, cat_ int)
+FUNCTION `has_object_category`(obj_ int, cat_ int)
 	RETURNS boolean
   READS SQL DATA
 	COMMENT 'Does given object have given category?'
@@ -700,6 +764,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `add_object_category`;
+SELECT '* PROCEDURE add_object_category';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `add_object_category`(obj_ int, cat_ int)
@@ -715,6 +780,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `drop_object_category`;
+SELECT '* PROCEDURE drop_object_category';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `drop_object_category`(obj_ int, cat_ int)
@@ -738,6 +804,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `group_default_category`;
+SELECT '* FUNCTION group_default_category';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 	FUNCTION `group_default_category`(group_ INT)
@@ -755,12 +822,13 @@ DELIMITER ;
 
 CALL assert_fail('group_default_category( group_named(\'Registered\') )');
 
-CALL assert_true('group_default_category( group_named(\'User_Greg\') ) =
- category_named_parent(\'Greg\', category_named_parent(\'User\', 0))');
+CALL assert_true('group_default_category( group_named(@string_group_user_greg) ) =
+ category_named_parent(\'Greg\', category_named_parent(@string_user, 0))');
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `groupname_default_category`;
+SELECT '* FUNCTION groupname_default_category';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 	FUNCTION `groupname_default_category`(group_name TEXT)
@@ -778,14 +846,15 @@ DELIMITER ;
 
 CALL assert_fail('groupname_default_category( \'Registered\' )');
 
-CALL assert_true('groupname_default_category( \'User_Greg\' ) =
- category_named_parent(\'Greg\', category_named_parent(\'User\', 0))');
+CALL assert_true('groupname_default_category( @string_group_user_greg ) =
+ category_named_parent(\'Greg\', category_named_parent(@string_user, 0))');
 -- #+END_SRC
 
 -- ** User IDs --> User Properties
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `user_default_groupname`;
+SELECT '* FUNCTION user_default_groupname';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_default_groupname`(user_ INT)
@@ -805,11 +874,12 @@ DELIMITER ;
 
 CALL assert_fail('user_default_groupname( 0 )');
 
-CALL assert_true('user_default_groupname( user_named(\'Greg\') ) = \'User_Greg\'');
+CALL assert_true('user_default_groupname( user_named(\'Greg\') ) = @string_group_user_greg');
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `user_default_group`;
+SELECT '* FUNCTION user_default_group';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_default_group`(user_id INT)
@@ -825,11 +895,12 @@ DELIMITER ;
 -- Find a stable test user without a default group for next line!!!
 -- SELECT user_default_group( user_named('sad_user') ) = 0;
 CALL assert_true('user_default_group( 0 ) IS NULL');
-CALL assert_true('user_default_group( user_named(\'Greg\') ) = group_named(\'User_Greg\')');
+CALL assert_true('user_default_group( user_named(\'Greg\') ) = group_named(@string_group_user_greg)');
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `user_default_category`;
+SELECT '* FUNCTION user_default_category';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `user_default_category`(user_id INT)
@@ -847,13 +918,14 @@ DELIMITER ;
 -- !!! next line !!!
 -- SELECT user_default_category( user_named('sad_user') ) = 0;
 CALL assert_true('user_default_category( user_named(\'Greg\') ) =
- category_named_parent(\'Greg\', category_named_parent(\'User\', 0))');
+ category_named_parent(\'Greg\', category_named_parent(@string_user, 0))');
 -- #+END_SRC
 
 -- * Relating Groups and Categories and the Permissions between them
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `perms_grp_cat`;
+SELECT '* PROCEDURE perms_grp_cat';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `perms_grp_cat`(grp_ INT, cat_ INT)
@@ -871,6 +943,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `set_perm_grp_cat`;
+SELECT '* PROCEDURE set_perm_grp_cat';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `set_perm_grp_cat`(perm_ TEXT, grp_ INT, cat_ INT)
@@ -888,6 +961,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `copy_perms_grp_cat_grp_cat`;
+SELECT '* PROCEDURE copy_perms_grp_cat_grp_cat';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `copy_perms_grp_cat_grp_cat`(grp_ INT, cat_ INT, to_grp INT, to_cat INT)
@@ -912,6 +986,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `create_steward_category`;
+SELECT '* PROCEDURE create_steward_category';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `create_steward_category`(group_ INT, username_ TEXT)
@@ -947,6 +1022,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `user_add_groupname`;
+SELECT '* PROCEDURE user_add_groupname';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `user_add_groupname`(user_ INT, groupname_ TEXT)
@@ -973,6 +1049,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `user_add_group`;
+SELECT '* PROCEDURE user_add_group';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `user_add_group`(user_ INT, group_ INT)
@@ -986,6 +1063,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP FUNCTION IF EXISTS `ensure_groupname_comment`;
+SELECT '* FUNCTION ensure_groupname_comment';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 FUNCTION `ensure_groupname_comment`(group_name TEXT, comment_ TEXT)
@@ -1008,6 +1086,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `assert_groupname_comment`;
+SELECT '* PROCEDURE assert_groupname_comment';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `assert_groupname_comment`(group_name TEXT, comment_ TEXT)
@@ -1026,6 +1105,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `create_steward_default_group`;
+SELECT '* PROCEDURE create_steward_default_group';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `create_steward_default_group`(user_ INT)
@@ -1049,6 +1129,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `make_steward_user`;
+SELECT '* PROCEDURE make_steward_user';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `make_steward_user`(user_ INT)
@@ -1063,6 +1144,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `make_steward_username`;
+SELECT '* PROCEDURE make_steward_username';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `make_steward_username`(user_name TEXT)
@@ -1076,6 +1158,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `make_stewards_be_stewards`;
+SELECT '* PROCEDURE make_stewards_be_stewards';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `make_stewards_be_stewards`()
@@ -1102,6 +1185,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `add_everyone_to_group_stewards`;
+SELECT '* PROCEDURE add_everyone_to_group_stewards';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `add_everyone_to_group_stewards`()
@@ -1125,8 +1209,6 @@ END//
 DELIMITER ;
 -- #+END_SRC
 
-SELECT @TESTS_PASSED, @TESTS_FAILED;
-
 -- ** Session Variables
 
 -- It would be good if set_cat_stew_vars
@@ -1143,6 +1225,7 @@ SELECT @TESTS_PASSED, @TESTS_FAILED;
 -- #+BEGIN_SRC sql
 
 DROP PROCEDURE IF EXISTS `set_cat_stew_vars`;
+SELECT '* PROCEDURE set_cat_stew_vars';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `set_cat_stew_vars`()
@@ -1183,6 +1266,7 @@ DELIMITER ;
 
 -- #+BEGIN_SRC sql
 DROP PROCEDURE IF EXISTS `feature_ngender_stewards`;
+SELECT '* PROCEDURE feature_ngender_stewards';
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `feature_ngender_stewards`(activate boolean)
@@ -1199,3 +1283,5 @@ BEGIN
 END//
 DELIMITER ;
 -- #+END_SRC
+
+SELECT @TESTS_RUN, @TESTS_PASSED, @TESTS_FAILED;
