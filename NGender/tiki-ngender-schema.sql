@@ -302,13 +302,15 @@ DELIMITER ;
 -- #+END_SRC
 
 -- #+BEGIN_SRC sql
--- Grant Stewards view permission to top-level categories under Category User except for 'User::Test'
+-- Grant Stewards view permission of all Users' default
+-- categories, i.e. to top-level categories under Category
+-- User except for 'User::Test'
 DROP PROCEDURE IF EXISTS `let_stewards_view_user_categories`;
 DELIMITER //
 CREATE DEFINER=`phpmyadmin`@`localhost`
 PROCEDURE `let_stewards_view_user_categories`()
 READS SQL DATA MODIFIES SQL DATA
-COMMENT 'Grant Stewards view permission to non-model child categories of User'
+COMMENT 'Grant Stewards view permission to everyone''s default categories, i.e. non-model child categories of User'
 BEGIN
 DECLARE groupname_ int DEFAULT group_named('Stewards');
 DECLARE permname_ TEXT DEFAULT 'tiki_p_view_category';
@@ -317,7 +319,7 @@ DECLARE model_ int = MODEL_CATEGORY_ID();
 DECLARE category_ int;
 DECLARE done_ int DEFAULT 0;
 DECLARE cursor_ CURSOR FOR 
-SELECT DISTINCT categId_ FROM tiki_categories
+SELECT DISTINCT categId FROM tiki_categories
 WHERE parentId = parent_ AND categId != model_;
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET done_ = 1;
 OPEN cursor_;
